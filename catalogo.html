@@ -126,7 +126,7 @@
     recamaras: ['Clósets y vestidores a tu medida', 'Abiertos o con puertas, con o sin iluminación. Se fabrican con las medidas de tu muro.'] };
   if (c) { $('#catTitle').textContent = titles[cat][0]; $('#catDesc').textContent = titles[cat][1]; document.title = c.name + ' · Cardian Muebles'; $('#catBg').style.backgroundImage = `url(/${c.img})`; }
   else $('#catBg').style.backgroundImage = 'url(/img/sala-nube.jpg)';
-  $('#catTabs').innerHTML = [['', 'Todo'], ...D.categories.map(x => [x.id, x.name])].map(([id, n]) => `<a href="${id ? '/' + id : '/catalogo'}" class="${id === cat ? 'on' : ''}">${n}</a>`).join('');
+  $('#catTabs').innerHTML = [['', 'Todo'], ...D.categories.map(x => [x.id, x.name])].map(([id, n]) => `<a href="${id ? '/catalogo?c=' + id : '/catalogo'}" class="${id === cat ? 'on' : ''}">${n}</a>`).join('');
 
   const pool = D.products.filter(p => !cat || p.cat === cat);
   const tapices = [...new Set(pool.flatMap(p => p.tapiz || []))];

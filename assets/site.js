@@ -23,7 +23,7 @@
     const c = catOf(p.cat);
     const sw = (p.tapiz || []).slice(0, 4).map(t => `<i style="background:${D.TAPIZ[t].hex}" title="${D.TAPIZ[t].name}"></i>`).join('');
     const alt = p.imgs[1] ? `<img class="alt" src="/${p.imgs[1]}" alt="" loading="lazy">` : '';
-    return `<a class="card reveal" style="--d:${(i % 4) * 80}ms" href="/producto/${p.id}">
+    return `<a class="card reveal" style="--d:${(i % 4) * 80}ms" href="/producto?id=${p.id}">
       <div class="ph"><img src="/${p.imgs[0]}" alt="${p.name}" loading="lazy">${alt}<span class="tag ${stockClass(p)}">${p.stock === 'inmediata' ? 'Entrega inmediata' : p.stock === 'medida' ? 'A medida' : 'Sobre pedido'}</span></div>
       <div class="c"><div class="cat">${c.name}</div><h3>${p.name}</h3><div class="type">${p.type}</div>${sw ? `<div class="sw">${sw}</div>` : ''}
       <div class="price num">${p.from ? '<small style="margin:0 4px 0 0">desde</small>' : ''}${fmt(p.price)}<small>MXN</small></div>
@@ -70,8 +70,8 @@
 
   function header() {
     const path = location.pathname.replace(/\/$/, '') || '/';
-    const cur = (h) => (path === h || (h !== '/inicio' && path.startsWith(h))) ? ' aria-current="page"' : '';
-    const links = [['/salas', 'Salas'], ['/cocinas', 'Cocinas'], ['/comedores', 'Comedores'], ['/recamaras', 'Recámaras'], ['/envios', 'Envíos'], ['/proyectos', 'Proyectos']];
+    const here = path + location.search; const cur = (h) => (here === h || (h.indexOf('?') < 0 && h !== '/inicio' && path.startsWith(h))) ? ' aria-current="page"' : '';
+    const links = [['/catalogo?c=salas', 'Salas'], ['/catalogo?c=cocinas', 'Cocinas'], ['/catalogo?c=comedores', 'Comedores'], ['/catalogo?c=recamaras', 'Recámaras'], ['/envios', 'Envíos'], ['/proyectos', 'Proyectos']];
     const nav = links.map(([h, t]) => `<a href="${h}"${cur(h)}>${t}</a>`).join('');
     return `
     <div class="preview-bar"><div class="wrap"><span>Vista previa · sitio en construcción · datos de muestra</span><button type="button" id="gateOut">Salir</button></div></div>
@@ -93,7 +93,7 @@
     return `<footer class="site"><div class="wrap">
       <div class="top">
         <div class="brand"><img src="/img/logo.png" alt="Cardian Muebles"><p>Cocinas, salas, comedores y recámaras hechos en nuestro propio taller. Envío a todo México.</p></div>
-        <div><h4>Catálogo</h4><ul><li><a href="/salas">Salas</a></li><li><a href="/cocinas">Cocinas</a></li><li><a href="/comedores">Comedores</a></li><li><a href="/recamaras">Recámaras</a></li><li><a href="/catalogo?stock=inmediata">Entrega inmediata</a></li></ul></div>
+        <div><h4>Catálogo</h4><ul><li><a href="/catalogo?c=salas">Salas</a></li><li><a href="/catalogo?c=cocinas">Cocinas</a></li><li><a href="/catalogo?c=comedores">Comedores</a></li><li><a href="/catalogo?c=recamaras">Recámaras</a></li><li><a href="/catalogo?stock=inmediata">Entrega inmediata</a></li></ul></div>
         <div><h4>Ayuda</h4><ul><li><a href="/como-comprar">Cómo comprar</a></li><li><a href="/envios">Envíos y entregas</a></li><li><a href="/pagos">Pagos y garantía</a></li><li><a href="/preguntas">Preguntas frecuentes</a></li><li><a href="/contacto">Contacto</a></li></ul></div>
         <div><h4>Empresa</h4><ul><li><a href="/nosotros">Nosotros y taller</a></li><li><a href="/proyectos">Hoteles y oficinas</a></li><li><a href="${D.brand.ig}" target="_blank" rel="noopener">Instagram</a></li><li><a href="${D.brand.fb}" target="_blank" rel="noopener">Facebook</a></li><li><a href="/privacidad">Aviso de privacidad</a></li><li><a href="/terminos">Términos de compra</a></li></ul></div>
       </div>

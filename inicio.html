@@ -75,8 +75,8 @@
       <h1>Muebles hechos en nuestro taller, <em>entregados y armados</em> en tu casa.</h1>
       <p>Cocinas, salas, comedores y recámaras. Eliges tapiz y medida en línea, pagas como prefieras y nosotros nos encargamos del resto.</p>
       <div class="cta">
-        <a class="btn gold" href="/salas">Ver salas desde $12,900</a>
-        <a class="btn light" href="/cocinas">Cotizar una cocina a medida</a>
+        <a class="btn gold" href="/catalogo?c=salas">Ver salas desde $12,900</a>
+        <a class="btn light" href="/catalogo?c=cocinas">Cotizar una cocina a medida</a>
       </div>
     </div>
     <a class="hero-card" href="/producto?id=sala-africa">
@@ -188,7 +188,7 @@
 (function(){
   const { $, card, fmt } = window.Cardian; const D = window.CARDIAN;
   const minBy = cat => Math.min(...D.products.filter(p => p.cat === cat).map(p => p.price));
-  $('#cats').innerHTML = D.categories.map((c, i) => `<a class="cat-card reveal" style="--d:${i*90}ms" href="/${c.id}"><img src="/${c.img}" alt="${c.name}"><div class="t"><h3>${c.name}</h3><p>${c.desc}</p><div class="from">Desde ${fmt(minBy(c.id))}</div></div></a>`).join('');
+  $('#cats').innerHTML = D.categories.map((c, i) => `<a class="cat-card reveal" style="--d:${i*90}ms" href="/catalogo?c=${c.id}"><img src="/${c.img}" alt="${c.name}"><div class="t"><h3>${c.name}</h3><p>${c.desc}</p><div class="from">Desde ${fmt(minBy(c.id))}</div></div></a>`).join('');
   $('#inmediata').innerHTML = D.products.filter(p => p.stock === 'inmediata').slice(0, 8).map(card).join('');
   $('#featured').innerHTML = D.products.filter(p => p.featured).slice(0, 8).map(card).join('');
   Cardian.reveal();
