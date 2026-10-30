@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="es" data-gated>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Catálogo · Cardian Muebles</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="/img/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap">
+<link rel="stylesheet" href="/assets/site.css">
+<script src="/assets/gate.js"></script>
+<style>
+  .cat-hero{background:var(--ink);color:var(--ink-fg);position:relative;overflow:hidden}
+  .cat-hero .bg{position:absolute;inset:0;background:center/cover no-repeat;opacity:.45}
+  .cat-hero::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(13,12,10,.95) 30%,rgba(13,12,10,.4))}
+  .cat-hero .wrap{position:relative;z-index:1;padding-block:44px;display:flex;justify-content:space-between;align-items:flex-end;gap:20px;flex-wrap:wrap}
+  .cat-hero h1{font-size:clamp(28px,4vw,42px)}
+  .cat-hero p{color:var(--ink-muted);margin-top:8px;max-width:56ch}
+  .cat-hero .b2b{font-size:12.5px;color:var(--gold-bright);text-decoration:none;letter-spacing:.06em}
+  .cat-tabs{background:var(--surface);border-bottom:1px solid var(--line);position:sticky;top:76px;z-index:30}
+  .cat-tabs .wrap{display:flex;gap:4px;overflow-x:auto;padding-block:8px;scrollbar-width:none}
+  .cat-tabs a{white-space:nowrap;text-decoration:none;font-size:12.5px;letter-spacing:.08em;text-transform:uppercase;padding:9px 14px;border-radius:999px;color:var(--muted)}
+  .cat-tabs a.on{background:var(--ink);color:var(--ink-fg)}
+  .layout{display:grid;grid-template-columns:250px minmax(0,1fr);gap:32px;padding-block:32px;align-items:start}
+  .filters{position:sticky;top:140px;display:grid;gap:22px}
+  .filters h4{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:500;margin-bottom:8px}
+  .filters label{display:flex;align-items:center;gap:10px;font-size:13.5px;padding:5px 0;cursor:pointer}
+  .filters input[type=checkbox],.filters input[type=radio]{accent-color:var(--gold-deep);width:16px;height:16px}
+  .filters .help{font-size:12px;color:var(--muted);margin-top:4px}
+  .filters .sw{width:14px;height:14px;border-radius:50%;border:1px solid rgba(0,0,0,.15)}
+  .filters .close{display:none}
+  .toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap}
+  .toolbar .count{font-size:13.5px;color:var(--muted)}
+  .toolbar select{padding:9px 12px;border:1px solid var(--line);border-radius:999px;background:var(--surface)}
+  .filters-btn{display:none}
+  .empty{grid-column:1/-1;background:var(--surface);border:1px dashed var(--line);border-radius:var(--r);padding:40px;text-align:center;color:var(--muted)}
+  .medida-banner{grid-column:1/-1;background:var(--ink);color:var(--ink-fg);border-radius:var(--r);padding:26px 28px;display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap}
+  .medida-banner h3{font-size:20px}
+  .medida-banner p{color:var(--ink-muted);font-size:13.5px;margin-top:4px}
+  @media (max-width:900px){
+    .layout{grid-template-columns:1fr}
+    .filters{position:fixed;inset:0;background:var(--bg);z-index:80;padding:24px;overflow:auto;display:none}
+    .filters.open{display:grid;align-content:start}
+    .filters .close{display:flex;justify-content:space-between;align-items:center}
+    .filters-btn{display:inline-flex}
+    .cat-tabs{top:68px}
+  }
+</style>
+</head>
+<body>
+<div id="site-header"></div>
+
+<section class="cat-hero">
+  <div class="bg" id="catBg" aria-hidden="true"></div>
+  <div class="wrap">
+    <div><div class="eyebrow" style="color:var(--gold-bright)">Catálogo</div><h1 id="catTitle">Todo el catálogo</h1><p id="catDesc">Salas, cocinas, comedores y recámaras hechos en nuestro taller.</p></div>
+    <a class="b2b" href="/proyectos">¿Para un hotel u oficina? Cotiza por volumen →</a>
+  </div>
+</section>
+<div class="cat-tabs"><div class="wrap" id="catTabs"></div></div>
+
+<main class="wrap layout">
+  <aside class="filters" id="filters" aria-label="Filtros">
+    <div class="close"><b>Filtros</b><button type="button" class="btn sm" id="closeFilters">Cerrar</button></div>
+    <div><h4>Disponibilidad</h4>
+      <label><input type="checkbox" name="stock" value="inmediata"> Entrega inmediata</label>
+      <label><input type="checkbox" name="stock" value="pedido"> Sobre pedido</label>
+      <label><input type="checkbox" name="stock" value="medida"> A medida</label>
+      <div class="help">Entrega inmediata: ya está fabricado, sale del taller en 1 a 2 días.</div>
+    </div>
+    <div><h4>Precio</h4>
+      <label><input type="radio" name="price" value="" checked> Todos</label>
+      <label><input type="radio" name="price" value="0-15000"> Hasta $15,000</label>
+      <label><input type="radio" name="price" value="15000-30000"> $15,000 a $30,000</label>
+      <label><input type="radio" name="price" value="30000-"> Más de $30,000</label>
+    </div>
+    <div><h4>Mensualidad a 12 MSI</h4>
+      <label><input type="radio" name="msi" value="" checked> Cualquiera</label>
+      <label><input type="radio" name="msi" value="1000"> Hasta $1,000 al mes</label>
+      <label><input type="radio" name="msi" value="2000"> Hasta $2,000 al mes</label>
+      <label><input type="radio" name="msi" value="3000"> Hasta $3,000 al mes</label>
+    </div>
+    <div id="fTapiz"><h4>Tapiz</h4></div>
+    <div id="fLargo"><h4>Largo total</h4>
+      <label><input type="radio" name="largo" value="" checked> Cualquiera</label>
+      <label><input type="radio" name="largo" value="0-220"> Hasta 2.2 m</label>
+      <label><input type="radio" name="largo" value="220-270"> 2.2 a 2.7 m</label>
+      <label><input type="radio" name="largo" value="270-"> Más de 2.7 m</label>
+      <div class="help">Mide la pared donde irá el mueble y deja 10 cm libres de cada lado.</div>
+    </div>
+    <button type="button" class="btn sm ghost" id="clearFilters">Quitar filtros</button>
+  </aside>
+
+  <section>
+    <div class="toolbar">
+      <div class="count" id="count"></div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button type="button" class="btn sm ghost filters-btn" id="openFilters">Filtros</button>
+        <select id="sort" aria-label="Ordenar">
+          <option value="rel">Más vendidos</option>
+          <option value="fast">Entrega más rápida</option>
+          <option value="asc">Menor precio</option>
+          <option value="desc">Mayor precio</option>
+        </select>
+      </div>
+    </div>
+    <div class="cards three" id="grid"></div>
+  </section>
+</main>
+
+<div id="site-footer"></div>
+<script src="/assets/data.js"></script>
+<script src="/assets/site.js"></script>
+<script>
+(function(){
+  const { $, $$, card } = window.Cardian; const D = window.CARDIAN;
+  const q = new URLSearchParams(location.search);
+  const fromPath = location.pathname.replace(/^\//, '').replace(/\.html$/, '').replace(/\/$/, '');
+  const want = q.get('c') || fromPath;
+  const cat = D.categories.find(c => c.id === want) ? want : '';
+  const c = D.categories.find(x => x.id === cat);
+  const titles = { salas: ['Salas reclinables, modulares y esquineras', 'Elige tapiz y mecanismo en cada modelo. Las piezas marcadas «Entrega inmediata» ya están terminadas; las demás se fabrican en 15 a 20 días hábiles.'],
+    cocinas: ['Cocinas integrales lineales y a medida', 'Las cocinas lineales tienen precio fijo. Las integrales se cotizan con tus medidas en 24 horas, sin compromiso.'],
+    comedores: ['Comedores con mesa de ónix, madera o cristal', 'Mesas para 4 y 6 personas con sillas tapizadas. Varios modelos de entrega inmediata.'],
+    recamaras: ['Clósets y vestidores a tu medida', 'Abiertos o con puertas, con o sin iluminación. Se fabrican con las medidas de tu muro.'] };
+  if (c) { $('#catTitle').textContent = titles[cat][0]; $('#catDesc').textContent = titles[cat][1]; document.title = c.name + ' · Cardian Muebles'; $('#catBg').style.backgroundImage = `url(/${c.img})`; }
+  else $('#catBg').style.backgroundImage = 'url(/img/sala-nube.jpg)';
+  $('#catTabs').innerHTML = [['', 'Todo'], ...D.categories.map(x => [x.id, x.name])].map(([id, n]) => `<a href="${id ? '/' + id : '/catalogo'}" class="${id === cat ? 'on' : ''}">${n}</a>`).join('');
+
+  const pool = D.products.filter(p => !cat || p.cat === cat);
+  const tapices = [...new Set(pool.flatMap(p => p.tapiz || []))];
+  if (tapices.length) $('#fTapiz').insertAdjacentHTML('beforeend', tapices.map(t => `<label><input type="checkbox" name="tapiz" value="${t}"><span class="sw" style="background:${D.TAPIZ[t].hex}"></span> ${D.TAPIZ[t].name}</label>`).join(''));
+  else $('#fTapiz').hidden = true;
+  if (!pool.some(p => p.dims)) $('#fLargo').hidden = true;
+  if (q.get('stock')) { const cb = $(`input[name=stock][value="${q.get('stock')}"]`); if (cb) cb.checked = true; }
+
+  function apply() {
+    const stock = $$('input[name=stock]:checked').map(i => i.value);
+    const price = $('input[name=price]:checked').value, msi = $('input[name=msi]:checked').value;
+    const tap = $$('input[name=tapiz]:checked').map(i => i.value);
+    const largo = ($('input[name=largo]:checked') || {}).value || '';
+    const inRange = (v, r) => { if (!r) return true; const [a, b] = r.split('-'); return v >= +a && (b === '' || v <= +b); };
+    let list = pool.filter(p => (!stock.length || stock.includes(p.stock)) && inRange(p.price, price) && (!msi || p.price / 12 <= +msi) && (!tap.length || (p.tapiz || []).some(t => tap.includes(t))) && (!largo || (p.dims && inRange(p.dims.largo, largo))));
+    const s = $('#sort').value, ord = { inmediata: 0, pedido: 1, medida: 2 };
+    if (s === 'asc') list.sort((a, b) => a.price - b.price); else if (s === 'desc') list.sort((a, b) => b.price - a.price);
+    else if (s === 'fast') list.sort((a, b) => ord[a.stock] - ord[b.stock]);
+    else list.sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0));
+    $('#count').textContent = list.length + (list.length === 1 ? ' producto' : ' productos');
+    let html;
+    if (!list.length) html = `<div class="empty">No hay piezas con esa combinación. Quita un filtro o pídenos esa medida: la fabricamos.<br><br><a class="btn sm gold" href="${Cardian.wa('Hola, busco un mueble a medida')}" target="_blank" rel="noopener">Pedir una medida especial</a></div>`;
+    else {
+      const banner = `<div class="medida-banner reveal"><div><h3>¿Ninguna medida te cuadra?</h3><p>Tenemos taller propio. Mándanos las medidas de tu espacio por WhatsApp y te decimos precio y tiempo de entrega el mismo día.</p></div><a class="btn gold sm" href="${Cardian.wa('Hola, quiero cotizar un mueble a medida')}" target="_blank" rel="noopener">Pedir una medida especial</a></div>`;
+      const parts = list.map((p, i) => card(p, i)); if (parts.length > 6) parts.splice(6, 0, banner); else parts.push(banner); html = parts.join('');
+    }
+    $('#grid').innerHTML = html; Cardian.reveal();
+  }
+  $$('#filters input').forEach(i => i.addEventListener('change', apply));
+  $('#sort').addEventListener('change', apply);
+  $('#clearFilters').onclick = () => { $$('#filters input[type=checkbox]').forEach(i => i.checked = false); $$('#filters input[type=radio][value=""]').forEach(i => i.checked = true); apply(); };
+  $('#openFilters').onclick = () => $('#filters').classList.add('open');
+  $('#closeFilters').onclick = () => $('#filters').classList.remove('open');
+  apply();
+})();
+</script>
+</body>
+</html>

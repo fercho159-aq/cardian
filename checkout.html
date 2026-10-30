@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="es" data-gated>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Finalizar compra · Cardian Muebles</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="/img/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap">
+<link rel="stylesheet" href="/assets/site.css">
+<script src="/assets/gate.js"></script>
+<style>
+  .co{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(300px,.8fr);gap:32px;align-items:start;padding-block:24px 48px}
+  @media (max-width:860px){.co{grid-template-columns:1fr}.summary{order:-1}}
+  h1{font-size:clamp(26px,3.5vw,34px)}
+  .stepper{display:flex;gap:6px;margin:14px 0 24px;flex-wrap:wrap}
+  .stepper span{font-size:11px;letter-spacing:.1em;text-transform:uppercase;padding:6px 12px;border:1px solid var(--line);border-radius:999px;color:var(--muted);background:var(--surface)}
+  .stepper span.on{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+  .stepper span.done{border-color:var(--gold);color:var(--gold-deep)}
+  .panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:22px;animation:rise .45s both}
+  .panel h2{font-size:19px;margin-bottom:14px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media (max-width:560px){.grid2{grid-template-columns:1fr}}
+  .grid2 .full{grid-column:1/-1}
+  .opts{display:grid;gap:10px}
+  .opt{display:grid;grid-template-columns:22px 1fr auto;gap:12px;align-items:center;border:1px solid var(--line);border-radius:6px;padding:14px;background:var(--surface);text-align:left;width:100%;transition:border-color .2s,box-shadow .2s,background .2s,transform .2s}
+  .opt:hover{border-color:var(--gold);transform:translateX(3px)}
+  .opt[aria-pressed="true"]{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold);background:var(--gold-soft)}
+  .opt .radio{width:18px;height:18px;border-radius:50%;border:1.5px solid var(--muted);display:grid;place-items:center}
+  .opt[aria-pressed="true"] .radio{border-color:var(--gold-deep)}
+  .opt[aria-pressed="true"] .radio::after{content:"";width:9px;height:9px;border-radius:50%;background:var(--gold-deep)}
+  .opt .t{font-weight:500;font-size:14px}.opt .d{font-size:12.5px;color:var(--muted)}
+  .opt .b{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--gold-deep);font-weight:500;white-space:nowrap}
+  .mp{display:inline-block;background:#009ee3;color:#fff;font-size:10px;font-weight:600;letter-spacing:.04em;padding:2px 6px;border-radius:3px;vertical-align:1px}
+  .actions{display:flex;justify-content:space-between;gap:10px;margin-top:20px;flex-wrap:wrap}
+  .summary{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:20px;position:sticky;top:96px}
+  .summary h2{font-size:17px;margin-bottom:10px}
+  .summary .it{display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);font-size:13px}
+  .summary .it img{width:54px;height:40px;object-fit:cover;border-radius:3px}
+  .summary .it b{font-weight:500;display:block}
+  .summary .it small{color:var(--muted)}
+  .summary .row{display:flex;justify-content:space-between;gap:12px;padding:7px 0;font-size:14px}
+  .summary .row small{display:block;color:var(--muted);font-size:12px}
+  .summary .disc{color:var(--ok)}
+  .summary .total{border-top:1px solid var(--line);margin-top:6px;padding-top:12px;font-size:18px;font-weight:600}
+  .instr{border:1px solid var(--line);border-radius:6px;padding:16px;background:var(--surface-2);font-size:14px;margin-top:14px}
+  .instr h3{font-size:16px;margin-bottom:8px}
+  .instr dl{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:10px 0 0;font-size:13px}
+  .instr dt{color:var(--muted)}.instr dd{margin:0;font-weight:500}
+  .instr ol{margin:10px 0 0;padding-left:18px}.instr li{margin-bottom:4px}
+  .mpbtn{display:block;width:100%;background:#009ee3;color:#fff;border:0;border-radius:6px;padding:14px;font-weight:600;letter-spacing:.04em;margin-top:14px;font-size:14px}
+  .review dl{display:grid;grid-template-columns:140px 1fr;gap:8px 16px;font-size:14px;margin:0}
+  .review dt{color:var(--muted)}.review dd{margin:0}
+  .review .edit{font-size:12px;color:var(--gold-deep);margin-left:8px}
+  .secure{display:flex;gap:8px;align-items:center;font-size:12px;color:var(--muted);margin-top:12px}
+  .secure svg{width:16px;height:16px;color:var(--ok)}
+  label.chk{display:flex;gap:10px;align-items:flex-start;font-size:13px;color:var(--muted);margin-top:14px}
+  label.chk input{accent-color:var(--gold-deep);margin-top:3px}
+</style>
+</head>
+<body>
+<div id="site-header"></div>
+
+<main class="wrap">
+  <nav class="crumbs" aria-label="Ruta"><a href="/inicio">Inicio</a><span>/</span><a href="/carrito">Carrito</a><span>/</span>Finalizar compra</nav>
+  <div class="co">
+    <section>
+      <h1>Finalizar compra</h1>
+      <div class="stepper" id="stepper"></div>
+      <div id="panel"></div>
+    </section>
+    <aside class="summary" id="summary"></aside>
+  </div>
+</main>
+
+<div id="site-footer"></div>
+<script src="/assets/data.js"></script>
+<script src="/assets/site.js"></script>
+<script>
+(function(){
+  const C = window.Cardian, D = window.CARDIAN, { $, $$, fmt, fmt2 } = C;
+  const lines = C.cartLines();
+  if (!lines.length) { location.replace('/carrito'); return; }
+  const o = Object.assign({ step: 1, delivery: 'ship', state: 'Ciudad de México', pay: 'mp', name: '', phone: '', email: '', street: '', colonia: '', cp: '', city: '', floor: 'pb', notes: '', invoice: false, rfc: '', razon: '' }, C.getOrder());
+  if (o.step > 3) o.step = 1;
+  const save = () => C.setOrder(o);
+  const calc = () => {
+    const sub = lines.reduce((s, l) => s + l.unit * l.qty, 0);
+    const ship = o.delivery === 'store' ? { cost: 0, zone: null } : C.shipping(o.state, lines.map(l => ({ factor: l.p.factor, qty: l.qty })));
+    const disc = o.pay === 'spei' ? Math.round(sub * 0.05) : 0;
+    return { sub, ship, disc, total: sub + ship.cost - disc };
+  };
+  const steps = ['Tus datos y entrega', 'Forma de pago', 'Revisar y confirmar'];
+
+  function summary() {
+    const c = calc();
+    $('#summary').innerHTML = `<h2>Tu pedido</h2>${lines.map(l => `<div class="it"><img src="/${l.p.imgs[0]}" alt=""><div style="flex:1"><b>${l.qty} × ${l.p.name}</b><small>${l.tapiz ? D.TAPIZ[l.tapiz].name : ''}${l.mech ? ' · ' + l.mech : ''}</small></div><span class="num">${fmt(l.unit * l.qty)}</span></div>`).join('')}
+      <div class="row" style="margin-top:8px"><span>Subtotal</span><span class="num">${fmt(c.sub)}</span></div>
+      <div class="row"><span>Envío<small>${o.delivery === 'store' ? 'Recoger en bodega' : o.state + ' · ' + c.ship.zone.days}</small></span><span class="num">${c.ship.cost ? fmt(c.ship.cost) : 'Gratis'}</span></div>
+      ${c.disc ? `<div class="row disc"><span>Descuento por transferencia (5 %)</span><span class="num">−${fmt(c.disc)}</span></div>` : ''}
+      <div class="row total"><span>Total</span><span class="num">${fmt(c.total)}</span></div>
+      ${o.pay === 'mp' ? `<div class="note num">o 12 × ${fmt2(c.total / 12)} sin intereses</div>` : o.pay === 'cash' ? `<div class="note num">Anticipo hoy ${fmt(c.total * 0.5)} · al recibir ${fmt(c.total - Math.round(c.total * 0.5))}</div>` : ''}
+      <div class="secure"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Pago seguro. No guardamos datos de tarjeta.</div>`;
+  }
+  function stepper() { $('#stepper').innerHTML = steps.map((s, i) => `<span class="${i + 1 === o.step ? 'on' : i + 1 < o.step ? 'done' : ''}">${i + 1} ${s}</span>`).join('') + `<span class="${o.step > 3 ? 'on' : ''}">4 Confirmación</span>`; }
+  const inp = (id, label, extra) => `<div class="field ${extra && extra.full ? 'full' : ''}"><label for="${id}">${label}</label><input class="input" id="${id}" value="${(o[id] || '').replace(/"/g, '&quot;')}" ${extra && extra.attrs || ''}><div class="err-msg" id="err-${id}" hidden></div></div>`;
+
+  function step1() {
+    $('#panel').innerHTML = `<div class="panel"><h2>Tus datos</h2>
+      <div class="grid2">${inp('name', 'Nombre completo', { attrs: 'autocomplete="name"' })}${inp('phone', 'WhatsApp (10 dígitos)', { attrs: 'inputmode="tel" autocomplete="tel"' })}${inp('email', 'Correo electrónico', { full: true, attrs: 'type="email" autocomplete="email"' })}</div>
+      <h2 style="margin-top:24px">Entrega</h2>
+      <div class="opts">
+        <button type="button" class="opt" data-d="ship" aria-pressed="${o.delivery === 'ship'}"><span class="radio"></span><span><span class="t">Envío a domicilio</span><br><span class="d">Incluye maniobra hasta planta baja, armado y retiro del empaque</span></span><span class="b">Gratis en CDMX y EdoMex</span></button>
+        <button type="button" class="opt" data-d="store" aria-pressed="${o.delivery === 'store'}"><span class="radio"></span><span><span class="t">Recoger en bodega</span><br><span class="d">Te confirmamos punto de entrega, horario y fecha por WhatsApp</span></span><span class="b">Sin costo</span></button>
+      </div>
+      <div id="addr" ${o.delivery === 'store' ? 'hidden' : ''} style="margin-top:16px"><div class="grid2">
+        ${inp('street', 'Calle y número', { full: true, attrs: 'autocomplete="street-address"' })}${inp('colonia', 'Colonia')}${inp('cp', 'Código postal', { attrs: 'inputmode="numeric" autocomplete="postal-code"' })}${inp('city', 'Ciudad o municipio')}
+        <div class="field"><label for="state">Estado</label><select class="input" id="state">${D.states.map(s => `<option ${s === o.state ? 'selected' : ''}>${s}</option>`).join('')}</select></div>
+        <div class="field full"><label for="floor">Acceso al domicilio</label><select class="input" id="floor"><option value="pb" ${o.floor === 'pb' ? 'selected' : ''}>Planta baja o con elevador de servicio</option><option value="1" ${o.floor === '1' ? 'selected' : ''}>Primer piso sin elevador (se cotiza maniobra)</option><option value="2" ${o.floor === '2' ? 'selected' : ''}>Segundo piso o más sin elevador (se cotiza maniobra)</option></select></div>
+        <div class="field full"><label for="notes">Referencias para llegar (opcional)</label><input class="input" id="notes" value="${(o.notes || '').replace(/"/g, '&quot;')}" placeholder="Entre qué calles, color de la fachada, caseta…"></div>
+      </div></div>
+      <label class="chk"><input type="checkbox" id="invoice" ${o.invoice ? 'checked' : ''}> Necesito factura CFDI 4.0</label>
+      <div id="inv" ${o.invoice ? '' : 'hidden'} style="margin-top:10px"><div class="grid2">${inp('razon', 'Razón social o nombre')}${inp('rfc', 'RFC')}</div></div>
+      <div class="actions"><a class="btn ghost sm" href="/carrito">← Volver al carrito</a><button type="button" class="btn primary" id="next1">Continuar al pago</button></div></div>`;
+    $$('.opt[data-d]').forEach(b => b.onclick = () => { o.delivery = b.dataset.d; $$('.opt[data-d]').forEach(x => x.setAttribute('aria-pressed', String(x === b))); $('#addr').hidden = o.delivery === 'store'; summary(); });
+    $('#state').onchange = e => { o.state = e.target.value; summary(); };
+    $('#invoice').onchange = e => { o.invoice = e.target.checked; $('#inv').hidden = !o.invoice; };
+    $('#next1').onclick = () => {
+      ['name', 'phone', 'email', 'street', 'colonia', 'cp', 'city', 'notes', 'razon', 'rfc'].forEach(k => { const el = $('#' + k); if (el) o[k] = el.value.trim(); });
+      o.floor = $('#floor').value;
+      let ok = true; const bad = (k, m) => { const el = $('#' + k); el.classList.add('err'); $('#err-' + k).textContent = m; $('#err-' + k).hidden = false; ok = false; };
+      $$('.input').forEach(e => e.classList.remove('err')); $$('.err-msg').forEach(e => e.hidden = true);
+      if (o.name.length < 3) bad('name', 'Escribe tu nombre completo.');
+      if (!/^\d{10}$/.test(o.phone.replace(/\D/g, ''))) bad('phone', 'El WhatsApp debe tener 10 dígitos.');
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(o.email)) bad('email', 'Revisa el correo, parece incompleto.');
+      if (o.delivery === 'ship') { if (!o.street) bad('street', 'Escribe calle y número.'); if (!o.colonia) bad('colonia', 'Escribe la colonia.'); if (!/^\d{5}$/.test(o.cp)) bad('cp', 'El código postal tiene 5 dígitos.'); if (!o.city) bad('city', 'Escribe la ciudad o municipio.'); }
+      if (o.invoice) { if (!o.razon) bad('razon', 'Escribe la razón social.'); if (o.rfc.length < 12) bad('rfc', 'Revisa el RFC.'); }
+      if (!ok) { C.toast('Revisa los campos marcados'); return; }
+      o.step = 2; save(); render(); scrollTo({ top: 0, behavior: 'smooth' });
+    };
+  }
+
+  function step2() {
+    $('#panel').innerHTML = `<div class="panel"><h2>¿Cómo quieres pagar?</h2>
+      <div class="opts">
+        <button type="button" class="opt" data-p="mp" aria-pressed="${o.pay === 'mp'}"><span class="radio"></span><span><span class="t">Mercado Pago <span class="mp">mercado pago</span></span><br><span class="d">Tarjeta de crédito o débito, hasta 12 meses sin intereses</span></span><span class="b">12 MSI</span></button>
+        <button type="button" class="opt" data-p="spei" aria-pressed="${o.pay === 'spei'}"><span class="radio"></span><span><span class="t">Transferencia SPEI</span><br><span class="d">Te damos CLABE y concepto; el pedido se confirma al acreditar</span></span><span class="b">5 % de descuento</span></button>
+        <button type="button" class="opt" data-p="cash" aria-pressed="${o.pay === 'cash'}"><span class="radio"></span><span><span class="t">Efectivo</span><br><span class="d">Anticipo del 50 % en OXXO o por depósito, el resto al recibir</span></span><span class="b">Apartado</span></button>
+      </div>
+      <div class="instr" id="payInfo"></div>
+      <div class="actions"><button type="button" class="btn ghost sm" id="back2">← Mis datos</button><button type="button" class="btn primary" id="next2">Revisar pedido</button></div></div>`;
+    const info = () => { const c = calc(); $('#payInfo').innerHTML = o.pay === 'mp' ? `<h3>Pago con Mercado Pago</h3>Al confirmar serás redirigido al checkout seguro de Mercado Pago. Puedes pagar en una exhibición o elegir 3, 6 o 12 meses sin intereses con tarjetas participantes.<dl><dt>Total</dt><dd class="num">${fmt(c.total)}</dd><dt>12 MSI</dt><dd class="num">12 × ${fmt2(c.total / 12)}</dd></dl>` : o.pay === 'spei' ? `<h3>Transferencia SPEI</h3>Al confirmar verás la CLABE y el concepto de pago. Transfieres el monto exacto y nos mandas el comprobante; se acredita en minutos.<dl><dt>Descuento</dt><dd class="num">−${fmt(c.disc)}</dd><dt>Total a transferir</dt><dd class="num">${fmt(c.total)}</dd></dl>` : `<h3>Pago en efectivo</h3>Apartas con el 50 % y liquidas el resto cuando recibes el mueble (o al recogerlo en bodega). Pagas el anticipo en cualquier OXXO con la referencia o por depósito bancario.<dl><dt>Anticipo hoy</dt><dd class="num">${fmt(c.total * 0.5)}</dd><dt>Al recibir</dt><dd class="num">${fmt(c.total - Math.round(c.total * 0.5))}</dd></dl>`; };
+    $$('.opt[data-p]').forEach(b => b.onclick = () => { o.pay = b.dataset.p; $$('.opt[data-p]').forEach(x => x.setAttribute('aria-pressed', String(x === b))); info(); summary(); });
+    info();
+    $('#back2').onclick = () => { o.step = 1; save(); render(); };
+    $('#next2').onclick = () => { o.step = 3; save(); render(); scrollTo({ top: 0, behavior: 'smooth' }); };
+  }
+
+  function step3() {
+    const c = calc(); const payName = { mp: 'Mercado Pago', spei: 'Transferencia SPEI (5 % de descuento)', cash: 'Efectivo, 50 % de anticipo' }[o.pay];
+    $('#panel').innerHTML = `<div class="panel review"><h2>Revisa tu pedido</h2>
+      <dl>
+        <dt>Nombre</dt><dd>${o.name}</dd><dt>WhatsApp</dt><dd>${o.phone}</dd><dt>Correo</dt><dd>${o.email}</dd>
+        <dt>Entrega</dt><dd>${o.delivery === 'store' ? 'Recoger en bodega (punto de entrega confirmado por WhatsApp)' : `${o.street}, ${o.colonia}, ${o.cp} ${o.city}, ${o.state}` + (o.floor !== 'pb' ? ' · piso sin elevador, maniobra por cotizar' : '')}<a class="edit" href="#" data-go="1">Editar</a></dd>
+        <dt>Tiempo estimado</dt><dd>${o.delivery === 'store' ? 'Listo en 3 días hábiles para piezas en existencia' : c.ship.zone.days}${lines.some(l => l.p.stock === 'pedido') ? ' más los días de fabricación de las piezas sobre pedido' : ''}</dd>
+        <dt>Pago</dt><dd>${payName}<a class="edit" href="#" data-go="2">Editar</a></dd>
+        ${o.invoice ? `<dt>Factura</dt><dd>${o.razon} · ${o.rfc}</dd>` : ''}
+      </dl>
+      <div class="callout" style="margin-top:18px;font-size:13.5px">Al confirmar aceptas los <a href="/terminos" style="color:var(--gold-deep)">términos de compra</a> y el <a href="/privacidad" style="color:var(--gold-deep)">aviso de privacidad</a>. Nada se cobra hasta que completes el pago en el siguiente paso.</div>
+      <div class="actions"><button type="button" class="btn ghost sm" id="back3">← Forma de pago</button><button type="button" class="btn gold" id="confirm">${o.pay === 'mp' ? 'Ir a pagar con Mercado Pago' : 'Confirmar pedido'}</button></div></div>`;
+    $$('.edit').forEach(a => a.onclick = e => { e.preventDefault(); o.step = +a.dataset.go; save(); render(); });
+    $('#back3').onclick = () => { o.step = 2; save(); render(); };
+    $('#confirm').onclick = () => {
+      const num = 'CM-' + String(Math.floor(100000 + Math.random() * 899999));
+      const done = { ...o, num, lines: lines.map(l => ({ id: l.id, name: l.p.name, qty: l.qty, unit: l.unit, tapiz: l.tapiz ? D.TAPIZ[l.tapiz].name : '', mech: l.mech || '' })), totals: calc(), when: new Date().toISOString() };
+      try { sessionStorage.setItem('cardian_done', JSON.stringify(done)); } catch (e) {}
+      C.setCart([]); C.setOrder({});
+      location.href = '/gracias';
+    };
+  }
+  function render() { stepper(); summary(); [step1, step2, step3][o.step - 1](); }
+  render();
+})();
+</script>
+</body>
+</html>

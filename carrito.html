@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="es" data-gated>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Carrito · Cardian Muebles</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="/img/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap">
+<link rel="stylesheet" href="/assets/site.css">
+<script src="/assets/gate.js"></script>
+<style>
+  .cart{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(300px,.8fr);gap:32px;align-items:start;padding-block:28px 48px}
+  @media (max-width:860px){.cart{grid-template-columns:1fr}}
+  h1{font-size:clamp(26px,3.5vw,36px)}
+  .line{display:grid;grid-template-columns:110px 1fr auto;gap:16px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;animation:rise .5s both}
+  .line img{width:110px;height:84px;object-fit:cover;border-radius:4px}
+  .line h3{font-size:16px}
+  .line .d{font-size:12.5px;color:var(--muted);margin-top:2px}
+  .line .d a{color:var(--gold-deep)}
+  .line .r{text-align:right;display:grid;gap:8px;justify-items:end}
+  .line .p{font-weight:600}
+  .line .rm{border:0;background:transparent;color:var(--muted);font-size:12px;text-decoration:underline;padding:0}
+  .lines{display:grid;gap:12px}
+  @media (max-width:520px){.line{grid-template-columns:84px 1fr}.line .r{grid-column:1/-1;justify-items:start;grid-auto-flow:column;align-items:center;justify-content:space-between;width:100%}.line img{width:84px;height:64px}}
+  .summary{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:20px;position:sticky;top:96px}
+  .summary h2{font-size:18px;margin-bottom:12px}
+  .summary .row{display:flex;justify-content:space-between;gap:12px;padding:8px 0;font-size:14px}
+  .summary .row small{display:block;color:var(--muted);font-size:12px}
+  .summary .total{border-top:1px solid var(--line);margin-top:6px;padding-top:12px;font-size:18px;font-weight:600}
+  .summary .free{color:var(--ok)}
+  .summary select{margin-top:6px}
+  .empty{text-align:center;padding:60px 20px;background:var(--surface);border:1px dashed var(--line);border-radius:var(--r)}
+  .empty h2{font-size:22px;margin-bottom:8px}
+  .empty p{color:var(--muted);margin-bottom:20px}
+  .vol{margin-top:12px;font-size:12.5px;background:var(--gold-soft);border-radius:4px;padding:10px 12px}
+  .vol a{color:var(--gold-deep)}
+</style>
+</head>
+<body>
+<div id="site-header"></div>
+
+<main class="wrap">
+  <nav class="crumbs" aria-label="Ruta"><a href="/inicio">Inicio</a><span>/</span>Carrito</nav>
+  <div class="cart" id="cart"></div>
+</main>
+
+<div id="site-footer"></div>
+<script src="/assets/data.js"></script>
+<script src="/assets/site.js"></script>
+<script>
+(function(){
+  const C = window.Cardian, D = window.CARDIAN, { $, $$, fmt, fmt2 } = C;
+  const order = C.getOrder(); let state = order.state || 'Ciudad de México'; let delivery = order.delivery || 'ship';
+  function render() {
+    const lines = C.cartLines();
+    if (!lines.length) { $('#cart').innerHTML = `<div class="empty" style="grid-column:1/-1"><h2>Tu carrito está vacío</h2><p>Explora el catálogo y agrega las piezas que te gusten. Puedes calcular el envío a tu estado desde cada ficha.</p><a class="btn gold" href="/catalogo">Ver el catálogo</a></div>`; return; }
+    const sub = lines.reduce((s, l) => s + l.unit * l.qty, 0);
+    const ship = delivery === 'store' ? { cost: 0, zone: null } : C.shipping(state, lines.map(l => ({ factor: l.p.factor, qty: l.qty })));
+    const total = sub + ship.cost;
+    const big = lines.find(l => l.qty >= 10);
+    $('#cart').innerHTML = `
+      <section><h1>Tu carrito</h1><p class="muted" style="margin:6px 0 20px">${lines.reduce((s, l) => s + l.qty, 0)} pieza(s). Los precios ya incluyen IVA.</p>
+        <div class="lines">${lines.map(l => `<div class="line" data-key="${l.key}">
+          <img src="/${l.p.imgs[0]}" alt="">
+          <div><h3>${l.p.name}</h3><div class="d">${l.p.type}${l.tapiz ? ' · ' + D.TAPIZ[l.tapiz].name : ''}${l.mech ? ' · ' + l.mech : ''}<br>${C.stockLabel(l.p)} · <a href="/producto?id=${l.p.id}">Ver ficha</a></div></div>
+          <div class="r"><div class="p num">${fmt(l.unit * l.qty)}</div><div class="qty"><button type="button" data-act="minus" aria-label="Menos">−</button><output>${l.qty}</output><button type="button" data-act="plus" aria-label="Más">+</button></div><button type="button" class="rm" data-act="rm">Quitar</button></div>
+        </div>`).join('')}</div>
+        ${big ? `<div class="vol">Tienes ${big.qty} piezas iguales. Desde 10 piezas tenemos precio por volumen: <a href="/proyectos?modelo=${big.p.id}&cantidad=${big.qty}">pide tu cotización antes de pagar →</a></div>` : ''}
+        <p style="margin-top:18px"><a href="/catalogo" style="color:var(--gold-deep);font-size:13.5px">← Seguir comprando</a></p>
+      </section>
+      <aside class="summary">
+        <h2>Resumen</h2>
+        <div class="row"><span>Subtotal</span><span class="num">${fmt(sub)}</span></div>
+        <div class="row" style="display:block"><span>Entrega</span>
+          <select class="input" id="delivery"><option value="ship" ${delivery === 'ship' ? 'selected' : ''}>Envío a domicilio</option><option value="store" ${delivery === 'store' ? 'selected' : ''}>Recoger en bodega (gratis)</option></select>
+          ${delivery === 'ship' ? `<select class="input" id="state">${D.states.map(s => `<option ${s === state ? 'selected' : ''}>${s}</option>`).join('')}</select>` : ''}
+        </div>
+        <div class="row"><span>Envío<small>${delivery === 'store' ? 'Recoger en bodega' : ship.zone.name + ' · ' + ship.zone.days}</small></span><span class="num ${ship.cost === 0 ? 'free' : ''}">${ship.cost === 0 ? 'Gratis' : fmt(ship.cost)}</span></div>
+        <div class="row total"><span>Total</span><span class="num">${fmt(total)}</span></div>
+        <div class="note num">o 12 × ${fmt2(total / 12)} sin intereses con Mercado Pago · 5 % menos por transferencia</div>
+        <div style="display:grid;gap:10px;margin-top:16px"><a class="btn primary block" href="/checkout">Continuar con la compra</a><a class="btn ghost block sm" href="/como-comprar">¿Cómo funciona?</a></div>
+        <div class="note" style="margin-top:12px">Pagas con Mercado Pago, transferencia SPEI o efectivo con 50 % de anticipo. Sin cargos ocultos.</div>
+      </aside>`;
+    $$('.line [data-act]').forEach(b => b.addEventListener('click', () => {
+      const key = b.closest('.line').dataset.key; const cart = C.getCart(); const i = cart.findIndex(l => l.key === key); if (i < 0) return;
+      if (b.dataset.act === 'minus') cart[i].qty = Math.max(1, cart[i].qty - 1); else if (b.dataset.act === 'plus') cart[i].qty = Math.min(20, cart[i].qty + 1); else cart.splice(i, 1);
+      C.setCart(cart); render();
+    }));
+    $('#delivery').onchange = e => { delivery = e.target.value; C.setOrder({ ...C.getOrder(), delivery, state }); render(); };
+    const sel = $('#state'); if (sel) sel.onchange = e => { state = e.target.value; C.setOrder({ ...C.getOrder(), delivery, state }); render(); };
+  }
+  render();
+})();
+</script>
+</body>
+</html>

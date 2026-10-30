@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="es" data-gated>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pagos y garantía · Cardian Muebles</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="/img/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap">
+<link rel="stylesheet" href="/assets/site.css">
+<script src="/assets/gate.js"></script>
+<style>
+  .pay{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  .pcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--rl);padding:26px 24px;display:flex;flex-direction:column;min-width:0;position:relative;overflow:hidden}
+  .pcard::before{content:"";position:absolute;left:0;top:0;right:0;height:3px;background:var(--gold)}
+  .pcard .pill{align-self:flex-start}
+  .pcard h3{font-size:20px;margin-top:12px}
+  .pcard .lead{color:var(--muted);font-size:14px;margin-top:6px}
+  .pcard h4{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);font-weight:500;margin-top:20px;margin-bottom:8px}
+  .pcard ol{margin:0;padding-left:18px;font-size:13.5px;color:var(--muted);display:grid;gap:6px}
+  .pcard .foot{margin-top:auto;padding-top:16px;font-size:12.5px;color:var(--muted);border-top:1px solid var(--line);margin-top:20px}
+  @media (max-width:900px){.pay{grid-template-columns:1fr}}
+  .three{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  @media (max-width:860px){.three{grid-template-columns:1fr}}
+  .col{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:24px;min-width:0}
+  .col h3{font-size:17px;margin-bottom:12px}
+  .list{list-style:none;padding:0;margin:0;display:grid;gap:9px}
+  .list li{display:flex;gap:12px;align-items:flex-start;font-size:14px}
+  .list li::before{content:"◆";color:var(--gold);font-size:9px;margin-top:6px;flex:none}
+  .list.no li::before{content:"—";color:var(--muted);font-size:14px;margin-top:0}
+  .list.steps-min{counter-reset:n}
+  .list.steps-min li{counter-increment:n}
+  .list.steps-min li::before{content:counter(n);width:22px;height:22px;border-radius:50%;background:var(--gold-soft);color:var(--gold-deep);display:grid;place-items:center;font-size:12px;font-weight:600;margin-top:0}
+  .pol{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  .pol div{border-top:2px solid var(--gold);padding-top:14px}
+  .pol b{display:block;font-weight:500;font-size:15px;margin-bottom:6px}
+  .pol p{color:var(--muted);font-size:13.5px}
+  @media (max-width:860px){.pol{grid-template-columns:1fr}}
+  .cfdi{display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:start}
+  @media (max-width:860px){.cfdi{grid-template-columns:1fr}}
+  .warr{background:var(--ink);color:var(--ink-fg);border-radius:var(--rl);padding:28px;display:flex;gap:24px;align-items:center;flex-wrap:wrap;justify-content:space-between}
+  .warr .n{font-size:44px;font-weight:600;color:var(--gold-bright);line-height:1}
+  .warr p{color:var(--ink-muted);max-width:50ch}
+</style>
+</head>
+<body>
+<div id="site-header"></div>
+
+<section class="band"><div class="wrap" style="padding-block:40px"><div class="eyebrow">Compra con confianza</div><h1 style="font-size:clamp(28px,4vw,42px)">Pagos y garantía</h1><p style="color:var(--ink-muted);margin-top:8px;max-width:60ch">Tres formas de pagar, una garantía directa del taller y reglas claras para cambios y devoluciones.</p></div></section>
+
+<section class="section">
+  <div class="wrap">
+    <div class="section-head reveal"><div><div class="eyebrow">Formas de pago</div><h2>Elige cómo pagar al finalizar tu compra</h2><p>Todas las opciones aparecen en el último paso del carrito. Los precios ya incluyen IVA y se muestran en pesos mexicanos.</p></div></div>
+    <div class="pay">
+      <div class="pcard reveal">
+        <span class="pill">Hasta 12 MSI</span>
+        <h3>Mercado Pago</h3>
+        <p class="lead">Tarjeta de crédito o débito, con hasta 12 meses sin intereses en tarjetas participantes.</p>
+        <h4>Cómo funciona</h4>
+        <ol>
+          <li>Eliges «Mercado Pago» y pasas a su página segura.</li>
+          <li>Pagas con tarjeta, en una exhibición o a meses sin intereses.</li>
+          <li>Regresas a la tienda con tu pedido confirmado al instante.</li>
+        </ol>
+        <div class="foot">Los meses sin intereses dependen del banco emisor de tu tarjeta. Nunca vemos ni guardamos los datos de tu tarjeta.</div>
+      </div>
+      <div class="pcard reveal" style="--d:100ms">
+        <span class="pill">5 % de descuento</span>
+        <h3>Transferencia SPEI</h3>
+        <p class="lead">La opción más económica: 5 % menos sobre el total de tu pedido, incluido el envío.</p>
+        <h4>Cómo funciona</h4>
+        <ol>
+          <li>Eliges «Transferencia SPEI»; el descuento se aplica en el resumen.</li>
+          <li>Te mostramos la CLABE y tu número de pedido como referencia.</li>
+          <li>Al acreditarse el pago, normalmente en minutos, confirmamos tu pedido por WhatsApp.</li>
+        </ol>
+        <div class="foot">Tienes 24 horas para transferir; si no, el pedido se libera. El descuento no se combina con otras promociones.</div>
+      </div>
+      <div class="pcard reveal" style="--d:200ms">
+        <span class="pill">50 % de anticipo</span>
+        <h3>Efectivo</h3>
+        <p class="lead">Apartas con la mitad y liquidas el resto cuando recibes tu mueble.</p>
+        <h4>Cómo funciona</h4>
+        <ol>
+          <li>Eliges «Efectivo»; el resumen muestra el anticipo del 50 % y el saldo.</li>
+          <li>Pagas el anticipo en OXXO con la referencia que te damos, o por depósito en ventanilla.</li>
+          <li>El resto lo entregas en efectivo a nuestro equipo el día de la entrega, contra recibo.</li>
+        </ol>
+        <div class="foot">El anticipo tiene 48 horas para registrarse. En «Recoger en bodega» el saldo se liquida al recoger.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section band-soft">
+  <div class="wrap">
+    <div class="warr reveal">
+      <div><div class="n">1 año</div><div class="eyebrow" style="margin-top:6px">Garantía directa del taller</div></div>
+      <p>Como fabricamos nosotros, no te mandamos con un distribuidor: la garantía la atiende el mismo taller que hizo tu mueble. Cubre estructura y mecanismos durante 12 meses a partir de la entrega.</p>
+    </div>
+    <div class="three" style="margin-top:24px">
+      <div class="col reveal">
+        <h3>Qué cubre</h3>
+        <ul class="list">
+          <li>Estructura de madera: bastidores, patas y uniones.</li>
+          <li>Mecanismos reclinables, manuales y eléctricos, y sus controles.</li>
+          <li>Resortes y bases de asiento.</li>
+          <li>Correderas, bisagras y herrajes de cocinas y clósets.</li>
+          <li>Defectos de fabricación en costuras y acabados de laminado.</li>
+        </ul>
+      </div>
+      <div class="col reveal" style="--d:100ms">
+        <h3>Qué no cubre</h3>
+        <ul class="list no">
+          <li>Desgaste normal del tapiz, decoloración por sol o manchas.</li>
+          <li>Daños por humedad, golpes, mascotas o uso distinto al doméstico.</li>
+          <li>Espuma que cede de forma normal con el uso.</li>
+          <li>Muebles modificados o reparados por terceros.</li>
+          <li>Instalaciones eléctricas o hidráulicas ajenas al mueble.</li>
+        </ul>
+      </div>
+      <div class="col reveal" style="--d:200ms">
+        <h3>Cómo se reclama</h3>
+        <ul class="list steps-min">
+          <li>Escríbenos por WhatsApp con tu número de pedido (empieza con CM-).</li>
+          <li>Manda fotos o un video corto del detalle.</li>
+          <li>Te respondemos en 24 horas hábiles con la solución: visita técnica, refacción o reposición.</li>
+          <li>La reparación en garantía no tiene costo, incluidas maniobras en CDMX y Estado de México.</li>
+        </ul>
+        <div style="margin-top:16px"><a class="btn wa sm" id="waGar" href="#" target="_blank" rel="noopener">Reportar por WhatsApp</a></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <div class="section-head reveal"><div><div class="eyebrow">Reglas claras</div><h2>Cambios y devoluciones</h2><p>Lo que aplica en cada caso, sin letras chiquitas. Para pedir un cambio escríbenos siempre con tu número de pedido.</p></div></div>
+    <div class="pol">
+      <div class="reveal"><b>Daño en la entrega</b><p>Si tu mueble llega con un golpe, raspón o pieza faltante, lo reparamos o lo reponemos sin costo. Anótalo en la hoja de entrega o repórtalo por WhatsApp con fotos dentro de las 48 horas siguientes a la entrega.</p></div>
+      <div class="reveal" style="--d:100ms"><b>Piezas de existencia</b><p>En muebles de entrega inmediata tienes 5 días hábiles a partir de la entrega para revocar tu compra, conforme a la Ley Federal de Protección al Consumidor. El mueble debe estar sin uso y con su empaque; el flete de regreso corre por cuenta del cliente y se reembolsa el resto por el mismo medio de pago.</p></div>
+      <div class="reveal" style="--d:200ms"><b>Piezas sobre pedido o a medida</b><p>Se fabrican especialmente para ti con el tapiz, mecanismo o medidas que elegiste. Puedes cancelar sin cargo dentro de las primeras 24 horas después de pagar. Pasado ese plazo no hay devolución por cambio de opinión, aunque la garantía aplica igual.</p></div>
+    </div>
+    <div class="callout reveal" style="margin-top:24px"><b style="font-weight:500">¿Elegiste un tapiz y ya no te convence?</b> <span class="muted">Antes de que la pieza entre a producción podemos cambiarlo sin costo. Por eso te confirmamos cada detalle por WhatsApp antes de empezar a fabricar.</span></div>
+  </div>
+</section>
+
+<section class="section band-soft">
+  <div class="wrap cfdi">
+    <div class="reveal">
+      <div class="eyebrow">Facturación</div>
+      <h2 style="font-size:clamp(22px,3vw,30px)">Factura CFDI 4.0</h2>
+      <p class="muted" style="margin-top:12px;max-width:52ch">Facturamos todas las compras, para persona física o moral. Puedes pedirla al momento de pagar, en el resumen de compra, o después por WhatsApp o correo dentro del mismo mes de la compra.</p>
+      <p class="muted" style="margin-top:12px;max-width:52ch">La factura llega a tu correo en PDF y XML en un plazo de 24 a 48 horas hábiles después de acreditado el pago. En pagos en efectivo se factura el anticipo y después el saldo.</p>
+    </div>
+    <div class="col reveal" style="--d:120ms">
+      <h3>Datos que te pedimos</h3>
+      <ul class="list">
+        <li>Nombre o razón social, exactamente como aparece en tu constancia de situación fiscal.</li>
+        <li>RFC.</li>
+        <li>Código postal del domicilio fiscal.</li>
+        <li>Régimen fiscal.</li>
+        <li>Uso de CFDI (por ejemplo, gastos en general o adquisición de mercancías).</li>
+        <li>Correo electrónico para enviarte el PDF y el XML.</li>
+      </ul>
+      <p class="note" style="margin-top:14px">Con la versión 4.0 del CFDI el SAT exige que estos datos coincidan con tu constancia; si no, la factura se rechaza. Si tienes dudas, mándanos una foto de tu constancia por WhatsApp y la llenamos por ti.</p>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap" style="text-align:center">
+    <div class="reveal">
+      <div class="eyebrow">¿Listo?</div>
+      <h2 style="font-size:clamp(22px,3vw,30px)">Elige tu mueble y paga como prefieras</h2>
+      <div style="margin-top:20px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap"><a class="btn primary" href="/catalogo">Ver el catálogo</a><a class="btn ghost" href="/como-comprar">Cómo comprar en línea</a></div>
+    </div>
+  </div>
+</section>
+
+<div id="site-footer"></div>
+<script src="/assets/data.js"></script>
+<script src="/assets/site.js"></script>
+<script>
+(function(){
+  const { $, wa } = window.Cardian;
+  $('#waGar').href = wa('Hola Cardian Muebles, quiero hacer válida mi garantía. Mi número de pedido es CM-');
+})();
+</script>
+</body>
+</html>

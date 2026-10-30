@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="es" data-gated>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cardian Muebles · Hechos en nuestro taller</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="/img/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap">
+<link rel="stylesheet" href="/assets/site.css">
+<script src="/assets/gate.js"></script>
+<style>
+  .hero{position:relative;background:var(--ink);color:var(--ink-fg);overflow:hidden;min-height:560px;display:flex;align-items:center}
+  .hero .bg{position:absolute;inset:0;background:url("/img/sala-africa.jpg") center/cover no-repeat;animation:kenburns 18s ease-in-out infinite alternate}
+  .hero::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(13,12,10,.92) 0%,rgba(13,12,10,.75) 45%,rgba(13,12,10,.25) 100%)}
+  .hero .wrap{position:relative;z-index:1;padding-block:72px;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:32px;align-items:center}
+  .hero h1{font-size:clamp(32px,5vw,56px);font-weight:600;line-height:1.08;animation:rise .8s .1s both}
+  .hero h1 em{font-style:normal;color:var(--gold-bright)}
+  .hero p{font-size:16px;color:var(--ink-muted);max-width:48ch;margin-top:18px;font-weight:300;animation:rise .8s .25s both}
+  .hero .cta{display:flex;gap:12px;flex-wrap:wrap;margin-top:28px;animation:rise .8s .4s both}
+  .hero .eyebrow{animation:rise .8s both}
+  .hero-card{justify-self:end;background:rgba(13,12,10,.6);border:1px solid rgba(198,161,91,.5);backdrop-filter:blur(8px);padding:22px 24px;border-radius:8px;max-width:340px;animation:rise .9s .5s both;text-decoration:none;color:inherit}
+  .hero-card .pill{background:var(--gold);color:var(--ink)}
+  .hero-card h3{font-size:22px;margin-top:10px}
+  .hero-card p{font-size:13.5px;margin-top:6px;color:var(--ink-muted)}
+  .hero-card .price{font-size:26px;font-weight:600;margin-top:12px}
+  .hero-card .price small{font-size:13px;color:var(--ink-muted);font-weight:400;margin-left:6px}
+  .hero-card .msi{font-size:12.5px;color:var(--ink-muted)}
+  .hero-card .btn{margin-top:14px}
+  @media (max-width:860px){.hero .wrap{grid-template-columns:1fr}.hero-card{justify-self:start}}
+  .trust{background:var(--surface);border-bottom:1px solid var(--line)}
+  .trust .wrap{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;padding-block:18px}
+  .trust div{display:flex;gap:12px;align-items:center;font-size:13.5px}
+  .trust svg{width:26px;height:26px;color:var(--gold);flex:none}
+  .trust b{display:block;font-weight:500}
+  .trust span{color:var(--muted);font-size:12.5px}
+  @media (max-width:760px){.trust .wrap{grid-template-columns:1fr 1fr}}
+  .cats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+  .cat-card{position:relative;aspect-ratio:3/4;border-radius:var(--r);overflow:hidden;text-decoration:none;color:#fff;display:block;background:var(--ink)}
+  .cat-card img{width:100%;height:100%;object-fit:cover;transition:transform .8s ease}
+  .cat-card:hover img{transform:scale(1.06)}
+  .cat-card::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0) 40%,rgba(13,12,10,.9) 100%)}
+  .cat-card .t{position:absolute;left:18px;right:18px;bottom:18px;z-index:1}
+  .cat-card h3{font-size:22px}
+  .cat-card p{font-size:12.5px;color:var(--ink-muted);margin-top:4px}
+  .cat-card .from{font-size:12px;color:var(--gold-bright);letter-spacing:.1em;text-transform:uppercase;margin-top:8px;font-weight:500}
+  @media (max-width:760px){.cats{grid-template-columns:1fr 1fr}}
+  .taller{display:grid;grid-template-columns:1.1fr 1fr;gap:40px;align-items:center}
+  .taller .photo{aspect-ratio:4/3}
+  .taller h2{font-size:clamp(24px,3.2vw,34px)}
+  .taller p{color:var(--muted);margin-top:14px;max-width:52ch}
+  .taller ul{list-style:none;padding:0;margin:20px 0 0;display:grid;gap:10px}
+  .taller li{display:flex;gap:12px;align-items:flex-start;font-size:14px}
+  .taller li::before{content:"◆";color:var(--gold);font-size:9px;margin-top:6px}
+  @media (max-width:860px){.taller{grid-template-columns:1fr}}
+  .b2b .wrap{display:grid;grid-template-columns:1.3fr 1fr;gap:32px;align-items:center;padding-block:56px}
+  .b2b h2{font-size:clamp(24px,3.2vw,34px)}
+  .b2b p{color:var(--ink-muted);margin-top:12px;max-width:52ch}
+  .b2b .actions{justify-self:end;display:flex;flex-direction:column;gap:10px;align-items:flex-start}
+  .b2b .stats{display:flex;gap:28px;margin-top:22px;flex-wrap:wrap}
+  .b2b .stats b{display:block;font-size:24px;font-weight:600;color:var(--gold-bright)}
+  .b2b .stats span{font-size:12px;color:var(--ink-muted);letter-spacing:.08em;text-transform:uppercase}
+  @media (max-width:860px){.b2b .wrap{grid-template-columns:1fr}.b2b .actions{justify-self:start}}
+</style>
+</head>
+<body>
+<div id="site-header"></div>
+
+<section class="hero">
+  <div class="bg" aria-hidden="true"></div>
+  <div class="wrap">
+    <div>
+      <div class="eyebrow">Hecho en México · Taller propio</div>
+      <h1>Muebles hechos en nuestro taller, <em>entregados y armados</em> en tu casa.</h1>
+      <p>Cocinas, salas, comedores y recámaras. Eliges tapiz y medida en línea, pagas como prefieras y nosotros nos encargamos del resto.</p>
+      <div class="cta">
+        <a class="btn gold" href="/salas">Ver salas desde $12,900</a>
+        <a class="btn light" href="/cocinas">Cotizar una cocina a medida</a>
+      </div>
+    </div>
+    <a class="hero-card" href="/producto?id=sala-africa">
+      <span class="pill">Entrega inmediata</span>
+      <h3>Sala África</h3>
+      <p>Seccional reclinable en U con consola central y chaise. Nuestra sala más vendida.</p>
+      <div class="price num">$24,990<small>MXN</small></div>
+      <div class="msi num">o 12 × $2,082.50 sin intereses</div>
+      <span class="btn light sm">Ver la sala</span>
+    </a>
+  </div>
+</section>
+
+<div class="trust">
+  <div class="wrap">
+    <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h11v9H3zM14 10h4l3 3v3h-7z"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></svg><div><b>Envío gratis en CDMX y EdoMex</b><span>Y tarifa fija por zona al resto del país</span></div></div>
+    <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg><div><b>Hasta 12 meses sin intereses</b><span>Con Mercado Pago, o 5 % menos por transferencia</span></div></div>
+    <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg><div><b>Armado incluido</b><span>Lo llevamos, lo armamos y nos llevamos el empaque</span></div></div>
+    <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6z"/><path d="m9 12 2 2 4-4"/></svg><div><b>Garantía de 1 año</b><span>Directa del taller, en estructura y mecanismos</span></div></div>
+  </div>
+</div>
+
+<section class="section">
+  <div class="wrap">
+    <div class="section-head reveal"><div><div class="eyebrow">Catálogo</div><h2>¿Qué espacio vas a amueblar?</h2></div></div>
+    <div class="cats" id="cats"></div>
+  </div>
+</section>
+
+<section class="section band-soft">
+  <div class="wrap">
+    <div class="section-head reveal"><div><div class="eyebrow">Listos para entregar esta semana</div><h2>Piezas que ya están terminadas</h2><p>Si vives en CDMX o Estado de México, las recibes en 3 a 5 días hábiles sin costo de envío.</p></div><a class="more" href="/catalogo?stock=inmediata">Ver todas →</a></div>
+    <div class="cards" id="inmediata"></div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap taller">
+    <div class="photo reveal"><img src="/img/cocina-nocturna.jpg" alt="Cocina integral fabricada por Cardian Muebles"></div>
+    <div class="reveal" style="--d:120ms">
+      <div class="eyebrow">Taller propio</div>
+      <h2>Lo que compras aquí se fabrica aquí</h2>
+      <p>No revendemos muebles de importación. Cada sala, cocina o comedor sale de nuestras manos con número de serie, y podemos ajustar medidas o tapices sin intermediarios. Por eso damos garantía directa.</p>
+      <ul>
+        <li>Estructuras de pino y triplay de 15 mm, resortes en zig-zag y espuma de alta densidad.</li>
+        <li>Laminados y cubiertas de piedra, cuarzo u ónix a elección.</li>
+        <li>Medidas a tu espacio: cocinas, clósets y vestidores se cotizan con tu plano en 24 horas.</li>
+      </ul>
+      <div style="margin-top:22px"><a class="btn ghost" href="/nosotros">Conoce el taller</a></div>
+    </div>
+  </div>
+</section>
+
+<section class="section band-soft">
+  <div class="wrap">
+    <div class="section-head reveal"><div><div class="eyebrow">Cómo funciona</div><h2>Comprar un mueble en línea sin sorpresas</h2></div><a class="more" href="/como-comprar">Ver el proceso completo →</a></div>
+    <div class="steps">
+      <div class="step reveal"><h3>Elige tu mueble</h3><p>Escoge modelo, tapiz y mecanismo. Revisa las medidas y calcula el envío a tu estado antes de pagar.</p></div>
+      <div class="step reveal" style="--d:100ms"><h3>Paga como prefieras</h3><p>Hasta 12 meses sin intereses con Mercado Pago, transferencia con 5 % de descuento o 50 % de anticipo en efectivo.</p></div>
+      <div class="step reveal" style="--d:200ms"><h3>Lo recibes armado</h3><p>Te avisamos por WhatsApp el día de entrega. Lo llevamos, lo armamos en tu casa y nos llevamos el empaque.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <div class="section-head reveal"><div><div class="eyebrow">Más vendidos</div><h2>Los favoritos de nuestros clientes</h2></div><a class="more" href="/catalogo">Ver todo el catálogo →</a></div>
+    <div class="cards" id="featured"></div>
+  </div>
+</section>
+
+<section class="band b2b">
+  <div class="wrap">
+    <div class="reveal">
+      <div class="eyebrow">Proyectos</div>
+      <h2>¿Amueblas un hotel, una oficina o varios departamentos?</h2>
+      <p>Producimos por volumen con el mismo acabado de esta tienda. Precio por cantidad desde 10 piezas, entregas por etapas y factura CFDI.</p>
+      <div class="stats"><div><b>Desde 10</b><span>piezas</span></div><div><b>Por etapas</b><span>entregas</span></div><div><b>CFDI 4.0</b><span>factura</span></div></div>
+    </div>
+    <div class="actions reveal" style="--d:120ms">
+      <a class="btn gold" href="/proyectos">Cotizar un proyecto</a>
+      <a class="btn light" href="/proyectos#como">Ver cómo trabajamos</a>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap two">
+    <div class="reveal">
+      <div class="eyebrow">Preguntas frecuentes</div>
+      <h2 style="font-size:clamp(22px,3vw,30px)">Lo que más nos preguntan</h2>
+      <p class="muted" style="margin-top:10px">Si tu duda no está aquí, escríbenos por WhatsApp y te contestamos en minutos.</p>
+      <div style="margin-top:18px"><a class="btn ghost" href="/preguntas">Ver todas las preguntas</a></div>
+    </div>
+    <div class="faq reveal" style="--d:120ms">
+      <details open><summary>¿Cuánto tarda en llegar mi mueble?</summary><div class="a">Piezas de entrega inmediata: 3 a 5 días hábiles en CDMX y Estado de México, y de 5 a 20 en el resto del país según la zona. Piezas sobre pedido: suma los días de fabricación que ves en cada ficha.</div></details>
+      <details><summary>¿Puedo cambiar el tapiz o las medidas?</summary><div class="a">Sí. Cada modelo tiene tapices a elegir, y cocinas, clósets y vestidores se fabrican a la medida de tu espacio.</div></details>
+      <details><summary>¿Qué pasa si no me cabe o llega dañado?</summary><div class="a">Antes de comprar te ayudamos a revisar accesos con fotos. Si llega con un golpe, lo reparamos o reponemos sin costo: todos los envíos van asegurados.</div></details>
+      <details><summary>¿Facturan?</summary><div class="a">Sí, factura CFDI 4.0 al momento de pagar. Pon tus datos fiscales en el resumen de compra.</div></details>
+      <details><summary>¿Puedo pagar una parte y el resto al recibir?</summary><div class="a">Sí, en efectivo: 50 % de anticipo en OXXO o por depósito, y el resto cuando recibes el mueble.</div></details>
+    </div>
+  </div>
+</section>
+
+<div id="site-footer"></div>
+<script src="/assets/data.js"></script>
+<script src="/assets/site.js"></script>
+<script>
+(function(){
+  const { $, card, fmt } = window.Cardian; const D = window.CARDIAN;
+  const minBy = cat => Math.min(...D.products.filter(p => p.cat === cat).map(p => p.price));
+  $('#cats').innerHTML = D.categories.map((c, i) => `<a class="cat-card reveal" style="--d:${i*90}ms" href="/${c.id}"><img src="/${c.img}" alt="${c.name}"><div class="t"><h3>${c.name}</h3><p>${c.desc}</p><div class="from">Desde ${fmt(minBy(c.id))}</div></div></a>`).join('');
+  $('#inmediata').innerHTML = D.products.filter(p => p.stock === 'inmediata').slice(0, 8).map(card).join('');
+  $('#featured').innerHTML = D.products.filter(p => p.featured).slice(0, 8).map(card).join('');
+  Cardian.reveal();
+})();
+</script>
+</body>
+</html>

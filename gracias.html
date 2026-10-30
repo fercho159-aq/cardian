@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="es" data-gated>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pedido recibido · Cardian Muebles</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="/img/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap">
+<link rel="stylesheet" href="/assets/site.css">
+<script src="/assets/gate.js"></script>
+<style>
+  .ty{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(300px,.8fr);gap:32px;align-items:start;padding-block:36px 48px}
+  @media (max-width:860px){.ty{grid-template-columns:1fr}}
+  .ok-badge{width:64px;height:64px;border-radius:50%;background:var(--ok-soft);color:var(--ok);display:grid;place-items:center;margin-bottom:16px;animation:pop .6s both}
+  .ok-badge svg{width:30px;height:30px}
+  h1{font-size:clamp(26px,3.5vw,36px)}
+  .num-box{display:inline-block;margin-top:10px;background:var(--ink);color:var(--gold-bright);padding:8px 16px;border-radius:4px;font-weight:600;letter-spacing:.08em}
+  .panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:22px;margin-top:22px;animation:rise .5s .15s both}
+  .panel h2{font-size:18px;margin-bottom:10px}
+  .panel dl{display:grid;grid-template-columns:auto 1fr;gap:8px 16px;margin:12px 0 0;font-size:14px}
+  .panel dt{color:var(--muted)}.panel dd{margin:0;font-weight:500}
+  .panel ol{margin:10px 0 0;padding-left:18px;font-size:14px}.panel li{margin-bottom:6px}
+  .mpbtn{display:block;width:100%;background:#009ee3;color:#fff;border:0;border-radius:6px;padding:14px;font-weight:600;letter-spacing:.04em;margin-top:14px;font-size:14px;text-align:center;text-decoration:none}
+  .copy{display:inline-flex;align-items:center;gap:8px;font-family:Consolas,monospace;background:var(--surface-2);padding:8px 12px;border-radius:4px;font-size:14px}
+  .copy button{border:0;background:var(--ink);color:var(--ink-fg);border-radius:3px;padding:3px 9px;font-size:11px}
+  .timeline{list-style:none;margin:16px 0 0;padding:0;display:grid;gap:0}
+  .timeline li{display:grid;grid-template-columns:22px 1fr;gap:12px;padding:0 0 18px;position:relative;font-size:14px}
+  .timeline li::before{content:"";width:12px;height:12px;border-radius:50%;border:2px solid var(--line);background:var(--surface);margin-top:4px;position:relative;z-index:1;justify-self:center}
+  .timeline li::after{content:"";position:absolute;left:10px;top:18px;bottom:-2px;width:2px;background:var(--line)}
+  .timeline li:last-child::after{display:none}
+  .timeline li.on::before{border-color:var(--gold);background:var(--gold)}
+  .timeline li b{display:block;font-weight:500}.timeline li span{color:var(--muted);font-size:12.5px}
+  .summary{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:20px}
+  .summary .it{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:13.5px}
+  .summary .row{display:flex;justify-content:space-between;padding:7px 0;font-size:14px}
+  .summary .total{border-top:1px solid var(--line);margin-top:6px;padding-top:12px;font-size:18px;font-weight:600}
+  .demo{margin-top:16px;font-size:12px;color:var(--muted);border-top:1px dashed var(--line);padding-top:10px}
+</style>
+</head>
+<body>
+<div id="site-header"></div>
+<main class="wrap"><div class="ty" id="ty"></div></main>
+<div id="site-footer"></div>
+<script src="/assets/data.js"></script>
+<script src="/assets/site.js"></script>
+<script>
+(function(){
+  const C = window.Cardian, { $, fmt, fmt2 } = C;
+  let d = null; try { d = JSON.parse(sessionStorage.getItem('cardian_done') || 'null'); } catch (e) {}
+  if (!d) { $('#ty').innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:60px 20px"><h1>No hay un pedido reciente</h1><p class="muted" style="margin:10px 0 20px">Si ya compraste, revisa tu WhatsApp o correo para ver la confirmación.</p><a class="btn gold" href="/catalogo">Ver el catálogo</a></div>`; return; }
+  const t = d.totals; const wa = C.wa(`Hola, acabo de hacer el pedido ${d.num} y ${d.pay === 'spei' ? 'te envío mi comprobante de transferencia' : d.pay === 'cash' ? 'quiero confirmar mi anticipo' : 'tengo una duda'}.`);
+  let pay = '';
+  if (d.pay === 'mp') pay = `<div class="panel"><h2>Completa tu pago con Mercado Pago</h2><p class="muted" style="font-size:14px">Serás redirigido al checkout seguro de Mercado Pago. Al aprobarse el pago, tu pedido entra a producción y te llega la confirmación por WhatsApp y correo.</p><dl><dt>Total</dt><dd class="num">${fmt(t.total)}</dd><dt>12 MSI</dt><dd class="num">12 × ${fmt2(t.total / 12)}</dd><dt>Referencia</dt><dd>${d.num}</dd></dl><a class="mpbtn" href="#" id="mpGo">Pagar con Mercado Pago</a><div class="demo">Maqueta: aquí se abriría el checkout real de Mercado Pago.</div></div>`;
+  else if (d.pay === 'spei') pay = `<div class="panel"><h2>Datos para tu transferencia</h2><p class="muted" style="font-size:14px">Transfiere el monto exacto con el concepto indicado. Se acredita en minutos y te confirmamos la fecha de entrega el mismo día.</p><dl><dt>Banco</dt><dd>[banco por confirmar]</dd><dt>Beneficiario</dt><dd>Cardian Muebles</dd><dt>CLABE</dt><dd><span class="copy" id="clabe">000 000 0000 0000 0000 0 <button type="button" data-copy="000000000000000000">Copiar</button></span></dd><dt>Concepto</dt><dd><span class="copy">${d.num} <button type="button" data-copy="${d.num}">Copiar</button></span></dd><dt>Monto con 5 % de descuento</dt><dd class="num">${fmt(t.total)}</dd></dl><ol><li>Transfiere el monto exacto.</li><li>Mándanos el comprobante por WhatsApp con tu número de pedido.</li><li>Te confirmamos la fecha de entrega.</li></ol><a class="btn gold block" style="margin-top:14px" href="${wa}" target="_blank" rel="noopener">${C.WA_SVG} Enviar comprobante por WhatsApp</a><div class="demo">Maqueta: la CLABE real se configura antes de publicar.</div></div>`;
+  else pay = `<div class="panel"><h2>Tu referencia de pago en efectivo</h2><p class="muted" style="font-size:14px">Paga el anticipo en cualquier OXXO con esta referencia (hasta $10,000 por operación) o por depósito bancario. Tu pedido entra a producción al registrarse el anticipo; el saldo se paga en efectivo al recibir.</p><dl><dt>Referencia</dt><dd><span class="copy">${d.num.replace('CM-', '9400 ')}<button type="button" data-copy="${d.num}">Copiar</button></span></dd><dt>Anticipo hoy</dt><dd class="num">${fmt(t.total * 0.5)}</dd><dt>Al recibir</dt><dd class="num">${fmt(t.total - Math.round(t.total * 0.5))}</dd><dt>Vigencia</dt><dd>3 días</dd></dl><a class="btn gold block" style="margin-top:14px" href="${wa}" target="_blank" rel="noopener">${C.WA_SVG} Avisar que ya pagué</a><div class="demo">Maqueta: la referencia real la genera la pasarela de pagos.</div></div>`;
+  $('#ty').innerHTML = `<section>
+      <div class="ok-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg></div>
+      <h1>Recibimos tu pedido, ${d.name.split(' ')[0]}</h1>
+      <p class="muted" style="margin-top:8px">Te enviamos la confirmación a ${d.email} y por WhatsApp al ${d.phone}. Guarda tu número de pedido.</p>
+      <div class="num-box">${d.num}</div>
+      ${pay}
+      <div class="panel"><h2>Qué sigue</h2><ol class="timeline">
+        <li class="on"><div><b>Pedido recibido</b><span>Hoy. ${d.pay === 'mp' ? 'Se confirma al aprobarse el pago.' : d.pay === 'spei' ? 'Se confirma al acreditarse la transferencia.' : 'Se confirma al registrarse el anticipo.'}</span></div></li>
+        <li><div><b>En producción</b><span>${d.lines.every(l => (C.byId(l.id) || {}).stock === 'inmediata') ? 'Tus piezas ya están terminadas: pasan directo a empaque.' : 'Te mandamos fotos del avance por WhatsApp.'}</span></div></li>
+        <li><div><b>Salió del taller</b><span>Te confirmamos la ventana de entrega con 2 días de anticipación.</span></div></li>
+        <li><div><b>${d.delivery === 'store' ? 'Listo para recoger' : 'En camino'}</b><span>${d.delivery === 'store' ? 'Te confirmamos punto de entrega, horario y fecha por WhatsApp.' : 'El chofer te avisa cuando va en camino. Lo armamos y nos llevamos el empaque.'}</span></div></li>
+        <li><div><b>Entregado</b><span>Revisas pieza por pieza, firmas de conformidad y te dejamos la garantía por escrito.</span></div></li>
+      </ol></div>
+    </section>
+    <aside class="summary"><h2 style="font-size:17px;margin-bottom:8px">Resumen</h2>${d.lines.map(l => `<div class="it"><span>${l.qty} × ${l.name}${l.tapiz ? ' · ' + l.tapiz : ''}</span><span class="num">${fmt(l.unit * l.qty)}</span></div>`).join('')}
+      <div class="row" style="margin-top:8px"><span>Subtotal</span><span class="num">${fmt(t.sub)}</span></div><div class="row"><span>Envío</span><span class="num">${t.ship.cost ? fmt(t.ship.cost) : 'Gratis'}</span></div>${t.disc ? `<div class="row" style="color:var(--ok)"><span>Descuento SPEI</span><span class="num">−${fmt(t.disc)}</span></div>` : ''}<div class="row total"><span>Total</span><span class="num">${fmt(t.total)}</span></div>
+      <div class="note" style="margin-top:12px">${d.delivery === 'store' ? 'Recoger en bodega' : 'Entrega en ' + d.city + ', ' + d.state}${d.invoice ? ' · Factura CFDI a ' + d.razon : ''}</div>
+      <div style="display:grid;gap:8px;margin-top:16px"><a class="btn ghost sm block" href="/catalogo">Seguir comprando</a><a class="btn ghost sm block" href="/envios">Ver cómo es la entrega</a></div></aside>`;
+  document.querySelectorAll('[data-copy]').forEach(b => b.onclick = () => { navigator.clipboard.writeText(b.dataset.copy).then(() => C.toast('Copiado')).catch(() => C.toast('Selecciona y copia el texto')); });
+  const mp = $('#mpGo'); if (mp) mp.onclick = e => { e.preventDefault(); C.toast('Maqueta: aquí abriría Mercado Pago'); };
+})();
+</script>
+</body>
+</html>

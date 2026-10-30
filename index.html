@@ -6,7 +6,7 @@
 <title>Cardian Muebles · Muy pronto</title>
 <meta name="description" content="Cardian Muebles: cocinas, salas, comedores y recámaras hechos en nuestro taller. Muy pronto nuestra tienda en línea con envío a todo México.">
 <meta name="theme-color" content="#0d0c0a">
-<link rel="icon" href="logo.jpg">
+<link rel="icon" href="img/logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap">
@@ -68,9 +68,8 @@
   .hang b:nth-of-type(1){left:calc(22% - 3px)}
   .hang b:nth-of-type(2){right:calc(22% - 3px)}
 
-  .logo{width:132px;height:132px;margin:0 auto 6px;overflow:hidden}
-  .logo img{width:100%;height:100%;object-fit:cover;transform:scale(1.3);
-    -webkit-mask-image:radial-gradient(circle,#000 52%,transparent 72%);mask-image:radial-gradient(circle,#000 52%,transparent 72%)}
+  .logo{width:150px;margin:0 auto 10px}
+  .logo img{width:100%;height:auto;filter:drop-shadow(0 6px 18px rgba(0,0,0,.6))}
 
   .badge{
     display:inline-flex;align-items:center;gap:10px;margin-top:4px;
@@ -112,10 +111,26 @@
   footer span{white-space:nowrap}
   footer i{display:inline-block;width:4px;height:4px;background:var(--gold);transform:rotate(45deg);margin:0 10px;vertical-align:2px}
 
+  /* Acceso del equipo, al pie del letrero */
+  .team{width:min(640px,100%);background:rgba(13,12,10,.72);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border:1px solid rgba(198,161,91,.35);padding:18px 22px;display:grid;gap:12px;animation:rise 1s .5s both}
+  .team-text{display:grid;gap:2px;text-align:center}
+  .team-eyebrow{font-size:10.5px;letter-spacing:.28em;text-transform:uppercase;color:var(--gold);font-weight:500}
+  .team h2{font-size:15px;font-weight:500;color:var(--cream)}
+  .team-fields{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end}
+  .team label{display:grid;gap:5px;text-align:left}
+  .team label span{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+  .team input{width:100%;padding:11px 13px;border:1px solid rgba(198,161,91,.3);background:#0d0c0a;color:var(--cream);border-radius:4px;font:inherit;font-size:14px}
+  .team input::placeholder{color:#5e5648}
+  .team input:focus{outline:0;border-color:var(--gold-2);box-shadow:0 0 0 3px rgba(198,161,91,.2)}
+  .team .go{border:0;background:var(--gold);color:var(--ink);padding:12px 22px;font:inherit;font-weight:600;font-size:12.5px;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;border-radius:999px;transition:transform .2s,background .2s;height:43px}
+  .team .go:hover{transform:translateY(-2px);background:var(--gold-2)}
+  .team .go[disabled]{opacity:.6;transform:none}
+  .team .err{font-size:12.5px;color:#e07a7a;text-align:center}
+  @media (max-width:560px){.team-fields{grid-template-columns:1fr}.team .go{width:100%}}
   @keyframes rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
   @media (max-width:480px){
     .sign{padding:30px 20px 26px}
-    .logo{width:112px;height:112px}
+    .logo{width:120px}
     .hang{display:none}
   }
   @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
@@ -128,15 +143,15 @@
     <main class="sign">
       <div class="hang" aria-hidden="true"><i></i><i></i><b></b><b></b></div>
 
-      <div class="logo"><img src="logo.jpg" alt="Cardian Muebles"></div>
+      <div class="logo"><img src="img/logo.png" alt="Cardian Muebles"></div>
 
       <div class="badge">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
-        Sitio en construcción
+        Muy pronto
       </div>
 
-      <h1>Estamos preparando nuestra tienda en línea</h1>
-      <p class="lead">Muy pronto podrás elegir tu cocina, sala, comedor o recámara, hechos en nuestro propio taller, con envío a todo México.</p>
+      <h1>Sitio en construcción</h1>
+      <p class="lead">Estamos preparando nuestra tienda en línea. Muy pronto podrás elegir tu cocina, sala, comedor o recámara, hechos en nuestro propio taller, con envío a todo México.</p>
 
       <div class="progress" aria-hidden="true"><span></span></div>
 
@@ -158,7 +173,39 @@
       <div class="contact"><span>+52 1 55 7006 0233</span> · <span>atencion@cardianmuebles.com</span></div>
     </main>
 
+    <form class="team" id="loginForm" novalidate aria-labelledby="loginTitle">
+      <div class="team-text">
+        <span class="team-eyebrow">Equipo Cardian</span>
+        <h2 id="loginTitle">Ingresa tu usuario y contraseña para navegar el sitio</h2>
+      </div>
+      <div class="team-fields">
+        <label><span>Usuario</span><input type="text" id="user" autocomplete="username" autocapitalize="none" placeholder="usuario" required></label>
+        <label><span>Contraseña</span><input type="password" id="pass" autocomplete="current-password" placeholder="••••••••" required></label>
+        <button type="submit" class="go" id="loginGo">Entrar</button>
+      </div>
+      <div class="err" id="loginErr" hidden>Usuario o contraseña incorrectos. Inténtalo de nuevo.</div>
+    </form>
+
     <footer><span>© 2026 Cardian Muebles</span> <i></i> <span>Hecho en México</span></footer>
   </div>
+
+  <script src="assets/gate.js"></script>
+  <script>
+    (function () {
+      const $ = s => document.querySelector(s);
+      const ir = new URLSearchParams(location.search).get('ir') || '/inicio';
+      const dest = ir.startsWith('/') && !ir.startsWith('//') ? ir : '/inicio';
+      if (CardianGate.isOpen()) { $('#loginTitle').textContent = 'Tu sesión sigue abierta'; $('#loginGo').textContent = 'Seguir navegando'; $('.team-fields').classList.add('open'); }
+      $('#loginForm').addEventListener('submit', async e => {
+        e.preventDefault();
+        if (CardianGate.isOpen() && !$('#pass').value) { location.href = dest; return; }
+        const b = $('#loginGo'); b.disabled = true; b.textContent = 'Verificando…'; $('#loginErr').hidden = true;
+        const ok = await CardianGate.check($('#user').value, $('#pass').value);
+        if (ok) { b.textContent = 'Entrando…'; location.href = dest; }
+        else { $('#loginErr').hidden = false; b.disabled = false; b.textContent = 'Entrar'; $('#pass').value = ''; $('#pass').focus(); }
+      });
+      if (new URLSearchParams(location.search).has('ir')) { $('#loginForm').scrollIntoView({ behavior: 'smooth', block: 'center' }); setTimeout(() => $('#user').focus(), 400); }
+    })();
+  </script>
 </body>
 </html>

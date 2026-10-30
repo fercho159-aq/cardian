@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="es" data-gated>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Envíos y entregas · Cardian Muebles</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="/img/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap">
+<link rel="stylesheet" href="/assets/site.css">
+<script src="/assets/gate.js"></script>
+<style>
+  .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+  .fcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:22px 20px;min-width:0}
+  .fcard svg{width:28px;height:28px;color:var(--gold);margin-bottom:12px}
+  .fcard h3{font-size:16px;margin-bottom:6px}
+  .fcard p{color:var(--muted);font-size:13.5px}
+  @media (max-width:900px){.grid4{grid-template-columns:1fr 1fr}}
+  @media (max-width:560px){.grid4{grid-template-columns:1fr}}
+  .steps.four{grid-template-columns:repeat(4,1fr)}
+  @media (max-width:900px){.steps.four{grid-template-columns:1fr 1fr}}
+  @media (max-width:560px){.steps.four{grid-template-columns:1fr}}
+  .list{list-style:none;padding:0;margin:0;display:grid;gap:10px}
+  .list li{display:flex;gap:12px;align-items:flex-start;font-size:14px}
+  .list li::before{content:"◆";color:var(--gold);font-size:9px;margin-top:6px;flex:none}
+  .list.plus li::before{content:"+";color:var(--muted);font-size:15px;margin-top:0;line-height:1.4}
+  .col{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:24px}
+  .col h3{font-size:17px;margin-bottom:14px}
+  .formula{font-family:var(--font);font-weight:500;font-size:15px;margin-top:6px}
+  .formula b{color:var(--gold-deep)}
+  .calc{background:var(--surface);border:1px solid var(--line);border-radius:var(--rl);padding:26px;display:grid;grid-template-columns:1.2fr 1fr;gap:28px;align-items:start;box-shadow:var(--shadow)}
+  .calc .fields{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .calc .fields .field.full{grid-column:1/-1}
+  .calc .result{background:var(--ink);color:var(--ink-fg);border-radius:var(--r);padding:22px;min-height:100%}
+  .calc .result .big{font-size:34px;font-weight:600;color:var(--gold-bright);margin:6px 0 2px}
+  .calc .result .big small{font-size:13px;color:var(--ink-muted);font-weight:400;margin-left:6px}
+  .calc .result p{font-size:13px;color:var(--ink-muted)}
+  .calc .result .zone{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-muted)}
+  @media (max-width:860px){.calc{grid-template-columns:1fr}}
+  @media (max-width:520px){.calc .fields{grid-template-columns:1fr}}
+  .check{display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:start}
+  .check ol{margin:0;padding:0;list-style:none;counter-reset:c;display:grid;gap:12px}
+  .check ol li{counter-increment:c;display:flex;gap:14px;align-items:flex-start;font-size:14px}
+  .check ol li::before{content:counter(c);flex:none;width:28px;height:28px;border-radius:50%;background:var(--gold-soft);color:var(--gold-deep);display:grid;place-items:center;font-weight:600;font-size:13px}
+  .check ol li b{display:block;font-weight:500}
+  .check ol li span{color:var(--muted)}
+  @media (max-width:860px){.check{grid-template-columns:1fr}}
+  .rule{background:var(--gold-soft);border-radius:var(--r);padding:18px 20px;margin-top:18px}
+  .rule b{color:var(--gold-deep)}
+  .rec{display:grid;grid-template-columns:1fr 1fr;gap:28px;align-items:center}
+  @media (max-width:860px){.rec{grid-template-columns:1fr}}
+  .b2b .wrap{display:flex;justify-content:space-between;align-items:center;gap:24px;flex-wrap:wrap;padding-block:40px}
+  .b2b h2{font-size:clamp(22px,3vw,30px)}
+  .b2b p{color:var(--ink-muted);margin-top:8px;max-width:56ch}
+</style>
+</head>
+<body>
+<div id="site-header"></div>
+
+<section class="band"><div class="wrap" style="padding-block:40px"><div class="eyebrow">Envíos a todo México</div><h1 style="font-size:clamp(28px,4vw,42px)">Envíos y entregas</h1><p style="color:var(--ink-muted);margin-top:8px;max-width:60ch">Sin costo en CDMX y Estado de México, y con tarifa fija por zona al resto del país. Siempre entregado, armado y asegurado.</p></div></section>
+
+<section class="section">
+  <div class="wrap">
+    <div class="grid4">
+      <div class="fcard reveal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h11v9H3zM14 10h4l3 3v3h-7z"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></svg><h3>Envío gratis en CDMX y EdoMex</h3><p>Cualquier pieza, cualquier cantidad. Lo que ves en la ficha es lo que pagas.</p></div>
+      <div class="fcard reveal" style="--d:90ms"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg><h3>Lo entregamos armado</h3><p>Nuestro equipo lo sube, lo arma en el lugar que elijas y se lleva el empaque.</p></div>
+      <div class="fcard reveal" style="--d:180ms"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6z"/><path d="m9 12 2 2 4-4"/></svg><h3>Seguro de transporte incluido</h3><p>Si algo llega con un golpe, lo reparamos o lo reponemos sin costo. Solo repórtalo en 48 horas.</p></div>
+      <div class="fcard reveal" style="--d:270ms"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-6 9 6v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="M9 21V12h6v9"/></svg><h3>Recoger en bodega sin costo</h3><p>Si prefieres pasar por tu mueble, lo apartamos y te confirmamos el punto de entrega por WhatsApp.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="section band-soft">
+  <div class="wrap">
+    <div class="section-head reveal"><div><div class="eyebrow">Transparente desde el carrito</div><h2>Cómo se calcula tu envío</h2><p>No hay cargos sorpresa: el costo aparece en la ficha del producto y en el carrito antes de pagar.</p></div></div>
+    <div class="steps">
+      <div class="step reveal"><h3>Ubicamos tu zona</h3><p>Cada estado pertenece a una de cinco zonas con tarifa base fija. CDMX y Estado de México siempre son $0.</p></div>
+      <div class="step reveal" style="--d:100ms"><h3>Ajustamos por tamaño</h3><p>Cada mueble tiene un factor según lo que ocupa en el camión: un comedor paga menos que una sala en U, y una cocina un poco más.</p></div>
+      <div class="step reveal" style="--d:200ms"><h3>Piezas extra con descuento</h3><p>Si agregas más muebles al mismo pedido, la pieza más grande paga completo y las demás solo el 60 % de su envío.</p></div>
+    </div>
+    <div class="callout reveal" style="margin-top:22px">
+      <div class="eyebrow">La fórmula</div>
+      <div class="formula">Costo de envío = <b>tarifa base de tu zona</b> × <b>factor de tamaño del mueble</b></div>
+      <p class="note" style="margin-top:8px">Factores de referencia: comedor 0.8 · sala grande 1.0 · cocina 1.3. Las piezas adicionales del mismo pedido pagan el 60 % de su propio envío. Ejemplo: una sala grande a Zona 2 paga $2,290; si agregas un comedor, este suma $2,290 × 0.8 × 60 % = $1,099.</p>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <div class="section-head reveal"><div><div class="eyebrow">Zonas de envío</div><h2>Tarifa base y tiempo de tránsito por estado</h2><p>Los días son de tránsito para piezas terminadas. En piezas sobre pedido o a medida se suman los días de fabricación que ves en cada ficha.</p></div></div>
+    <div class="table-wrap reveal">
+      <table class="table" id="zoneTable">
+        <thead><tr><th>Zona</th><th>Estados</th><th>Tarifa base</th><th>Tránsito</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <p class="note" style="margin-top:10px">La tarifa base corresponde a un mueble con factor 1.0, por ejemplo una sala grande. Precios en pesos mexicanos, ya con IVA.</p>
+  </div>
+</section>
+
+<section class="section band-soft">
+  <div class="wrap">
+    <div class="section-head reveal"><div><div class="eyebrow">Calculadora</div><h2>¿Cuánto pagarías de envío?</h2><p>Elige tu estado y el tipo de mueble. El resultado es el mismo que verás en el carrito.</p></div></div>
+    <form class="calc reveal" id="calcForm" novalidate>
+      <div class="fields">
+        <div class="field full"><label for="cState">Estado de entrega</label><select class="input" id="cState"></select></div>
+        <div class="field"><label for="cCat">Tipo de mueble</label><select class="input" id="cCat">
+          <option value="1.0">Sala</option><option value="0.8">Comedor</option><option value="1.3">Cocina</option><option value="1.2">Recámara</option>
+        </select></div>
+        <div class="field"><label for="cQty">Cantidad</label><input class="input" id="cQty" type="number" inputmode="numeric" min="1" max="20" value="1"></div>
+        <div class="field full"><button class="btn primary" type="submit">Calcular envío</button></div>
+      </div>
+      <div class="result" id="calcRes" aria-live="polite">
+        <div class="zone">Tu zona</div>
+        <div class="big">—</div>
+        <p>Elige un estado para ver el costo y el tiempo de entrega.</p>
+      </div>
+    </form>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <div class="section-head reveal"><div><div class="eyebrow">Sin letras chiquitas</div><h2>Qué incluye toda entrega</h2></div></div>
+    <div class="two" style="align-items:start">
+      <div class="col reveal">
+        <h3>Incluido siempre</h3>
+        <ul class="list">
+          <li>Transporte con seguro contra daños y pérdida.</li>
+          <li>Maniobra de descarga y subida hasta el espacio donde va el mueble.</li>
+          <li>Armado completo por nuestro equipo y retiro del empaque.</li>
+          <li>Aviso por WhatsApp un día antes con ventana de horario.</li>
+          <li>Hoja de entrega firmada y garantía por escrito.</li>
+        </ul>
+      </div>
+      <div class="col reveal" style="--d:120ms">
+        <h3>Con costo adicional, siempre autorizado antes</h3>
+        <ul class="list plus">
+          <li>Subida por escaleras a partir del cuarto piso sin elevador.</li>
+          <li>Maniobras especiales: izar por balcón, retirar puertas o barandales.</li>
+          <li>Segunda visita si en la fecha acordada no hay quien reciba.</li>
+          <li>Entregas fuera del área urbana de la ciudad o en comunidades sin acceso para camión.</li>
+          <li>Retiro de tu mueble anterior.</li>
+        </ul>
+        <p class="note" style="margin-top:14px">Cualquier cargo extra se cotiza y se confirma contigo por WhatsApp antes de la entrega. Nunca se cobra en la puerta sin aviso.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section band-soft">
+  <div class="wrap">
+    <div class="section-head reveal"><div><div class="eyebrow">Cocinas</div><h2>Cocinas: se entregan instaladas</h2><p>Una cocina no se deja en cajas. En CDMX y Estado de México la instalación está incluida; en el resto del país se cotiza con el envío.</p></div></div>
+    <div class="steps four">
+      <div class="step reveal"><h3>Visita técnica</h3><p>Tomamos medidas definitivas, revisamos tomas de agua, gas y contactos eléctricos.</p></div>
+      <div class="step reveal" style="--d:90ms"><h3>Fabricación</h3><p>Se producen los módulos en nuestro taller con las medidas tomadas en sitio.</p></div>
+      <div class="step reveal" style="--d:180ms"><h3>Instalación</h3><p>Nuestro equipo fija módulos, cubierta y luz. Normalmente de uno a dos días según el tamaño.</p></div>
+      <div class="step reveal" style="--d:270ms"><h3>Entrega y limpieza</h3><p>Revisamos contigo puertas, cajones y niveles. Dejamos el área limpia y firmamos el acta de entrega.</p></div>
+    </div>
+    <p class="note" style="margin-top:16px">La conexión de tarja, estufa y campana la realiza tu plomero o gasero; nosotros dejamos los huecos y las preparaciones listas.</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap rec">
+    <div class="reveal">
+      <div class="eyebrow">Otra opción</div>
+      <h2 style="font-size:clamp(22px,3vw,30px)">Recoger en bodega</h2>
+      <p class="muted" style="margin-top:12px;max-width:52ch">Si tienes camioneta o prefieres hacer tu propio flete, elige «Recoger en bodega» en el carrito y el envío queda en $0 para cualquier estado.</p>
+      <ul class="list" style="margin-top:18px">
+        <li>Te confirmamos por WhatsApp el punto de entrega, la fecha y el horario para recoger.</li>
+        <li>Tu pedido se entrega empacado y protegido; el armado en casa queda por tu cuenta.</li>
+        <li>Revisamos juntos la pieza antes de cargarla y firmas la hoja de entrega.</li>
+        <li>Tienes hasta 7 días hábiles para recogerlo a partir de que te avisemos que está listo.</li>
+        <li>Si el vehículo no es adecuado para el tamaño del mueble, te lo decimos antes para evitar daños.</li>
+      </ul>
+    </div>
+    <div class="photo reveal" style="--d:120ms;aspect-ratio:4/3"><img src="/img/sala-berlin-2.jpg" alt="Sala modular lista para entrega" loading="lazy"></div>
+  </div>
+</section>
+
+<section class="section band-soft">
+  <div class="wrap">
+    <div class="section-head reveal"><div><div class="eyebrow">Antes de comprar</div><h2>¿Y si no cabe? Mide tu acceso en 2 minutos</h2><p>Las devoluciones por «no cupo» son las que más nos duelen a los dos. Revisa estos cinco puntos con un flexómetro.</p></div></div>
+    <div class="check">
+      <div class="reveal">
+        <ol>
+          <li><b>Puerta de entrada</b><span>Ancho y alto libres, con la puerta abierta por completo.</span></li>
+          <li><b>Pasillos y vueltas</b><span>El ancho del pasillo más estrecho y de cualquier giro de 90 grados.</span></li>
+          <li><b>Escaleras</b><span>Ancho, altura del techo en el descanso y si hay barandal que estorbe.</span></li>
+          <li><b>Elevador</b><span>Ancho de la puerta y fondo interior, con diagonal si el mueble es largo.</span></li>
+          <li><b>El espacio final</b><span>Largo de la pared y profundidad disponible. Compáralos con las medidas de la ficha.</span></li>
+        </ol>
+        <div class="rule"><b>Regla de los 5 cm:</b> el acceso debe medir al menos 5 cm más que el lado más corto de cada bulto. Las fichas indican cuántos bultos trae cada mueble y el tamaño del mayor.</div>
+      </div>
+      <div class="col reveal" style="--d:120ms">
+        <h3>¿Tienes dudas? Mándanos fotos</h3>
+        <p class="muted" style="font-size:14px">Toma una foto de la puerta, del pasillo y del lugar donde va el mueble, y envíalas por WhatsApp con el nombre del modelo. Las revisamos sin costo y te decimos si pasa, si conviene otro modelo o si hace falta una maniobra especial.</p>
+        <div style="margin-top:18px"><a class="btn wa" id="waFotos" href="#" target="_blank" rel="noopener">Enviar fotos de mi acceso</a></div>
+        <p class="note" style="margin-top:14px">Para cocinas y clósets el problema no existe: se fabrican por módulos a la medida de tu espacio.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <div class="section-head reveal"><div><div class="eyebrow">Al recibir</div><h2>Seguro y recepción</h2><p>Todos los envíos viajan asegurados. Para que el seguro aplique sin trámites, solo te pedimos tres cosas.</p></div></div>
+    <div class="steps">
+      <div class="step reveal"><h3>Revisa con el equipo</h3><p>Antes de que se retiren, revisa tapiz, mecanismos, cajones y acabados. Pruébalo con calma: nadie tiene prisa.</p></div>
+      <div class="step reveal" style="--d:100ms"><h3>Anota cualquier detalle</h3><p>Si ves un golpe o un raspón, escríbelo en la hoja de entrega antes de firmar. Con eso queda registrado el reporte.</p></div>
+      <div class="step reveal" style="--d:200ms"><h3>Tienes 48 horas</h3><p>Si detectas algo después, mándanos fotos por WhatsApp con tu número de pedido dentro de las 48 horas siguientes. Reparamos o reponemos sin costo.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="band b2b">
+  <div class="wrap">
+    <div class="reveal">
+      <div class="eyebrow">Proyectos</div>
+      <h2>Envíos para hoteles, oficinas y desarrollos</h2>
+      <p>Para pedidos de 10 piezas o más cotizamos flete por viaje completo, entregas por etapas e instalación incluida en CDMX y Estado de México.</p>
+    </div>
+    <a class="btn gold reveal" style="--d:120ms" href="/proyectos">Cotizar un proyecto</a>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap two" style="align-items:start">
+    <div class="reveal">
+      <div class="eyebrow">Preguntas frecuentes</div>
+      <h2 style="font-size:clamp(22px,3vw,30px)">Dudas sobre envíos</h2>
+      <p class="muted" style="margin-top:10px">¿No encuentras tu respuesta? Escríbenos por WhatsApp y te contestamos en minutos.</p>
+      <div style="margin-top:18px;display:flex;gap:10px;flex-wrap:wrap"><a class="btn wa" id="waFaq" href="#" target="_blank" rel="noopener">Preguntar por WhatsApp</a><a class="btn ghost" href="/preguntas">Todas las preguntas</a></div>
+    </div>
+    <div class="faq reveal" style="--d:120ms">
+      <details open><summary>¿Cuándo sé la fecha exacta de entrega?</summary><div class="a">Cuando tu pedido sale del taller te escribimos por WhatsApp para acordar el día. Un día antes te confirmamos la ventana de horario.</div></details>
+      <details><summary>¿Puedo cambiar la dirección después de pagar?</summary><div class="a">Sí, mientras el pedido no haya salido del taller. Si el nuevo estado pertenece a otra zona, se ajusta la diferencia de tarifa.</div></details>
+      <details><summary>¿Entregan en fin de semana?</summary><div class="a">Entregamos de lunes a sábado. Los domingos no hay rutas, pero puedes recoger en bodega en el horario que acordemos.</div></details>
+      <details><summary>¿Qué pasa si no estoy cuando lleguen?</summary><div class="a">Puede recibir cualquier persona mayor de edad que tú indiques. Si no hay nadie en la ventana acordada, reprogramamos; la segunda visita puede tener costo.</div></details>
+      <details><summary>¿Suben el mueble a un segundo piso?</summary><div class="a">La entrega incluye hasta planta baja, o hasta tu piso si hay elevador de servicio donde quepan los bultos. La subida por escaleras sin elevador se cotiza antes de confirmar el pedido y nunca se cobra en la puerta.</div></details>
+      <details><summary>¿Se puede enviar a un estado que no aparece en la tabla?</summary><div class="a">La tabla incluye las 32 entidades del país. Si tu dirección está fuera del área urbana, escríbenos para confirmar el acceso para camión.</div></details>
+      <details><summary>¿El envío de una cocina incluye la instalación?</summary><div class="a">En CDMX y Estado de México, sí. En el resto del país la instalación se cotiza junto con el flete según la distancia y los días del equipo en sitio.</div></details>
+      <details><summary>¿Puedo rastrear mi pedido?</summary><div class="a">Sí. Te avisamos por WhatsApp en cada etapa: pedido confirmado, en producción, salió del taller, en camino y entregado. Siempre con tu número de pedido CM-.</div></details>
+    </div>
+  </div>
+</section>
+
+<div id="site-footer"></div>
+<script src="/assets/data.js"></script>
+<script src="/assets/site.js"></script>
+<script>
+(function(){
+  const { $, fmt, shipping, zoneOf, wa } = window.Cardian; const D = window.CARDIAN;
+
+  // Tabla de zonas, siempre desde los datos
+  $('#zoneTable tbody').innerHTML = D.zones.map(z => `<tr><td><b style="font-weight:500">${z.name}</b></td><td class="muted">${z.states.join(', ')}</td><td class="num">${z.cost === 0 ? '<span class="pill" style="background:var(--ok-soft);color:var(--ok)">Gratis</span>' : fmt(z.cost)}</td><td>${z.days}</td></tr>`).join('');
+
+  // Calculadora
+  const sel = $('#cState');
+  sel.innerHTML = '<option value="">Elige tu estado</option>' + D.states.map(s => `<option value="${s}">${s}</option>`).join('');
+  const res = $('#calcRes');
+  const names = { '1.0': ['sala', 'salas'], '0.8': ['comedor', 'comedores'], '1.3': ['cocina', 'cocinas'], '1.2': ['recámara', 'recámaras'] };
+  function calc(e) {
+    if (e) e.preventDefault();
+    const st = sel.value; const factor = parseFloat($('#cCat').value); const qty = Math.min(20, Math.max(1, parseInt($('#cQty').value, 10) || 1));
+    if (!st) { res.innerHTML = '<div class="zone">Tu zona</div><div class="big">—</div><p>Elige un estado para ver el costo y el tiempo de entrega.</p>'; return; }
+    const r = shipping(st, [{ factor, qty }]); const z = r.zone || zoneOf(st);
+    const n = names[$('#cCat').value]; const what = `${qty} ${qty > 1 ? n[1] : n[0]}`;
+    const extra = qty > 1 && r.cost > 0 ? ' La primera pieza paga completo y las demás el 60 %.' : '';
+    res.innerHTML = `<div class="zone">${z.name}</div><div class="big">${r.cost === 0 ? 'Gratis' : fmt(r.cost) + '<small>MXN</small>'}</div><p>Envío de ${what} a ${st}. Tránsito estimado de ${z.days} para piezas terminadas; en piezas sobre pedido se suman los días de fabricación.${extra}</p>`;
+  }
+  $('#calcForm').addEventListener('submit', calc);
+  sel.addEventListener('change', calc); $('#cCat').addEventListener('change', calc); $('#cQty').addEventListener('input', calc);
+
+  $('#waFotos').href = wa('Hola Cardian Muebles, les envío fotos de mi acceso para revisar si me cabe el modelo: ');
+  $('#waFaq').href = wa('Hola Cardian Muebles, tengo una duda sobre envíos: ');
+})();
+</script>
+</body>
+</html>
