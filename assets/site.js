@@ -31,9 +31,10 @@
   }
 
   /* ---------- envío ---------- */
-  const zoneOf = st => D.zones.find(z => z.states.includes(st));
+  // zoneOf devuelve el grupo del estado con la tarifa y el tránsito propios de ese estado
+  const zoneOf = st => { const g = D.zones.find(z => z.states.includes(st)); return g ? { ...g, state: st, cost: D.rates[st], days: D.transit[st] } : null; };
   function shipping(state, items) {
-    // items: [{factor, qty}] · la pieza mayor paga completo, las demás 60 %
+    // items: [{factor, qty}] · tarifa base del estado × factor; la pieza mayor paga completo, las demás 60 %
     const z = zoneOf(state); if (!z) return { cost: 0, zone: null };
     if (z.cost === 0) return { cost: 0, zone: z };
     const list = [];

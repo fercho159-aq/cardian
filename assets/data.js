@@ -220,15 +220,27 @@ window.CARDIAN = (function () {
       specs: [['Referencia', '360 × 60 × 250 cm'], ['Pantalla', 'Hasta 65"'], ['Iluminación', 'LED en nicho']] }
   ];
 
-  // Zonas de envío (versión recomendada en el documento de estructura)
-  const zones = [
-    { id: 'centro', name: 'Zona centro', cost: 0,    days: '3 a 5 días hábiles',   states: ['Ciudad de México', 'Estado de México'] },
-    { id: 'z1', name: 'Zona 1 · Vecinos del centro', cost: 1490, days: '5 a 7 días hábiles',   states: ['Hidalgo', 'Morelos', 'Puebla', 'Tlaxcala', 'Querétaro'] },
-    { id: 'z2', name: 'Zona 2 · Bajío, Occidente y Golfo', cost: 2290, days: '7 a 10 días hábiles',  states: ['Aguascalientes', 'Guanajuato', 'Guerrero', 'Jalisco', 'Michoacán', 'San Luis Potosí', 'Veracruz', 'Zacatecas'] },
-    { id: 'z3', name: 'Zona 3 · Norte y Sureste', cost: 3490, days: '10 a 14 días hábiles', states: ['Chiapas', 'Coahuila', 'Colima', 'Durango', 'Nayarit', 'Nuevo León', 'Oaxaca', 'Sinaloa', 'Tabasco', 'Tamaulipas'] },
-    { id: 'z4', name: 'Zona 4 · Noroeste y Península', cost: 4690, days: '14 a 20 días hábiles', states: ['Baja California', 'Baja California Sur', 'Campeche', 'Chihuahua', 'Quintana Roo', 'Sonora', 'Yucatán'] }
+  // Tarifa base de envío por estado (pesos, factor 1.0 = sala seccional de 3 bultos) y tránsito en días hábiles.
+  // Calibrada el 3 de noviembre de 2026 con tablas de Kessa Muebles e IKEA y distancia por carretera desde el centro.
+  const rates = { 'Ciudad de México': 0, 'Estado de México': 0, 'Hidalgo': 1290, 'Morelos': 1290, 'Tlaxcala': 1290, 'Puebla': 1490, 'Querétaro': 1490,
+    'Guanajuato': 1890, 'Michoacán': 2090, 'San Luis Potosí': 2090, 'Veracruz': 2190, 'Guerrero': 2290, 'Aguascalientes': 2290, 'Jalisco': 2390, 'Zacatecas': 2490,
+    'Oaxaca': 2690, 'Colima': 2690, 'Nayarit': 2790, 'Nuevo León': 2790, 'Tamaulipas': 2890, 'Tabasco': 2890, 'Coahuila': 2990, 'Durango': 2990, 'Chiapas': 3190,
+    'Sinaloa': 3490, 'Chihuahua': 3490, 'Campeche': 3590, 'Yucatán': 3890, 'Quintana Roo': 3990, 'Sonora': 3990, 'Baja California': 4890, 'Baja California Sur': 5490 };
+  const transit = { 'Ciudad de México': '3 a 5 días hábiles', 'Estado de México': '3 a 5 días hábiles', 'Hidalgo': '4 a 6 días hábiles', 'Morelos': '4 a 6 días hábiles', 'Tlaxcala': '4 a 6 días hábiles', 'Puebla': '4 a 6 días hábiles', 'Querétaro': '4 a 6 días hábiles',
+    'Guanajuato': '5 a 7 días hábiles', 'Michoacán': '5 a 7 días hábiles', 'San Luis Potosí': '5 a 8 días hábiles', 'Veracruz': '5 a 8 días hábiles', 'Guerrero': '5 a 8 días hábiles', 'Aguascalientes': '6 a 8 días hábiles', 'Jalisco': '6 a 8 días hábiles', 'Zacatecas': '6 a 9 días hábiles',
+    'Oaxaca': '6 a 9 días hábiles', 'Colima': '7 a 10 días hábiles', 'Nayarit': '7 a 10 días hábiles', 'Nuevo León': '7 a 10 días hábiles', 'Tamaulipas': '7 a 10 días hábiles', 'Tabasco': '8 a 11 días hábiles', 'Coahuila': '7 a 10 días hábiles', 'Durango': '8 a 11 días hábiles', 'Chiapas': '8 a 12 días hábiles',
+    'Sinaloa': '10 a 14 días hábiles', 'Chihuahua': '10 a 14 días hábiles', 'Campeche': '10 a 14 días hábiles', 'Yucatán': '10 a 14 días hábiles', 'Quintana Roo': '12 a 15 días hábiles', 'Sonora': '12 a 15 días hábiles', 'Baja California': '14 a 20 días hábiles', 'Baja California Sur': '14 a 20 días hábiles' };
+
+  // Zonas: agrupación para mostrar en la página de Envíos. cost = tarifa más baja del grupo, costMax = la más alta.
+  const zoneGroups = [
+    { id: 'centro', name: 'Zona centro', days: '3 a 5 días hábiles', states: ['Ciudad de México', 'Estado de México'] },
+    { id: 'z1', name: 'Zona 1 · Vecinos del centro', days: '4 a 6 días hábiles', states: ['Hidalgo', 'Morelos', 'Tlaxcala', 'Puebla', 'Querétaro'] },
+    { id: 'z2', name: 'Zona 2 · Bajío, Occidente y Golfo', days: '5 a 9 días hábiles', states: ['Guanajuato', 'Michoacán', 'San Luis Potosí', 'Veracruz', 'Guerrero', 'Aguascalientes', 'Jalisco', 'Zacatecas'] },
+    { id: 'z3', name: 'Zona 3 · Norte, Pacífico y Sureste', days: '6 a 12 días hábiles', states: ['Oaxaca', 'Colima', 'Nayarit', 'Nuevo León', 'Tamaulipas', 'Tabasco', 'Coahuila', 'Durango', 'Chiapas'] },
+    { id: 'z4', name: 'Zona 4 · Noroeste y Península', days: '10 a 20 días hábiles', states: ['Sinaloa', 'Chihuahua', 'Campeche', 'Yucatán', 'Quintana Roo', 'Sonora', 'Baja California', 'Baja California Sur'] }
   ];
-  const states = zones.flatMap(z => z.states).sort((a, b) => a.localeCompare(b, 'es'));
+  const zones = zoneGroups.map(z => ({ ...z, cost: Math.min(...z.states.map(s => rates[s])), costMax: Math.max(...z.states.map(s => rates[s])) }));
+  const states = Object.keys(rates).sort((a, b) => a.localeCompare(b, 'es'));
 
   const payments = [
     { id: 'mp',   name: 'Mercado Pago', badge: '12 MSI', desc: 'Tarjeta de crédito o débito, hasta 12 meses sin intereses' },
@@ -236,5 +248,5 @@ window.CARDIAN = (function () {
     { id: 'cash', name: 'Efectivo', badge: 'Apartado', desc: 'Anticipo del 50 % en OXXO o por depósito, el resto al recibir' }
   ];
 
-  return { brand, categories, products, zones, states, payments, TAPIZ };
+  return { brand, categories, products, zones, rates, transit, states, payments, TAPIZ };
 })();

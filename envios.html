@@ -256,7 +256,7 @@
   const { $, fmt, shipping, zoneOf, wa } = window.Cardian; const D = window.CARDIAN;
 
   // Tabla de zonas, siempre desde los datos
-  $('#zoneTable tbody').innerHTML = D.zones.map(z => `<tr><td><b style="font-weight:500">${z.name}</b></td><td class="muted">${z.states.join(', ')}</td><td class="num">${z.cost === 0 ? '<span class="pill" style="background:var(--ok-soft);color:var(--ok)">Gratis</span>' : fmt(z.cost)}</td><td>${z.days}</td></tr>`).join('');
+  $('#zoneTable tbody').innerHTML = D.zones.map(z => `<tr><td><b style="font-weight:500">${z.name}</b></td><td class="muted">${z.states.map(s => `${s} <span class="num" style="white-space:nowrap">(${D.rates[s] === 0 ? 'gratis' : fmt(D.rates[s])})</span>`).join(', ')}</td><td class="num">${z.cost === 0 ? '<span class="pill" style="background:var(--ok-soft);color:var(--ok)">Gratis</span>' : z.cost === z.costMax ? fmt(z.cost) : fmt(z.cost) + ' a ' + fmt(z.costMax)}</td><td>${z.days}</td></tr>`).join('');
 
   // Calculadora
   const sel = $('#cState');
