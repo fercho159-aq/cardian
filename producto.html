@@ -109,11 +109,11 @@
   $('#moreLink').href = '/' + cat.id;
 
   const st = { tapiz: (p.tapiz || [])[0] || null, mech: (p.mech || [{ name: null }])[0].name, qty: 1, delivery: 'ship', state: 'Ciudad de México' };
-  const isMedida = p.stock === 'medida';
+  const isMedida = p.stock === 'medida' || p.quote;
 
   // ----- render estático -----
   const thumbs = p.imgs.map((src, i) => `<button type="button" aria-pressed="${i === 0}" data-i="${i}"><img src="/${src}" alt="Vista ${i + 1}"></button>`).join('');
-  const tapizChips = p.tapiz ? `<div class="opt field"><div class="lbl"><span>Tapiz</span><b id="tapizName"></b></div><div class="chips" id="tapiz">${p.tapiz.map(t => `<button type="button" class="chip" data-t="${t}"><span class="sw" style="background:${D.TAPIZ[t].hex}"></span>${D.TAPIZ[t].name}${p.extras && p.extras[t] ? `<span class="plus">+ ${fmt(p.extras[t])}</span>` : ''}</button>`).join('')}</div></div>` : '';
+  const tapizChips = p.tapiz ? `<div class="opt field"><div class="lbl"><span>${p.optLabel || "Tapiz"}</span><b id="tapizName"></b></div><div class="chips" id="tapiz">${p.tapiz.map(t => `<button type="button" class="chip" data-t="${t}"><span class="sw" style="background:${D.TAPIZ[t].hex}"></span>${D.TAPIZ[t].name}${p.extras && p.extras[t] ? `<span class="plus">+ ${fmt(p.extras[t])}</span>` : ''}</button>`).join('')}</div></div>` : '';
   const mechChips = p.mech ? `<div class="opt field"><div class="lbl"><span>Mecanismo reclinable</span><b id="mechName"></b></div><div class="chips" id="mech">${p.mech.map(m => `<button type="button" class="chip" data-m="${m.name}">${m.name}<span class="plus">${m.extra ? '+ ' + fmt(m.extra) : 'incluido'}</span></button>`).join('')}</div></div>` : '';
   const stateOpts = D.states.map(s => `<option value="${s}">${s}</option>`).join('');
 
@@ -126,10 +126,10 @@
       <div class="eyebrow">${cat.name} · ${p.type}</div>
       <h1>${p.name}</h1>
       <div class="sku">SKU CM-${p.id.toUpperCase().replace(/-/g, '')} · ${p.stock === 'inmediata' ? 'Entrega en 3 a 5 días hábiles en CDMX y EdoMex' : p.stock === 'medida' ? 'Cotización con tus medidas en 24 horas' : 'Se fabrica en ' + p.dias + ' días hábiles'}</div>
-      <div class="price-row"><div class="price num">${p.from ? '<span class="from">desde</span>' : ''}<span id="priceMain">${fmt(p.price)}</span><small>MXN</small></div>${p.oldPrice ? `<div class="was num">${fmt(p.oldPrice)}</div>` : ''}</div>
-      <div class="msi num">${isMedida ? 'Precio de referencia. El precio cerrado sale de tus medidas.' : 'o <b id="msiLine">12 × ' + fmt2(p.price / 12) + '</b> sin intereses con <span class="mp">mercado pago</span>'}</div>
+      <div class="price-row"><div class="price num">${p.quote ? 'Cotiza a tu medida' : `<span id="priceMain">${fmt(p.price)}</span><small>MXN</small>`}</div>${p.oldPrice ? `<div class="was num">${fmt(p.oldPrice)}</div>` : ''}</div>
+      <div class="msi num">${p.quote ? 'Te damos precio cerrado con tus medidas, sin compromiso.' : 'o <b id="msiLine">12 × ' + fmt2(p.price / 12) + '</b> sin intereses con <span class="mp">mercado pago</span> · precio directo de fábrica'}</div>
       <p class="muted" style="margin-top:14px;font-size:14px">${p.short}</p>
-      ${tapizChips}${mechChips}
+      ${tapizChips}${p.varImgs ? '<div class="note" id="colorNote" hidden style="margin-top:-10px">Así se ve el modelo en ese color. Es una simulación sobre la foto; el tono real puede variar un poco según la luz y el lote de tela.</div>' : ''}${mechChips}
       ${isMedida ? `<div class="medida-box"><b>Este mueble se fabrica a tu medida</b>Mándanos las medidas de tu espacio o un plano y te cotizamos en 24 horas sin compromiso. En CDMX y Estado de México la medición a domicilio no tiene costo.</div>` : `
       <div class="opt field"><div class="lbl"><span>Cantidad</span></div><div class="qty"><button type="button" id="qMinus" aria-label="Menos">−</button><output id="qty">1</output><button type="button" id="qPlus" aria-label="Más">+</button></div><div class="volume" id="volume">¿Necesitas 10 o más? <a href="/proyectos?modelo=${p.id}">Cotiza por volumen →</a></div></div>
       <div class="delivery">
@@ -153,7 +153,7 @@
 
   $('#related').innerHTML = D.products.filter(x => x.cat === p.cat && x.id !== p.id).slice(0, 4).map(C.card).join('');
   if (!isMedida) $('#stickyBar').innerHTML = `<div class="p num"><span id="stickyPrice">${fmt(p.price)}</span><small id="stickyMsi">12 × ${fmt2(p.price / 12)} sin intereses</small></div><button type="button" class="btn gold sm" id="buyNow2">Comprar ahora</button>`;
-  else $('#stickyBar').innerHTML = `<div class="p"><span>Desde ${fmt(p.price)}</span><small>Se cotiza con tus medidas</small></div><a class="btn gold sm" id="quoteBtn2" href="#" target="_blank" rel="noopener">Cotizar</a>`;
+  else $('#stickyBar').innerHTML = `<div class="p"><span>A tu medida</span><small>Cotización sin compromiso</small></div><a class="btn gold sm" id="quoteBtn2" href="#" target="_blank" rel="noopener">Cotizar</a>`;
 
   // ----- galería -----
   const thumbBtns = $$('#thumbs button'); let cur = 0, timer = null;
@@ -168,7 +168,7 @@
   function animateMoney(el, to) { const from = +(el.dataset.v || to); el.dataset.v = to; if (C.reduceMotion || from === to) { el.textContent = fmt(to); return; } const t0 = performance.now(); (function step(now) { const k = Math.min(1, (now - t0) / 450), e = 1 - Math.pow(1 - k, 3); el.textContent = fmt(from + (to - from) * e); if (k < 1) requestAnimationFrame(step); })(t0); }
   function render() {
     const unit = C.unitPrice(p, st);
-    animateMoney($('#priceMain'), unit);
+    if ($('#priceMain')) animateMoney($('#priceMain'), unit);
     if ($('#msiLine')) $('#msiLine').textContent = '12 × ' + fmt2(unit / 12);
     if ($('#stickyPrice')) { $('#stickyPrice').textContent = fmt(unit); $('#stickyMsi').textContent = '12 × ' + fmt2(unit / 12) + ' sin intereses'; }
     if ($('#tapiz')) { $$('#tapiz .chip').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.t === st.tapiz))); $('#tapizName').textContent = D.TAPIZ[st.tapiz].name; }
@@ -182,11 +182,20 @@
       $('#shipZone').textContent = s.zone.name + ' · ' + st.state; $('#shipDays').textContent = 'Entrega estimada: ' + s.zone.days + (p.stock === 'pedido' ? ' + ' + p.dias + ' de fabricación' : '');
       const sc = $('#shipCost'); sc.textContent = s.cost === 0 ? 'Gratis' : fmt(s.cost); sc.classList.toggle('free', s.cost === 0);
     }
-    const waText = `Hola, me interesa ${p.name}${st.tapiz ? ' en ' + D.TAPIZ[st.tapiz].name.toLowerCase() : ''} (${fmt(unit)}). ${isMedida ? 'Quiero cotizarla con mis medidas.' : 'Quiero preguntar sobre'} `;
+    const waText = `Hola, me interesa ${p.name}${st.tapiz ? ' en ' + D.TAPIZ[st.tapiz].name.toLowerCase() : ''}${p.quote ? '' : ' (' + fmt(unit) + ')'}. ${isMedida ? 'Quiero cotizarla con mis medidas.' : 'Quiero preguntar sobre'} `;
     const wf = $('#waFloat'); if (wf) wf.href = C.wa(waText);
     $$('#quoteBtn, #quoteBtn2').forEach(a => a.href = C.wa(waText));
   }
-  $$('#tapiz .chip').forEach(b => b.addEventListener('click', () => { st.tapiz = b.dataset.t; const i = p.imgs.findIndex((s, k) => k === p.tapiz.indexOf(st.tapiz)); if (i >= 0 && i < p.imgs.length && thumbBtns.length) show(i); render(); }));
+  // Al elegir color, la foto cambia a la variante de ese color (simulación sobre la foto real)
+  function showColor(key) {
+    if (!p.varImgs) return;
+    clearInterval(timer);
+    const img = $('#mainImg'); const src = `/img/var/${p.id}-${key}.jpg`;
+    const apply = () => { img.src = src; img.classList.remove('swap'); };
+    if (C.reduceMotion) apply(); else { img.classList.add('swap'); setTimeout(apply, 200); }
+    const note = $('#colorNote'); if (note) note.hidden = false;
+  }
+  $$('#tapiz .chip').forEach(b => b.addEventListener('click', () => { st.tapiz = b.dataset.t; showColor(st.tapiz); render(); }));
   $$('#mech .chip').forEach(b => b.addEventListener('click', () => { st.mech = b.dataset.m; render(); }));
   if ($('#qty')) {
     $('#qMinus').onclick = () => { st.qty = Math.max(1, st.qty - 1); render(); };

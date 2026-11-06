@@ -10,10 +10,10 @@
   /* ---------- catálogo ---------- */
   const byId = id => D.products.find(p => p.id === id);
   const catOf = id => D.categories.find(c => c.id === id);
-  const stockLabel = p => p.stock === 'inmediata' ? 'Entrega inmediata' : p.stock === 'medida' ? 'A medida · cotización en 24 h' : 'Sobre pedido · ' + p.dias + ' días';
+  const stockLabel = p => p.stock === 'inmediata' ? 'Entrega inmediata' : p.stock === 'medida' ? 'A medida · cotización en 24 h' : 'Se fabrica en ' + p.dias + ' días hábiles';
   const stockClass = p => p.stock === 'inmediata' ? 'ok' : p.stock === 'medida' ? 'medida' : 'pedido';
   const unitPrice = (p, opts) => {
-    let u = p.price;
+    let u = p.price || 0;
     if (opts && opts.tapiz && p.extras && p.extras[opts.tapiz]) u += p.extras[opts.tapiz];
     if (opts && opts.mech && p.mech) { const m = p.mech.find(x => x.name === opts.mech); if (m) u += m.extra; }
     return u;
@@ -24,10 +24,10 @@
     const sw = (p.tapiz || []).slice(0, 4).map(t => `<i style="background:${D.TAPIZ[t].hex}" title="${D.TAPIZ[t].name}"></i>`).join('');
     const alt = p.imgs[1] ? `<img class="alt" src="/${p.imgs[1]}" alt="" loading="lazy">` : '';
     return `<a class="card reveal" style="--d:${(i % 4) * 80}ms" href="/producto?id=${p.id}">
-      <div class="ph"><img src="/${p.imgs[0]}" alt="${p.name}" loading="lazy">${alt}<span class="tag ${stockClass(p)}">${p.stock === 'inmediata' ? 'Entrega inmediata' : p.stock === 'medida' ? 'A medida' : 'Sobre pedido'}</span></div>
+      <div class="ph"><img src="/${p.imgs[0]}" alt="${p.name}" loading="lazy">${alt}<span class="tag ${stockClass(p)}">${p.stock === 'inmediata' ? 'Entrega inmediata' : p.stock === 'medida' ? 'A medida' : 'Hecho para ti'}</span></div>
       <div class="c"><div class="cat">${c.name}</div><h3>${p.name}</h3><div class="type">${p.type}</div>${sw ? `<div class="sw">${sw}</div>` : ''}
-      <div class="price num">${p.from ? '<small style="margin:0 4px 0 0">desde</small>' : ''}${fmt(p.price)}<small>MXN</small></div>
-      <div class="msi num">${p.stock === 'medida' ? 'Precio de referencia, se cotiza con tus medidas' : '12 × ' + fmt2(p.price / 12) + ' sin intereses'}</div></div></a>`;
+      <div class="price num">${p.quote ? 'Cotiza a tu medida' : fmt(p.price) + '<small>MXN</small>'}</div>
+      <div class="msi num">${p.quote ? 'Precio según tus medidas, sin compromiso' : '12 × ' + fmt2(p.price / 12) + ' sin intereses'}</div></div></a>`;
   }
 
   /* ---------- envío ---------- */

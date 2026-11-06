@@ -123,6 +123,8 @@ footer.site .pay-logos span{border:1px solid #3a3326;border-radius:4px;padding:2
 .tag.pedido{background:var(--surface-2);color:var(--muted)}
 .tag.medida{background:var(--gold-soft);color:var(--gold-deep)}
 .tag.ink{background:var(--ink);color:var(--ink-fg)}
+.gallery .main .tag{background:rgba(13,12,10,.82);color:var(--ink-fg);backdrop-filter:blur(4px)}
+.gallery .main .tag.ok{background:var(--ok);color:#fff}
 .card .c{padding:12px 14px 14px;display:flex;flex-direction:column;gap:4px;flex:1}
 .card .cat{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold)}
 .card h3{font-size:16.5px}

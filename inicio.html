@@ -75,7 +75,7 @@
       <h1>Muebles hechos en nuestro taller, <em>entregados y armados</em> en tu casa.</h1>
       <p>Cocinas, salas, comedores y recámaras. Eliges tapiz y medida en línea, pagas como prefieras y nosotros nos encargamos del resto.</p>
       <div class="cta">
-        <a class="btn gold" href="/catalogo?c=salas">Ver salas desde $12,900</a>
+        <a class="btn gold" href="/catalogo?c=salas">Ver salas desde $8,500</a>
         <a class="btn light" href="/catalogo?c=cocinas">Cotizar una cocina a medida</a>
       </div>
     </div>
@@ -108,7 +108,7 @@
 
 <section class="section band-soft">
   <div class="wrap">
-    <div class="section-head reveal"><div><div class="eyebrow">Listos para entregar esta semana</div><h2>Piezas que ya están terminadas</h2><p>Si vives en CDMX o Estado de México, las recibes en 3 a 5 días hábiles sin costo de envío.</p></div><a class="more" href="/catalogo?stock=inmediata">Ver todas →</a></div>
+    <div class="section-head reveal"><div><div class="eyebrow">Precio directo de fábrica</div><h2>Nuestras salas, sin intermediarios</h2><p>Las fabricamos nosotros, así que el precio que ves es el de fábrica. Envío gratis en CDMX y Estado de México.</p></div><a class="more" href="/catalogo?c=salas">Ver todas las salas →</a></div>
     <div class="cards" id="inmediata"></div>
   </div>
 </section>
@@ -189,7 +189,7 @@
   const { $, card, fmt } = window.Cardian; const D = window.CARDIAN;
   const minBy = cat => Math.min(...D.products.filter(p => p.cat === cat).map(p => p.price));
   $('#cats').innerHTML = D.categories.map((c, i) => `<a class="cat-card reveal" style="--d:${i*90}ms" href="/catalogo?c=${c.id}"><img src="/${c.img}" alt="${c.name}"><div class="t"><h3>${c.name}</h3><p>${c.desc}</p><div class="from">Desde ${fmt(minBy(c.id))}</div></div></a>`).join('');
-  $('#inmediata').innerHTML = D.products.filter(p => p.stock === 'inmediata').slice(0, 8).map(card).join('');
+  $('#inmediata').innerHTML = D.products.filter(p => p.cat === 'salas' && p.price).sort((a, b) => a.price - b.price).slice(0, 8).map(card).join('');
   $('#featured').innerHTML = D.products.filter(p => p.featured).slice(0, 8).map(card).join('');
   Cardian.reveal();
 })();
