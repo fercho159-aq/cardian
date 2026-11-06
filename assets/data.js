@@ -41,7 +41,7 @@ window.CARDIAN = (function () {
     // ===== SALAS =====
     { id: 'sala-modular-africa', defaultColor: 'grisPlata', cat: 'salas', name: 'Sala modular África', type: 'Modular con reposet y consola central', price: 25000, stock: 'pedido', dias: 15,
       imgs: ['img/sala-africa.jpg'], featured: true,
-      tapiz: TAPIZ_SALAS, optLabel: 'Color de tapiz', varImgs: true,
+      tapiz: TAPIZ_SALAS, optLabel: 'Color de tapiz', varImgs: false,
       dims: { largo: 360, fondo: 260, alto: 100 }, bultos: 4, factor: 1.2,
       short: 'Modular en escuadra con un reposet y consola central con portavasos.',
       desc: 'Nuestra sala más vendida. Modular en escuadra con un reposet y consola central con portavasos y compartimento. Tapizada en tela de alto tránsito sobre estructura de madera y espuma de alta densidad.',
@@ -49,7 +49,7 @@ window.CARDIAN = (function () {
 
     { id: 'sala-africa', defaultColor: 'cocoa', cat: 'salas', name: 'Sala África', type: 'Juego 3-2-1 con reposet', price: 25000, stock: 'pedido', dias: 15,
       imgs: ['img/sala-africa-321.jpg'], featured: true,
-      tapiz: TAPIZ_SALAS, optLabel: 'Color de tapiz', varImgs: true,
+      tapiz: TAPIZ_SALAS, optLabel: 'Color de tapiz', varImgs: false,
       dims: { largo: 235, fondo: 95, alto: 100 }, bultos: 3, factor: 1.0,
       short: 'Sofá, loveseat y sillón, los tres con reposet.',
       desc: 'Juego de tres piezas con reposet en cada una: sofá, loveseat y sillón. La misma comodidad de la Sala modular África en formato de juego, ideal para salas rectangulares.',
@@ -57,7 +57,7 @@ window.CARDIAN = (function () {
 
     { id: 'sala-tokio', defaultColor: 'chocolate', cat: 'salas', name: 'Sala Tokio', type: 'Juego 3-2-1 con reposet', price: 25000, stock: 'pedido', dias: 15,
       imgs: ['img/sala-tokio.jpg'], featured: true,
-      tapiz: TAPIZ_SALAS, optLabel: 'Color de tapiz', varImgs: true,
+      tapiz: TAPIZ_SALAS, optLabel: 'Color de tapiz', varImgs: false,
       dims: { largo: 235, fondo: 95, alto: 102 }, bultos: 3, factor: 1.0,
       short: 'Sofá, loveseat y sillón con reposet, líneas amplias y respaldo alto.',
       desc: 'Juego de tres piezas con reposet en cada una. Respaldos altos y brazos acolchados; se ve bien tanto en tela como en acabado tipo piel.',
@@ -65,7 +65,7 @@ window.CARDIAN = (function () {
 
     { id: 'sala-delta', defaultColor: 'cocoa', cat: 'salas', name: 'Sala Delta', type: 'Juego 3-2-1', price: 19500, stock: 'pedido', dias: 15,
       imgs: ['img/sala-delta.jpg'],
-      tapiz: TAPIZ_SALAS, optLabel: 'Color de tapiz', varImgs: true,
+      tapiz: TAPIZ_SALAS, optLabel: 'Color de tapiz', varImgs: false,
       dims: { largo: 235, fondo: 95, alto: 95 }, bultos: 3, factor: 1.0,
       short: 'Sofá, loveseat y sillón de asiento amplio, sin mecanismo.',
       desc: 'Juego de tres piezas de asiento amplio y cojines sueltos de respaldo. Sin mecanismo reclinable, lo que la hace más ligera y más fácil de acomodar.',
@@ -73,7 +73,7 @@ window.CARDIAN = (function () {
 
     { id: 'sala-paris', defaultColor: 'grisOxford', cat: 'salas', name: 'Sala París', type: 'Juego 3-2-1', price: 17000, stock: 'pedido', dias: 15,
       imgs: ['img/sala-paris.jpg'], featured: true,
-      tapiz: TAPIZ_SALAS, optLabel: 'Color de tapiz', varImgs: true,
+      tapiz: TAPIZ_SALAS, optLabel: 'Color de tapiz', varImgs: false,
       dims: { largo: 205, fondo: 90, alto: 92 }, bultos: 3, factor: 0.9,
       short: 'Juego de tres piezas con respaldo capitonado. Para salas compactas.',
       desc: 'Juego de tres piezas con respaldo capitonado y brazos rectos. Es la opción más compacta de la línea y la que mejor entra en departamentos.',
@@ -81,7 +81,7 @@ window.CARDIAN = (function () {
 
     { id: 'sala-africa-junior', defaultColor: 'grisOxford', cat: 'salas', name: 'Sala África Junior', type: 'Escuadra con diván y reclinable', price: 16000, stock: 'pedido', dias: 15,
       imgs: ['img/sala-africa-junior.jpg'], featured: true,
-      tapiz: TAPIZ_SALAS, optLabel: 'Color de tapiz', varImgs: true,
+      tapiz: TAPIZ_SALAS, optLabel: 'Color de tapiz', varImgs: false,
       dims: { largo: 240, fondo: 160, alto: 100 }, bultos: 2, factor: 0.8,
       short: 'Escuadra con diván y reclinable. Con o sin portavasos.',
       desc: 'La versión compacta de la Sala África: escuadra con diván y reclinable. Puede llevar consola con portavasos, que agrega 30 cm al largo.',
@@ -89,7 +89,7 @@ window.CARDIAN = (function () {
 
     { id: 'sala-xcaret', defaultColor: 'grisOxford', cat: 'salas', name: 'Sala Xcaret', type: 'Escuadra con diván', price: 14500, stock: 'pedido', dias: 15,
       imgs: ['img/sala-xcaret.jpg'],
-      tapiz: TAPIZ_SALAS, optLabel: 'Color de tapiz', varImgs: true,
+      tapiz: TAPIZ_SALAS, optLabel: 'Color de tapiz', varImgs: false,
       dims: { largo: 230, fondo: 180, alto: 85 }, bultos: 2, factor: 0.9,
       short: 'Escuadra con diván y cojines con cierre, desenfundables.',
       desc: 'Escuadra con diván y cojines con cierre, que se pueden desenfundar para lavar. Es nuestra sala más accesible en formato escuadra.',
@@ -97,7 +97,7 @@ window.CARDIAN = (function () {
 
     { id: 'sala-sorento', defaultColor: 'beige', cat: 'salas', name: 'Sala Sorento', type: 'Modular por piezas', price: 30500, stock: 'pedido', dias: 20,
       imgs: ['img/sala-sorento.jpg'], featured: true,
-      tapiz: TAPIZ_SALAS, optLabel: 'Color de tapiz', varImgs: true,
+      tapiz: TAPIZ_SALAS, optLabel: 'Color de tapiz', varImgs: false,
       dims: { largo: 320, fondo: 240, alto: 80 }, bultos: 5, factor: 1.2,
       short: 'Modular que armas como quieras: cada módulo mide 80 cm.',
       desc: 'Sala modular por piezas: cada módulo individual mide 80 cm y los módulos con brazo miden 1 metro. Se acomoda en línea, en escuadra o en U, y puedes agregar módulos después.',
@@ -105,7 +105,7 @@ window.CARDIAN = (function () {
 
     { id: 'sofa-cama', defaultColor: 'azulMarino', cat: 'salas', name: 'Sofá cama', type: 'Sofá cama de 3 posiciones', price: 8500, stock: 'pedido', dias: 10,
       imgs: ['img/sofa-cama.jpg'],
-      tapiz: ['negro', 'grisOxford', 'grisPlata', 'cocoa', 'chocolate', 'azulMarino', 'beige'], optLabel: 'Color de tapiz', varImgs: true,
+      tapiz: ['negro', 'grisOxford', 'grisPlata', 'cocoa', 'chocolate', 'azulMarino', 'beige'], optLabel: 'Color de tapiz', varImgs: false,
       dims: { largo: 185, fondo: 100, alto: 80 }, bultos: 1, factor: 0.5,
       short: 'Tres posiciones: sentado, descanso y cama. En siete colores.',
       desc: 'Sofá cama de tres posiciones: sentado, descanso y cama. Ocupa poco y resuelve la visita; es la pieza que más se lleva para departamentos y cuartos de TV.',
