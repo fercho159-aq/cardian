@@ -24,6 +24,20 @@
   .thumbs button img{width:100%;height:100%;object-fit:cover}
   .thumbs button:hover{opacity:1;transform:translateY(-2px)}
   .thumbs button[aria-pressed="true"]{opacity:1;border-color:var(--gold);box-shadow:0 0 0 1px var(--gold)}
+  /* indicador del color elegido sobre la foto */
+  .color-badge{position:absolute;left:14px;bottom:14px;z-index:1;display:flex;align-items:center;gap:9px;background:rgba(13,12,10,.82);color:var(--ink-fg);backdrop-filter:blur(4px);border-radius:999px;padding:7px 14px 7px 8px;font-size:12.5px;letter-spacing:.06em;text-transform:uppercase;font-weight:500}
+  .color-badge i{width:20px;height:20px;border-radius:50%;border:2px solid rgba(243,234,219,.9);box-shadow:0 0 0 1px rgba(0,0,0,.4)}
+  .color-badge.pop{animation:pop .45s}
+  /* tira de miniaturas por color */
+  .cstrip{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-top:10px}
+  .cstrip.seven{grid-template-columns:repeat(7,1fr)}
+  .cstrip button{padding:0;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:var(--surface);position:relative;aspect-ratio:1/1;opacity:.85;transition:opacity .2s,transform .2s,border-color .2s,box-shadow .2s}
+  .cstrip button img{width:100%;height:100%;object-fit:cover;object-position:center 65%}
+  .cstrip button span{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;gap:5px;justify-content:center;background:linear-gradient(transparent,rgba(13,12,10,.85));color:var(--ink-fg);font-size:10px;letter-spacing:.04em;padding:14px 4px 5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .cstrip button span i{width:9px;height:9px;border-radius:50%;border:1px solid rgba(255,255,255,.8);flex:none}
+  .cstrip button:hover{opacity:1;transform:translateY(-2px)}
+  .cstrip button[aria-pressed="true"]{opacity:1;border-color:var(--gold);box-shadow:0 0 0 2px var(--gold)}
+  @media (max-width:600px){.cstrip,.cstrip.seven{grid-template-columns:repeat(4,1fr)}.cstrip button span{font-size:9px}}
   .buy{position:sticky;top:96px;min-width:0}
   .buy > *{animation:rise .6s cubic-bezier(.2,.7,.2,1) both;animation-delay:calc(80ms + var(--i,0)*55ms)}
   @media (max-width:900px){.buy{position:static}}
@@ -108,7 +122,9 @@
   $('#crumbs').innerHTML = `<a href="/inicio">Inicio</a><span>/</span><a href="/${cat.id}">${cat.name}</a><span>/</span>${p.name}`;
   $('#moreLink').href = '/' + cat.id;
 
-  const st = { tapiz: (p.tapiz || [])[0] || null, mech: (p.mech || [{ name: null }])[0].name, qty: 1, delivery: 'ship', state: 'Ciudad de México' };
+  const st = { tapiz: (p.defaultColor && (p.tapiz || []).includes(p.defaultColor)) ? p.defaultColor : (p.tapiz || [])[0] || null, mech: (p.mech || [{ name: null }])[0].name, qty: 1, delivery: 'ship', state: 'Ciudad de México' };
+  // Foto por color: la foto original es la del color por defecto; los demás colores usan la variante recoloreada
+  const colorSrc = key => (p.varImgs && key && key !== p.defaultColor) ? `/img/var/${p.id}-${key}.jpg` : '/' + p.imgs[0];
   const isMedida = p.stock === 'medida' || p.quote;
 
   // ----- render estático -----
@@ -119,8 +135,10 @@
 
   $('#product').innerHTML = `
     <figure class="gallery" style="margin:0">
-      <div class="main"><span class="tag ${C.stockClass(p)}">${C.stockLabel(p)}</span><img id="mainImg" src="/${p.imgs[0]}" alt="${p.name}"><div class="progress" id="progress"></div></div>
+      <div class="main"><span class="tag ${C.stockClass(p)}">${C.stockLabel(p)}</span><img id="mainImg" src="/${p.imgs[0]}" alt="${p.name}"><div class="progress" id="progress"></div>
+        ${p.varImgs ? `<div class="color-badge" id="colorBadge"><i id="colorBadgeDot"></i><span id="colorBadgeName"></span></div>` : ''}</div>
       ${p.imgs.length > 1 ? `<div class="thumbs" id="thumbs">${thumbs}</div>` : ''}
+      ${p.varImgs ? `<div class="cstrip ${p.tapiz.length > 6 ? 'seven' : ''}" id="cstrip" aria-label="Ver en cada color">${p.tapiz.map(k => `<button type="button" data-c="${k}" aria-pressed="false" title="${D.TAPIZ[k].name}"><img src="${colorSrc(k)}" alt="${p.name} en ${D.TAPIZ[k].name}" loading="lazy"><span><i style="background:${D.TAPIZ[k].hex}"></i>${D.TAPIZ[k].name}</span></button>`).join('')}</div>` : ''}
     </figure>
     <div class="buy">
       <div class="eyebrow">${cat.name} · ${p.type}</div>
@@ -187,15 +205,27 @@
     $$('#quoteBtn, #quoteBtn2').forEach(a => a.href = C.wa(waText));
   }
   // Al elegir color, la foto cambia a la variante de ese color (simulación sobre la foto real)
-  function showColor(key) {
+  function showColor(key, instant) {
     if (!p.varImgs) return;
     clearInterval(timer);
-    const img = $('#mainImg'); const src = `/img/var/${p.id}-${key}.jpg`;
+    const img = $('#mainImg'); const src = colorSrc(key);
     const apply = () => { img.src = src; img.classList.remove('swap'); };
-    if (C.reduceMotion) apply(); else { img.classList.add('swap'); setTimeout(apply, 200); }
-    const note = $('#colorNote'); if (note) note.hidden = false;
+    if (C.reduceMotion || instant || img.getAttribute('src') === src) apply(); else { img.classList.add('swap'); setTimeout(apply, 160); }
+    const note = $('#colorNote'); if (note) note.hidden = key === p.defaultColor;
+    const badge = $('#colorBadge'); if (badge) { $('#colorBadgeDot').style.background = D.TAPIZ[key].hex; $('#colorBadgeName').textContent = D.TAPIZ[key].name; badge.classList.remove('pop'); void badge.offsetWidth; badge.classList.add('pop'); }
+    $$('#cstrip button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.c === key)));
   }
   $$('#tapiz .chip').forEach(b => b.addEventListener('click', () => { st.tapiz = b.dataset.t; showColor(st.tapiz); render(); }));
+  $$('#cstrip button').forEach(b => b.addEventListener('click', () => { st.tapiz = b.dataset.c; showColor(st.tapiz); render(); }));
+  if (p.varImgs) {
+    showColor(st.tapiz, true);
+    // precarga de las variantes para que el cambio de color sea instantáneo
+    const pre = () => p.tapiz.forEach(k => { const im = new Image(); im.src = colorSrc(k); });
+    if ('requestIdleCallback' in window) requestIdleCallback(pre, { timeout: 2500 }); else setTimeout(pre, 1200);
+  }
+  // ?color=negro preselecciona un color (sirve para compartir la liga de un color específico)
+  const wantColor = new URLSearchParams(location.search).get('color');
+  if (wantColor && (p.tapiz || []).includes(wantColor)) { st.tapiz = wantColor; showColor(wantColor, true); }
   $$('#mech .chip').forEach(b => b.addEventListener('click', () => { st.mech = b.dataset.m; render(); }));
   if ($('#qty')) {
     $('#qMinus').onclick = () => { st.qty = Math.max(1, st.qty - 1); render(); };
