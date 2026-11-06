@@ -14,8 +14,11 @@
   .product{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:40px;align-items:start;padding-block:8px 48px}
   @media (max-width:900px){.product{grid-template-columns:1fr;gap:28px}}
   .gallery{min-width:0;animation:rise .7s cubic-bezier(.2,.7,.2,1) both}
-  .gallery .main{position:relative;background:var(--surface-2);border-radius:var(--r);overflow:hidden;aspect-ratio:4/3.3}
+  .gallery .main{position:relative;background:var(--surface-2);border-radius:var(--r);overflow:hidden;aspect-ratio:4/3}
+  .gallery .main .bgblur{position:absolute;inset:-30px;width:calc(100% + 60px);height:calc(100% + 60px);object-fit:cover;filter:blur(26px) brightness(.72) saturate(1.1);animation:none}
   .gallery .main img{width:100%;height:100%;object-fit:cover;transition:opacity .25s;animation:kenburns 9s ease-in-out infinite alternate}
+  .gallery .main #mainImg{position:relative;z-index:1;object-fit:contain;animation:kenburnsSoft 9s ease-in-out infinite alternate}
+  @keyframes kenburnsSoft{from{transform:scale(1)}to{transform:scale(1.03)}}
   .gallery .main img.swap{opacity:0}
   .gallery .main .tag{position:absolute;left:14px;top:14px;z-index:1}
   .gallery .main .progress{position:absolute;left:0;bottom:0;height:3px;width:0;background:var(--gold);z-index:1}
@@ -135,7 +138,7 @@
 
   $('#product').innerHTML = `
     <figure class="gallery" style="margin:0">
-      <div class="main"><span class="tag ${C.stockClass(p)}">${C.stockLabel(p)}</span><img id="mainImg" src="/${p.imgs[0]}" alt="${p.name}"><div class="progress" id="progress"></div>
+      <div class="main"><span class="tag ${C.stockClass(p)}">${C.stockLabel(p)}</span><img class="bgblur" id="bgBlur" src="/${p.imgs[0]}" alt="" aria-hidden="true"><img id="mainImg" src="/${p.imgs[0]}" alt="${p.name}"><div class="progress" id="progress"></div>
         ${p.varImgs ? `<div class="color-badge" id="colorBadge"><i id="colorBadgeDot"></i><span id="colorBadgeName"></span></div>` : ''}</div>
       ${p.imgs.length > 1 ? `<div class="thumbs" id="thumbs">${thumbs}</div>` : ''}
       ${p.varImgs ? `<div class="cstrip ${p.tapiz.length > 6 ? 'seven' : ''}" id="cstrip" aria-label="Ver en cada color">${p.tapiz.map(k => `<button type="button" data-c="${k}" aria-pressed="false" title="${D.TAPIZ[k].name}"><img src="${colorSrc(k)}" alt="${p.name} en ${D.TAPIZ[k].name}" loading="lazy"><span><i style="background:${D.TAPIZ[k].hex}"></i>${D.TAPIZ[k].name}</span></button>`).join('')}</div>` : ''}
@@ -175,7 +178,7 @@
 
   // ----- galería -----
   const thumbBtns = $$('#thumbs button'); let cur = 0, timer = null;
-  function show(i) { cur = i; thumbBtns.forEach((b, k) => b.setAttribute('aria-pressed', String(k === i))); const img = $('#mainImg'); const apply = () => { img.src = '/' + p.imgs[i]; img.classList.remove('swap'); }; if (C.reduceMotion) apply(); else { img.classList.add('swap'); setTimeout(apply, 240); } restart(); }
+  function show(i) { cur = i; thumbBtns.forEach((b, k) => b.setAttribute('aria-pressed', String(k === i))); const img = $('#mainImg'); const apply = () => { img.src = '/' + p.imgs[i]; const bg = $('#bgBlur'); if (bg) bg.src = img.src; img.classList.remove('swap'); }; if (C.reduceMotion) apply(); else { img.classList.add('swap'); setTimeout(apply, 240); } restart(); }
   function restart() { clearInterval(timer); const pr = $('#progress'); pr.style.transition = 'none'; pr.style.width = '0'; void pr.offsetWidth; if (thumbBtns.length > 1 && !C.reduceMotion) { pr.style.transition = 'width 5000ms linear'; pr.style.width = '100%'; timer = setInterval(() => show((cur + 1) % thumbBtns.length), 5000); } }
   thumbBtns.forEach(b => b.addEventListener('click', () => show(+b.dataset.i)));
   $('.gallery .main').addEventListener('mouseenter', () => clearInterval(timer));

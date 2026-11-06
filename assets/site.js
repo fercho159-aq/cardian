@@ -24,7 +24,7 @@
     const sw = (p.tapiz || []).slice(0, 4).map(t => `<i style="background:${D.TAPIZ[t].hex}" title="${D.TAPIZ[t].name}"></i>`).join('');
     const alt = p.imgs[1] ? `<img class="alt" src="/${p.imgs[1]}" alt="" loading="lazy">` : '';
     return `<a class="card reveal" style="--d:${(i % 4) * 80}ms" href="/producto?id=${p.id}">
-      <div class="ph"><img src="/${p.imgs[0]}" alt="${p.name}" loading="lazy">${alt}<span class="tag ${stockClass(p)}">${p.stock === 'inmediata' ? 'Entrega inmediata' : p.stock === 'medida' ? 'A medida' : 'Hecho para ti'}</span></div>
+      <div class="ph"><img class="bgblur" src="/${p.imgs[0]}" alt="" aria-hidden="true" loading="lazy"><img src="/${p.imgs[0]}" alt="${p.name}" loading="lazy">${alt}<span class="tag ${stockClass(p)}">${p.stock === 'inmediata' ? 'Entrega inmediata' : p.stock === 'medida' ? 'A medida' : 'Hecho para ti'}</span></div>
       <div class="c"><div class="cat">${c.name}</div><h3>${p.name}</h3><div class="type">${p.type}</div>${sw ? `<div class="sw">${sw}</div>` : ''}
       <div class="price num">${p.quote ? 'Cotiza a tu medida' : fmt(p.price) + '<small>MXN</small>'}</div>
       <div class="msi num">${p.quote ? 'Precio según tus medidas, sin compromiso' : '12 × ' + fmt2(p.price / 12) + ' sin intereses'}</div></div></a>`;
