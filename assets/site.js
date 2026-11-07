@@ -72,7 +72,7 @@
   function header() {
     const path = location.pathname.replace(/\/$/, '') || '/';
     const here = path + location.search; const cur = (h) => (here === h || (h.indexOf('?') < 0 && h !== '/inicio' && path.startsWith(h))) ? ' aria-current="page"' : '';
-    const links = [['/catalogo?c=salas', 'Salas'], ['/catalogo?c=cocinas', 'Cocinas'], ['/catalogo?c=comedores', 'Comedores'], ['/catalogo?c=recamaras', 'Recámaras'], ['/envios', 'Envíos'], ['/proyectos', 'Proyectos']];
+    const links = [['/catalogo?c=salas', 'Salas'], ['/catalogo?c=comedores', 'Comedores'], ['/envios', 'Envíos'], ['/proyectos', 'Proyectos']];
     const nav = links.map(([h, t]) => `<a href="${h}"${cur(h)}>${t}</a>`).join('');
     return `
     <div class="preview-bar"><div class="wrap"><span>Vista previa · sitio en construcción · datos de muestra</span><button type="button" id="gateOut">Salir</button></div></div>
@@ -93,10 +93,10 @@
   function footer() {
     return `<footer class="site"><div class="wrap">
       <div class="top">
-        <div class="brand"><img src="/img/logo.png" alt="Cardian Muebles"><p>Cocinas, salas, comedores y recámaras hechos en nuestro propio taller. Envío a todo México.</p></div>
-        <div><h4>Catálogo</h4><ul><li><a href="/catalogo?c=salas">Salas</a></li><li><a href="/catalogo?c=cocinas">Cocinas</a></li><li><a href="/catalogo?c=comedores">Comedores</a></li><li><a href="/catalogo?c=recamaras">Recámaras</a></li><li><a href="/catalogo?stock=inmediata">Entrega inmediata</a></li></ul></div>
+        <div class="brand"><img src="/img/logo.png" alt="Cardian Muebles"><p>Salas y comedores con precio directo. Envío a todo México.</p></div>
+        <div><h4>Catálogo</h4><ul><li><a href="/catalogo?c=salas">Salas</a></li><li><a href="/catalogo?c=comedores">Comedores</a></li><li><a href="/catalogo?stock=inmediata">Entrega inmediata</a></li></ul></div>
         <div><h4>Ayuda</h4><ul><li><a href="/como-comprar">Cómo comprar</a></li><li><a href="/envios">Envíos y entregas</a></li><li><a href="/pagos">Pagos y garantía</a></li><li><a href="/preguntas">Preguntas frecuentes</a></li><li><a href="/contacto">Contacto</a></li></ul></div>
-        <div><h4>Empresa</h4><ul><li><a href="/nosotros">Nosotros y taller</a></li><li><a href="/proyectos">Hoteles y oficinas</a></li><li><a href="${D.brand.ig}" target="_blank" rel="noopener">Instagram</a></li><li><a href="${D.brand.fb}" target="_blank" rel="noopener">Facebook</a></li><li><a href="/privacidad">Aviso de privacidad</a></li><li><a href="/terminos">Términos de compra</a></li></ul></div>
+        <div><h4>Empresa</h4><ul><li><a href="/nosotros">Nosotros y fábrica</a></li><li><a href="/proyectos">Hoteles y oficinas</a></li><li><a href="${D.brand.ig}" target="_blank" rel="noopener">Instagram</a></li><li><a href="${D.brand.fb}" target="_blank" rel="noopener">Facebook</a></li><li><a href="/privacidad">Aviso de privacidad</a></li><li><a href="/terminos">Términos de compra</a></li></ul></div>
       </div>
       <div class="bottom"><span>© 2026 Cardian Muebles · Hecho en México · ${D.brand.email} · WhatsApp ${D.brand.phone}</span><div class="pay-logos"><span>Mercado Pago</span><span>SPEI</span><span>Efectivo</span><span>CFDI 4.0</span></div></div>
     </div></footer>

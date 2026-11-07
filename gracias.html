@@ -64,7 +64,7 @@
       <div class="panel"><h2>Qué sigue</h2><ol class="timeline">
         <li class="on"><div><b>Pedido recibido</b><span>Hoy. ${d.pay === 'mp' ? 'Se confirma al aprobarse el pago.' : d.pay === 'spei' ? 'Se confirma al acreditarse la transferencia.' : 'Se confirma al registrarse el anticipo.'}</span></div></li>
         <li><div><b>En producción</b><span>${d.lines.every(l => (C.byId(l.id) || {}).stock === 'inmediata') ? 'Tus piezas ya están terminadas: pasan directo a empaque.' : 'Te mandamos fotos del avance por WhatsApp.'}</span></div></li>
-        <li><div><b>Salió del taller</b><span>Te confirmamos la ventana de entrega con 2 días de anticipación.</span></div></li>
+        <li><div><b>Salió de la fábrica</b><span>Te confirmamos la ventana de entrega con 2 días de anticipación.</span></div></li>
         <li><div><b>${d.delivery === 'store' ? 'Listo para recoger' : 'En camino'}</b><span>${d.delivery === 'store' ? 'Te confirmamos punto de entrega, horario y fecha por WhatsApp.' : 'El chofer te avisa cuando va en camino. Lo armamos y nos llevamos el empaque.'}</span></div></li>
         <li><div><b>Entregado</b><span>Revisas pieza por pieza, firmas de conformidad y te dejamos la garantía por escrito.</span></div></li>
       </ol></div>

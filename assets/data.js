@@ -1,6 +1,6 @@
 /* Cardian Muebles · catálogo.
    Salas y comedores: productos, precios, medidas y colores reales del documento del cliente (noviembre de 2026).
-   Cocinas y recámaras: fotos reales de trabajos del taller; se cotizan a medida, sin precio publicado. */
+   Cocinas y recámaras: fotos reales de trabajos de la fábrica; se cotizan a medida, sin precio publicado. */
 window.CARDIAN = (function () {
   const brand = {
     name: 'Cardian Muebles',
@@ -14,9 +14,7 @@ window.CARDIAN = (function () {
 
   const categories = [
     { id: 'salas',     name: 'Salas',     plural: 'salas',     img: 'img/sala-africa.jpg',      desc: 'Modulares, escuadras y juegos 3-2-1 con reposet. Seis colores de tapiz.' },
-    { id: 'comedores', name: 'Comedores', plural: 'comedores', img: 'img/comedor-delta-8.jpg',  desc: 'Para 4, 6 y 8 personas en madera de pino, encino y vidrio templado.' },
-    { id: 'cocinas',   name: 'Cocinas',   plural: 'cocinas',   img: 'img/cocina-nocturna.jpg',  desc: 'Integrales a la medida de tu espacio. Se cotizan con tus medidas.' },
-    { id: 'recamaras', name: 'Recámaras', plural: 'recámaras', img: 'img/closet-led.jpg',       desc: 'Clósets y vestidores a medida, con o sin iluminación.' }
+    { id: 'comedores', name: 'Comedores', plural: 'comedores', img: 'img/comedor-delta-8.jpg',  desc: 'Para 4, 6 y 8 personas en madera de pino, encino y vidrio templado.' }
   ];
 
   // Colores de tapiz y acabados de madera. El hex es la muestra que se ve en la página.
@@ -142,99 +140,7 @@ window.CARDIAN = (function () {
       dims: { largo: 100, fondo: 100, alto: 76 }, bultos: 5, factor: 0.6,
       short: 'Para 4 personas, enchapado de encino, con pedestal y almacén.',
       desc: 'La versión de cuatro personas del Comedor Delta: mesa cuadrada enchapada de encino sobre pedestal con puertas y almacén.',
-      specs: [['Mesa', '1.00 × 1.00 m'], ['Personas', '4'], ['Material', 'Enchapado de encino'], ['Extra', 'Pedestal con puertas y almacén']] },
-
-    // ===== COCINAS (a medida, sin precio publicado) =====
-    { id: 'cocina-nocturna', cat: 'cocinas', name: 'Cocina Nocturna', type: 'Integral en U', quote: true, stock: 'medida',
-      imgs: ['img/cocina-nocturna.jpg'], featured: true, bultos: 8, factor: 1.6,
-      short: 'Nogal oscuro con cubierta de granito negro, vitrinas iluminadas y luz LED bajo alacenas.',
-      desc: 'Cocina integral en U a la medida de tu espacio. Módulos en laminado nogal oscuro, cubierta de granito negro, vitrinas con luz, nichos abiertos y tira LED bajo las alacenas.',
-      specs: [['Diseño', 'En U, a medida'], ['Cubierta', 'Granito negro'], ['Herrajes', 'Cierre suave'], ['Instalación', 'Incluida en CDMX y EdoMex']] },
-
-    { id: 'cocina-onix', cat: 'cocinas', name: 'Cocina Ónix Negra', type: 'Lineal con torre', quote: true, stock: 'medida',
-      imgs: ['img/cocina-onix.jpg'], featured: true, bultos: 7, factor: 1.5,
-      short: 'Negro mate con nichos de roble iluminados, torre para refrigerador y cubierta de piedra.',
-      desc: 'Cocina lineal en laminado negro mate con tiradores ocultos, nichos abiertos en roble con luz LED, torre para refrigerador y espacio para microondas.',
-      specs: [['Diseño', 'Lineal, a medida'], ['Cubierta', 'Piedra sinterizada'], ['Extra', 'Torre para refrigerador'], ['Instalación', 'Incluida en CDMX y EdoMex']] },
-
-    { id: 'cocina-bruma', cat: 'cocinas', name: 'Cocina Bruma', type: 'Integral en L', quote: true, stock: 'medida',
-      imgs: ['img/cocina-bruma.jpg'], bultos: 6, factor: 1.3,
-      short: 'Laminado brillo arena, cubierta de cuarzo y luz cálida bajo las alacenas.',
-      desc: 'Cocina integral en L con puertas de alto brillo, cubierta de cuarzo blanco y campana integrada.',
-      specs: [['Diseño', 'En L, a medida'], ['Cubierta', 'Cuarzo'], ['Instalación', 'Incluida en CDMX y EdoMex']] },
-
-    { id: 'cocina-nogal', cat: 'cocinas', name: 'Cocina Nogal', type: 'Lineal', quote: true, stock: 'medida',
-      imgs: ['img/cocina-nogal.jpg'], bultos: 5, factor: 1.3,
-      short: 'Alacenas completas, espacio para estufa y cubierta negra mate.',
-      desc: 'Cocina lineal con alacenas superiores, gabinetes inferiores, hueco para estufa y cubierta laminada negra.',
-      specs: [['Diseño', 'Lineal, a medida'], ['Cubierta', 'Laminado negro mate'], ['Instalación', 'Incluida en CDMX y EdoMex']] },
-
-    { id: 'cocina-ceniza', cat: 'cocinas', name: 'Cocina Ceniza', type: 'Integral en L', quote: true, stock: 'medida',
-      imgs: ['img/cocina-ceniza.jpg'], bultos: 7, factor: 1.5,
-      short: 'Roble gris de piso a techo con tira LED y torre de almacenamiento.',
-      desc: 'Cocina en L con módulos hasta el techo, torre de despensa y luz LED continua.',
-      specs: [['Diseño', 'En L, a medida'], ['Cubierta', 'Cuarzo gris'], ['Instalación', 'Incluida en CDMX y EdoMex']] },
-
-    { id: 'cocina-calacatta', cat: 'cocinas', name: 'Cocina Calacatta', type: 'Integral en L', quote: true, stock: 'medida',
-      imgs: ['img/cocina-calacatta.jpg'], bultos: 6, factor: 1.3,
-      short: 'Nogal con cubierta y muro en mármol Calacatta.',
-      desc: 'Cocina en L con gabinetes en laminado nogal y cubierta de mármol tipo Calacatta.',
-      specs: [['Diseño', 'En L, a medida'], ['Cubierta', 'Mármol Calacatta'], ['Instalación', 'Incluida en CDMX y EdoMex']] },
-
-    { id: 'cocina-chocolate', cat: 'cocinas', name: 'Cocina Chocolate', type: 'Integral en L', quote: true, stock: 'medida',
-      imgs: ['img/cocina-chocolate.jpg'], bultos: 5, factor: 1.2,
-      short: 'Laminado chocolate mate, jaladeras de aluminio y cubierta laminada.',
-      desc: 'Cocina en L con laminado chocolate mate, jaladeras tipo barra y cubierta laminada.',
-      specs: [['Diseño', 'En L, a medida'], ['Cubierta', 'Laminado'], ['Instalación', 'Incluida en CDMX y EdoMex']] },
-
-    { id: 'cocina-marquina', cat: 'cocinas', name: 'Cocina Marquina', type: 'Lineal con alacena', quote: true, stock: 'medida',
-      imgs: ['img/cocina-marquina.jpg'], bultos: 4, factor: 1.1,
-      short: 'Madera natural y negro, muro y cubierta en mármol Marquina.',
-      desc: 'Cocina lineal con torre para despensa, alacena sobre el refrigerador y cubierta en mármol tipo Marquina.',
-      specs: [['Diseño', 'Lineal, a medida'], ['Cubierta', 'Mármol Marquina'], ['Instalación', 'Incluida en CDMX y EdoMex']] },
-
-    { id: 'cocina-compacta', cat: 'cocinas', name: 'Cocina Compacta Negra', type: 'Módulo con tarja', quote: true, stock: 'medida',
-      imgs: ['img/cocina-compacta.jpg'], bultos: 3, factor: 0.8,
-      short: 'Gabinete con tarja, cajones y alacena superior. Para departamentos y oficinas.',
-      desc: 'Módulo de cocina con tarja de acero inoxidable, cubierta negra, cajones, puerta y alacena superior con repisa.',
-      specs: [['Diseño', 'Módulo, a medida'], ['Tarja', 'Acero inoxidable incluida'], ['Cubierta', 'Laminado negro']] },
-
-    // ===== RECÁMARAS (a medida, sin precio publicado) =====
-    { id: 'closet-roble', cat: 'recamaras', name: 'Vestidor Roble', type: 'Vestidor completo a medida', quote: true, stock: 'medida',
-      imgs: ['img/closet-roble.jpg', 'img/closet-roble-2.jpg'], featured: true, bultos: 9, factor: 1.6,
-      short: 'Vestidor de piso a techo en roble claro con luz LED, cajoneras y colgadores en tres muros.',
-      desc: 'Vestidor completo en tres muros con laminado roble claro, tira LED en cada cuerpo, cajoneras con cierre suave y colgadores a dos alturas.',
-      specs: [['Diseño', 'Tres muros, a medida'], ['Cajones', 'Cierre suave'], ['Iluminación', 'LED en cada cuerpo']] },
-
-    { id: 'closet-led', cat: 'recamaras', name: 'Clóset Lino', type: 'Tres cuerpos con luz LED', quote: true, stock: 'medida',
-      imgs: ['img/closet-led.jpg'], featured: true, bultos: 5, factor: 1.2,
-      short: 'Entrepaños, cajonera y colgador con tira LED vertical. A la medida de tu muro.',
-      desc: 'Clóset abierto de tres cuerpos en laminado roble natural: entrepaños, cajones, barra para colgar y tira LED.',
-      specs: [['Diseño', 'Tres cuerpos, a medida'], ['Cajones', 'Cierre suave'], ['Iluminación', 'LED cálida']] },
-
-    { id: 'closet-grafito', cat: 'recamaras', name: 'Vestidor Grafito', type: 'Vestidor abierto en L', quote: true, stock: 'medida',
-      imgs: ['img/closet-grafito.jpg'], bultos: 7, factor: 1.4,
-      short: 'Vestidor en gris grafito con zapatera, cajonera y colgadores dobles.',
-      desc: 'Vestidor abierto en L con laminado gris grafito: colgadores dobles, zapatera inclinada, cajonera y entrepaños.',
-      specs: [['Diseño', 'En L, a medida'], ['Zapatera', 'Inclinada'], ['Colgadores', 'Dobles']] },
-
-    { id: 'closet-tv', cat: 'recamaras', name: 'Clóset con centro de TV', type: 'Clóset con nicho para pantalla', quote: true, stock: 'medida',
-      imgs: ['img/closet-tv.jpg'], bultos: 7, factor: 1.4,
-      short: 'Clóset de muro completo con nicho iluminado para pantalla y cajoneras a los lados.',
-      desc: 'Clóset de muro a muro con nicho central para pantalla, luz LED, cajoneras y maletero superior.',
-      specs: [['Diseño', 'Muro completo, a medida'], ['Nicho', 'Para pantalla'], ['Iluminación', 'LED en nicho']] },
-
-    { id: 'closet-arena', cat: 'recamaras', name: 'Clóset Arena', type: 'Clóset cerrado de puertas', quote: true, stock: 'medida',
-      imgs: ['img/closet-arena.jpg'], bultos: 5, factor: 1.2,
-      short: 'Clóset cerrado en laminado arena con puertas abatibles, cajones y maletero superior.',
-      desc: 'Clóset de piso a techo con puertas abatibles, cajones al frente y maletero superior. Laminado arena con jaladeras de aluminio.',
-      specs: [['Diseño', 'Cerrado, a medida'], ['Maletero', 'Incluido']] },
-
-    { id: 'closet-negro', cat: 'recamaras', name: 'Clóset Negro Mate', type: 'Clóset cerrado con torre', quote: true, stock: 'medida',
-      imgs: ['img/closet-negro.jpg'], bultos: 5, factor: 1.2,
-      short: 'Negro mate con jaladeras largas, torre de cajones y maletero.',
-      desc: 'Clóset cerrado en laminado negro mate con puertas abatibles, torre de cajones central y maletero.',
-      specs: [['Diseño', 'Cerrado, a medida'], ['Torre', 'De cajones']] }
+      specs: [['Mesa', '1.00 × 1.00 m'], ['Personas', '4'], ['Material', 'Enchapado de encino'], ['Extra', 'Pedestal con puertas y almacén']] }
   ];
 
   // Tarifa base de envío por estado (pesos, factor 1.0 = sala seccional de 3 bultos) y tránsito en días hábiles.

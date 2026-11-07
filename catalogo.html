@@ -54,7 +54,7 @@
 <section class="cat-hero">
   <div class="bg" id="catBg" aria-hidden="true"></div>
   <div class="wrap">
-    <div><div class="eyebrow" style="color:var(--gold-bright)">Catálogo</div><h1 id="catTitle">Todo el catálogo</h1><p id="catDesc">Salas, cocinas, comedores y recámaras hechos en nuestro taller.</p></div>
+    <div><div class="eyebrow" style="color:var(--gold-bright)">Catálogo</div><h1 id="catTitle">Todo el catálogo</h1><p id="catDesc">Salas y comedores con precio directo, en el color que elijas.</p></div>
     <a class="b2b" href="/proyectos">¿Para un hotel u oficina? Cotiza por volumen →</a>
   </div>
 </section>
@@ -67,7 +67,7 @@
       <label><input type="checkbox" name="stock" value="inmediata"> Entrega inmediata</label>
       <label><input type="checkbox" name="stock" value="pedido"> Sobre pedido</label>
       <label><input type="checkbox" name="stock" value="medida"> A medida</label>
-      <div class="help">Entrega inmediata: ya está fabricado, sale del taller en 1 a 2 días.</div>
+      <div class="help">Entrega inmediata: ya está fabricado, sale de la fábrica en 1 a 2 días.</div>
     </div>
     <div><h4>Precio</h4>
       <label><input type="radio" name="price" value="" checked> Todos</label>
@@ -150,7 +150,7 @@
     let html;
     if (!list.length) html = `<div class="empty">No hay piezas con esa combinación. Quita un filtro o pídenos esa medida: la fabricamos.<br><br><a class="btn sm gold" href="${Cardian.wa('Hola, busco un mueble a medida')}" target="_blank" rel="noopener">Pedir una medida especial</a></div>`;
     else {
-      const banner = `<div class="medida-banner reveal"><div><h3>¿Ninguna medida te cuadra?</h3><p>Tenemos taller propio. Mándanos las medidas de tu espacio por WhatsApp y te decimos precio y tiempo de entrega el mismo día.</p></div><a class="btn gold sm" href="${Cardian.wa('Hola, quiero cotizar un mueble a medida')}" target="_blank" rel="noopener">Pedir una medida especial</a></div>`;
+      const banner = `<div class="medida-banner reveal"><div><h3>¿Ninguna medida te cuadra?</h3><p>Tenemos fábrica propia. Mándanos las medidas de tu espacio por WhatsApp y te decimos precio y tiempo de entrega el mismo día.</p></div><a class="btn gold sm" href="${Cardian.wa('Hola, quiero cotizar un mueble a medida')}" target="_blank" rel="noopener">Pedir una medida especial</a></div>`;
       const parts = list.map((p, i) => card(p, i)); if (parts.length > 6) parts.splice(6, 0, banner); else parts.push(banner); html = parts.join('');
     }
     $('#grid').innerHTML = html; Cardian.reveal();
