@@ -320,7 +320,7 @@
       <div class="lead-list">${lista.length ? lista.map(l => `<div class="lead" data-lead="${l.id}">
         <div><b>${esc(l.nombre || 'Sin nombre')}</b> · ${l.tel} ${badge(l.estado, ESTADO_L)} <span class="badge origen">${ORIGEN[l.origen] || l.origen}</span>
           <div class="meta">${l.producto ? `<span>Interés: ${esc(l.producto)}</span>` : ''}<span>${hace(l.creado)}</span>${admin() ? `<span>${l.vendedorId ? esc(nombreU(l.vendedorId)) : '<b style="color:var(--warn)">sin vendedor</b>'}</span>` : ''}${l.sucursal ? `<span>${esc(l.sucursal)}</span>` : ''}${l.notas.length ? `<span>${l.notas.length} nota${l.notas.length > 1 ? 's' : ''}</span>` : ''}${l.ventaFolio ? `<span>Venta ${l.ventaFolio}</span>` : ''}</div>
-          ${l.mensaje ? `<div class="note" style="margin-top:4px">«${esc(l.mensaje)}»</div>` : ''}</div>
+          ${l.mensaje ? `<div class="note" style="margin-top:4px">«${esc(l.mensaje)}»</div>` : ''}${l.ultimoMensaje && l.ultimoMensaje.texto !== l.mensaje ? `<div class="note" style="margin-top:2px">Último mensaje ${hace(l.ultimoMensaje.cuando)}: «${esc(l.ultimoMensaje.texto)}»</div>` : ''}</div>
         <div class="acts"><a class="btn wa sm" target="_blank" rel="noopener" href="${waLink(l.tel, saludoLead(l))}">WhatsApp</a></div></div>`).join('') : '<div class="empty">No hay leads con esos filtros.</div>'}</div>`,
       admin() ? 'Leads' : 'Mis leads', 'Contactos que piden informes: del sitio, de WhatsApp Business o de sucursal. Cada uno se asigna al azar a un vendedor.',
       `<button class="btn gold sm" id="nuevoLead">+ Nuevo lead</button>`);
@@ -449,6 +449,10 @@
           <div class="box"><h2>Mercado Pago</h2>
             ${a.mpConfigurado ? `<div class="aviso ok">Conectado${a.mpPrueba ? ' en <b>modo prueba</b> (token TEST)' : ' en producción'}. ${a.mpWebhook ? 'Webhook con firma configurada.' : '<b>Falta MP_WEBHOOK_SECRET</b>: los avisos de pago se aceptan sin firma.'}</div><p class="note">Los pagos del sitio se aplican solos cuando Mercado Pago avisa. Si un pago no aparece, sincroniza: trae los pagos de los últimos 30 días de la cuenta y los liga por folio.</p><button class="btn sm" id="sync">Sincronizar ahora</button>` : `<div class="aviso">No conectado. En Vercel → proyecto → Settings → Environment Variables agrega <span class="copy">MP_ACCESS_TOKEN</span> (y <span class="copy">MP_WEBHOOK_SECRET</span> con la clave que da Mercado Pago en Webhooks). Al redesplegar, aquí aparece conectado.</div>`}
             <div id="sueltos"></div>
+          </div>
+          <div class="box" style="margin-top:14px"><h2>WhatsApp automático</h2>
+            ${a.waConfigurado ? `<div class="aviso ok">Receptor listo${a.waFirma ? ' con firma de Meta' : ' (falta <b>WA_APP_SECRET</b> para validar la firma)'}. Cada mensaje nuevo al WhatsApp Business crea el lead y lo asigna solo.</div>` : `<div class="aviso">Aún no conectado. Mientras tanto, usa la captura rápida.</div>`}
+            <p class="note">URL para Meta o el proveedor: <span class="copy">${location.origin}/api/wa-webhook</span><br>Variables en Vercel: <span class="copy">WA_VERIFY_TOKEN</span> (una palabra que inventas y pegas también en Meta) y <span class="copy">WA_APP_SECRET</span> (clave secreta de la app de Meta).</p>
           </div>
           <div class="box" style="margin-top:14px"><h2>Datos del negocio</h2>
             <div class="field"><label>Nombre en tickets</label><input class="input" id="aNeg" value="${esc(a.negocio || 'Cardian Muebles')}"></div>

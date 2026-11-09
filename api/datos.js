@@ -22,7 +22,7 @@ module.exports = seguro(async (req, res) => {
     if (c === 'leads' || c === 'todo') out.leads = visiblesLeads(await store.get('leads', []), u);
     if (c === 'usuarios' || c === 'todo') out.usuarios = usuarios.map(x => esAdmin(u) ? A.publico(x) : { id: x.id, nombre: x.nombre, rol: x.rol, sucursal: x.sucursal, activo: x.activo });
     if (c === 'sucursales' || c === 'todo') out.sucursales = await store.get('sucursales', []);
-    if (c === 'ajustes' || c === 'todo') out.ajustes = { almacen: store.modo(), secretoDefault: A.secretoDefault, mpConfigurado: !!process.env.MP_ACCESS_TOKEN, mpPrueba: !!(process.env.MP_ACCESS_TOKEN || '').startsWith('TEST-'), mpWebhook: !!process.env.MP_WEBHOOK_SECRET, ...(await store.get('ajustes', {})) };
+    if (c === 'ajustes' || c === 'todo') out.ajustes = { almacen: store.modo(), secretoDefault: A.secretoDefault, mpConfigurado: !!process.env.MP_ACCESS_TOKEN, mpPrueba: !!(process.env.MP_ACCESS_TOKEN || '').startsWith('TEST-'), mpWebhook: !!process.env.MP_WEBHOOK_SECRET, waConfigurado: !!process.env.WA_VERIFY_TOKEN, waFirma: !!process.env.WA_APP_SECRET, ...(await store.get('ajustes', {})) };
     out.yo = A.publico(u);
     out.catalogo = { productos: M.D().products.map(p => ({ id: p.id, nombre: p.name, precio: p.price || 0, cat: p.cat, tapiz: p.tapiz || [] })), tapiz: M.D().TAPIZ, estados: M.D().states, estadosVenta: M.ESTADOS_VENTA, estadosLead: M.ESTADOS_LEAD, origenes: M.ORIGENES };
     return ok(res, out);
