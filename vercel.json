@@ -2,13 +2,37 @@
   "cleanUrls": true,
   "trailingSlash": false,
   "rewrites": [
-    { "source": "/salas", "destination": "/catalogo?c=salas" },
-    { "source": "/cocinas", "destination": "/catalogo?c=cocinas" },
-    { "source": "/comedores", "destination": "/catalogo?c=comedores" },
-    { "source": "/recamaras", "destination": "/catalogo?c=recamaras" },
-    { "source": "/producto/:id", "destination": "/producto?id=:id" }
+    {
+      "source": "/salas",
+      "destination": "/catalogo?c=salas"
+    },
+    {
+      "source": "/comedores",
+      "destination": "/catalogo?c=comedores"
+    },
+    {
+      "source": "/producto/:id",
+      "destination": "/producto?id=:id"
+    }
   ],
   "headers": [
-    { "source": "/(.*)", "headers": [ { "key": "X-Robots-Tag", "value": "noindex, nofollow" } ] }
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        }
+      ]
+    },
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        }
+      ]
+    }
   ]
 }

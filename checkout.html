@@ -171,12 +171,25 @@
       <div class="actions"><button type="button" class="btn ghost sm" id="back3">← Forma de pago</button><button type="button" class="btn gold" id="confirm">${o.pay === 'mp' ? 'Ir a pagar con Mercado Pago' : 'Confirmar pedido'}</button></div></div>`;
     $$('.edit').forEach(a => a.onclick = e => { e.preventDefault(); o.step = +a.dataset.go; save(); render(); });
     $('#back3').onclick = () => { o.step = 2; save(); render(); };
-    $('#confirm').onclick = () => {
-      const num = 'CM-' + String(Math.floor(100000 + Math.random() * 899999));
-      const done = { ...o, num, lines: lines.map(l => ({ id: l.id, name: l.p.name, qty: l.qty, unit: l.unit, tapiz: l.tapiz ? D.TAPIZ[l.tapiz].name : '', mech: l.mech || '' })), totals: calc(), when: new Date().toISOString() };
+    $('#confirm').onclick = async () => {
+      const btn = $('#confirm'); btn.disabled = true; btn.textContent = 'Guardando tu pedido…';
+      // El pedido se registra en el sistema de Cardian; el servidor recalcula el precio con la lista oficial.
+      let srv = null;
+      try {
+        const r = await fetch('/api/pedido', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
+          lineas: lines.map(l => ({ id: l.id, color: l.tapiz || undefined, qty: l.qty })),
+          cliente: { nombre: o.name, tel: o.phone, email: o.email }, pago: o.pay,
+          envio: o.delivery === 'store' ? { tipo: 'bodega' } : { tipo: 'domicilio', estado: o.state, direccion: [o.street, o.colonia, o.cp, o.city].filter(Boolean).join(', ') + (o.notes ? ' · ' + o.notes : '') + (o.floor !== 'pb' ? ' · sin elevador' : '') },
+          factura: o.invoice ? { razon: o.razon, rfc: o.rfc } : null }) });
+        const j = await r.json(); if (r.ok) srv = j; else C.toast(j.error || 'No se pudo registrar el pedido');
+      } catch (e) {}
+      // Si el sistema no responde (p. ej. base de datos sin conectar), el pedido sigue con un folio provisional para no frenar al cliente.
+      if (!srv) srv = { folio: 'CM-' + String(Math.floor(100000 + Math.random() * 899999)), k: null, provisional: true };
+      const done = { ...o, num: srv.folio, k: srv.k, mpUrl: srv.mpUrl || null, mpError: srv.mpError || null, lines: lines.map(l => ({ id: l.id, name: l.p.name, qty: l.qty, unit: l.unit, tapiz: l.tapiz ? D.TAPIZ[l.tapiz].name : '', mech: l.mech || '' })), totals: calc(), when: new Date().toISOString() };
       try { sessionStorage.setItem('cardian_done', JSON.stringify(done)); } catch (e) {}
       C.setCart([]); C.setOrder({});
-      location.href = '/gracias';
+      if (srv.mpUrl) { location.href = srv.mpUrl; return; }
+      location.href = srv.k ? '/gracias?f=' + srv.folio + '&k=' + srv.k : '/gracias';
     };
   }
   function render() { stepper(); summary(); [step1, step2, step3][o.step - 1](); }

@@ -124,6 +124,45 @@
     const out = $('#gateOut'); if (out && window.CardianGate) out.onclick = () => CardianGate.close();
     reveal();
   }
+  // ── Leads: antes de abrir WhatsApp se piden nombre y número; el contacto queda en el sistema
+  //    y se asigna al azar a un vendedor, cuyo WhatsApp es el que se abre.
+  let leadAbierto = false;
+  function leadModal(producto, texto) {
+    if (leadAbierto) return; leadAbierto = true;
+    const prev = (() => { try { return JSON.parse(localStorage.getItem('cardian_lead') || '{}'); } catch (e) { return {}; } })();
+    const m = document.createElement('div'); m.className = 'modal'; m.id = 'leadModal';
+    const lbl = 'display:block;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:6px';
+    m.innerHTML = `<form class="box" style="width:min(440px,100%)"><header><h2 style="font-size:18px">Te atendemos por WhatsApp</h2><button type="button" data-x aria-label="Cerrar">×</button></header>
+      <div class="bd"><p class="muted" style="font-size:14px;margin:0 0 14px">Dinos cómo te llamas y tu WhatsApp; te contesta un asesor con el precio directo${producto ? ' de ' + producto : ''}.</p>
+        <div style="margin-bottom:10px"><label for="ldN" style="${lbl}">Nombre</label><input class="input" id="ldN" autocomplete="name" value="${(prev.nombre || '').replace(/"/g, '&quot;')}" required></div>
+        <div style="margin-bottom:14px"><label for="ldT" style="${lbl}">WhatsApp (10 dígitos)</label><input class="input" id="ldT" inputmode="tel" autocomplete="tel" value="${prev.tel || ''}" required></div>
+        <button class="btn primary" type="submit" style="width:100%;background:var(--wa);border-color:var(--wa);color:#fff">Abrir WhatsApp</button>
+        <p class="muted" style="font-size:12px;margin:12px 0 0;text-align:center">Solo usamos tus datos para atender tu solicitud.</p></div></form>`;
+    document.body.appendChild(m);
+    const cerrar = () => { m.remove(); leadAbierto = false; };
+    m.addEventListener('click', e => { if (e.target === m || e.target.closest('[data-x]')) cerrar(); });
+    setTimeout(() => $('#ldN', m).focus(), 50);
+    $('form', m).onsubmit = async e => {
+      e.preventDefault();
+      const nombre = $('#ldN', m).value.trim(); let tel = $('#ldT', m).value.replace(/\D/g, '');
+      if (tel.length === 12 && tel.startsWith('52')) tel = tel.slice(2); if (tel.length === 13 && tel.startsWith('521')) tel = tel.slice(3);
+      if (nombre.length < 2) return toast('Escribe tu nombre');
+      if (tel.length !== 10) return toast('El WhatsApp debe tener 10 dígitos');
+      try { localStorage.setItem('cardian_lead', JSON.stringify({ nombre, tel })); } catch (x) {}
+      const btn = $('button[type=submit]', m); btn.disabled = true; btn.textContent = 'Un momento…';
+      let num = D.brand.wa;
+      try { const r = await fetch('/api/lead', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nombre, tel, producto, mensaje: texto }) }); const j = await r.json(); if (r.ok && j.wa) num = j.wa; } catch (x) {}
+      cerrar();
+      window.open('https://wa.me/' + num + '?text=' + encodeURIComponent('Hola, soy ' + nombre + '. ' + (texto || 'Quiero información.')), '_blank', 'noopener');
+    };
+  }
+  document.addEventListener('click', e => {
+    const a = e.target.closest('a[href*="wa.me/"]'); if (!a || a.dataset.directo !== undefined) return;
+    e.preventDefault();
+    const texto = decodeURIComponent((a.href.split('text=')[1] || '').replace(/\+/g, ' ')).replace(/^Hola,?\s*(Cardian Muebles,?\s*)?/i, '').trim();
+    const h1 = $('h1'); const producto = a.dataset.producto || (location.pathname.startsWith('/producto') && h1 ? h1.textContent.trim() : '');
+    leadModal(producto, texto);
+  });
   document.addEventListener('DOMContentLoaded', mount);
 
   window.Cardian = { $, $$, fmt, fmt2, byId, catOf, stockLabel, stockClass, unitPrice, card, zoneOf, shipping, getCart, setCart, cartCount, addToCart, cartLines, subtotal, getOrder, setOrder, toast, reveal, wa, WA_SVG, reduceMotion };
