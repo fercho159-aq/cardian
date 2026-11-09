@@ -6,8 +6,14 @@
 const fs = require('fs');
 const path = require('path');
 
-const URL_ = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL || '';
-const TOKEN = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN || '';
+// Acepta cualquier prefijo que ponga la integración de Vercel (KV_, STORAGE_, UPSTASH_REDIS_…):
+// busca la primera variable que termine en _REST_API_URL / _REST_URL y su token correspondiente.
+function variable(sufijos) {
+  for (const s of sufijos) for (const [k, v] of Object.entries(process.env)) if (v && k.endsWith(s) && !k.includes('READ_ONLY')) return v;
+  return '';
+}
+const URL_ = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL || variable(['_REST_API_URL', '_REDIS_REST_URL']);
+const TOKEN = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN || variable(['_REST_API_TOKEN', '_REDIS_REST_TOKEN']);
 const PREFIX = 'cardian:';
 const LOCAL = path.join(process.cwd(), '.data', 'kv.json');
 
