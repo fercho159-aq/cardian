@@ -42,4 +42,7 @@ function tel10(t) {
   return d.length === 10 ? d : '';
 }
 
-module.exports = { cuerpo, query, cookies, json, ok, error, id, ahora, tel10 };
+// Envoltura de un manejador: los errores salen como JSON 500 legible.
+function seguro(fn) { return async (req, res) => { try { await fn(req, res); } catch (e) { console.error(e); if (!res.headersSent) json(res, 500, { error: e.message || 'Error del servidor' }); } }; }
+
+module.exports = { cuerpo, query, cookies, json, ok, error, id, ahora, tel10, seguro };

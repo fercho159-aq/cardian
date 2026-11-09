@@ -2,9 +2,9 @@
 const store = require('./_lib/store');
 const M = require('./_lib/modelo');
 const A = require('./_lib/auth');
-const { query, ok, error } = require('./_lib/http');
+const { query, ok, error, seguro } = require('./_lib/http');
 
-module.exports = async (req, res) => {
+module.exports = seguro(async (req, res) => {
   const q = query(req);
   if (!q.f) return error(res, 400, 'Falta el folio');
   const u = q.k ? null : await A.usuarioActual(req);
@@ -16,4 +16,4 @@ module.exports = async (req, res) => {
   const ajustes = await store.get('ajustes', {});
   const { historial, ...resto } = v;
   return ok(res, { venta: { ...resto, pagado: M.pagado(v), saldo: M.saldo(v) }, vendedor: vend ? { nombre: vend.nombre, whatsapp: vend.whatsapp } : null, ajustes: { negocio: ajustes.negocio || 'Cardian Muebles', leyendaTicket: ajustes.leyendaTicket || '', waNegocio: ajustes.waNegocio || '' }, k: M.llaveTicket(v.folio) });
-};
+});

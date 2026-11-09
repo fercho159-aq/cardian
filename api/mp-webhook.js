@@ -1,9 +1,9 @@
 // Aviso de Mercado Pago cuando cambia un pago. Se valida la firma, se consulta el pago
 // directamente en MP (nunca se confía en el cuerpo del aviso) y se aplica a la venta.
 const MP = require('./_lib/mp');
-const { cuerpo, query, ok, error } = require('./_lib/http');
+const { cuerpo, query, ok, error, seguro } = require('./_lib/http');
 
-module.exports = async (req, res) => {
+module.exports = seguro(async (req, res) => {
   if (req.method === 'GET') return ok(res, { ok: true, configurado: MP.configurado() });
   if (req.method !== 'POST') return error(res, 405, 'Método no permitido');
   if (!MP.configurado()) return ok(res, { ignorado: 'sin token' });
@@ -17,4 +17,4 @@ module.exports = async (req, res) => {
     const v = await MP.aplicarPago(p);
     return ok(res, { ok: true, estado: p.status, folio: v ? v.folio : null });
   } catch (e) { return error(res, 500, e.message); }
-};
+});

@@ -1,9 +1,9 @@
 // Sesión del sistema: entrar, salir, quién soy y cambiar mi contraseña.
 const A = require('./_lib/auth');
 const store = require('./_lib/store');
-const { cuerpo, ok, error, ahora } = require('./_lib/http');
+const { cuerpo, ok, error, ahora, seguro } = require('./_lib/http');
 
-module.exports = async (req, res) => {
+module.exports = seguro(async (req, res) => {
   if (req.method === 'GET') {
     const u = await A.usuarioActual(req);
     return ok(res, { usuario: A.publico(u) });
@@ -29,4 +29,4 @@ module.exports = async (req, res) => {
     return ok(res, { ok: true });
   }
   return error(res, 400, 'Acción desconocida');
-};
+});

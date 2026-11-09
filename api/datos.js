@@ -4,14 +4,14 @@
 const A = require('./_lib/auth');
 const store = require('./_lib/store');
 const M = require('./_lib/modelo');
-const { cuerpo, query, ok, error, id, ahora, tel10 } = require('./_lib/http');
+const { cuerpo, query, ok, error, id, ahora, tel10, seguro } = require('./_lib/http');
 
 const esAdmin = u => u.rol === 'admin';
 const visiblesVentas = (lista, u) => esAdmin(u) ? lista : lista.filter(v => v.vendedorId === u.id);
 const visiblesLeads = (lista, u) => esAdmin(u) ? lista : lista.filter(l => l.vendedorId === u.id);
 const hist = (obj, quien, que) => { (obj.historial = obj.historial || []).push({ cuando: ahora(), quien, que }); };
 
-module.exports = async (req, res) => {
+module.exports = seguro(async (req, res) => {
   const u = await A.exigir(req, res); if (!u) return;
   const q = query(req); const c = q.c || 'todo';
 
@@ -165,4 +165,4 @@ module.exports = async (req, res) => {
     return ok(res, { ajustes: cur });
   }
   return error(res, 400, 'Colección desconocida');
-};
+});

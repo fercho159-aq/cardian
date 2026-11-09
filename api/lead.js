@@ -3,9 +3,9 @@
 const A = require('./_lib/auth');
 const store = require('./_lib/store');
 const M = require('./_lib/modelo');
-const { cuerpo, ok, error, tel10 } = require('./_lib/http');
+const { cuerpo, ok, error, tel10, seguro } = require('./_lib/http');
 
-module.exports = async (req, res) => {
+module.exports = seguro(async (req, res) => {
   if (req.method !== 'POST') return error(res, 405, 'Método no permitido');
   const b = await cuerpo(req);
   const tel = tel10(b.tel);
@@ -29,4 +29,4 @@ module.exports = async (req, res) => {
   const ajustes = await store.get('ajustes', {});
   const wa = (vend && vend.whatsapp) ? '52' + vend.whatsapp : (ajustes.waNegocio ? '52' + tel10(ajustes.waNegocio) : M.D().brand.wa);
   return ok(res, { id: lead.id, vendedor: vend ? vend.nombre.split(' ')[0] : null, wa });
-};
+});

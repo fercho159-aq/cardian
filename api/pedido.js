@@ -4,9 +4,9 @@ const store = require('./_lib/store');
 const A = require('./_lib/auth');
 const M = require('./_lib/modelo');
 const MP = require('./_lib/mp');
-const { cuerpo, ok, error, tel10 } = require('./_lib/http');
+const { cuerpo, ok, error, tel10, seguro } = require('./_lib/http');
 
-module.exports = async (req, res) => {
+module.exports = seguro(async (req, res) => {
   if (req.method !== 'POST') return error(res, 405, 'Método no permitido');
   const b = await cuerpo(req);
   if (!Array.isArray(b.lineas) || !b.lineas.length) return error(res, 400, 'El carrito está vacío');
@@ -27,4 +27,4 @@ module.exports = async (req, res) => {
     catch (e) { out.mpError = 'No se pudo abrir Mercado Pago: ' + e.message; }
   }
   return ok(res, out);
-};
+});
