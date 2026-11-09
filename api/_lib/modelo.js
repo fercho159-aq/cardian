@@ -80,10 +80,18 @@ function nuevaVenta(datos, usuario) {
 }
 
 // Reparto aleatorio entre vendedores activos que reciben leads (opcionalmente de una sucursal).
-function elegirVendedor(usuarios, sucursal) {
+// «Al azar parejo»: entre los candidatos, solo concursan los que llevan menos leads asignados
+// en los últimos 7 días, y de esos se escoge uno al azar. Así nadie se queda sin leads por mala suerte.
+function elegirVendedor(usuarios, sucursal, leads) {
   let cand = usuarios.filter(u => u.activo && u.rol === 'vendedor' && u.recibeLeads !== false);
   if (sucursal) { const s = cand.filter(u => u.sucursal === sucursal); if (s.length) cand = s; }
   if (!cand.length) return null;
+  if (leads && leads.length) {
+    const desde = Date.now() - 7 * 864e5;
+    const carga = id => leads.filter(l => l.vendedorId === id && new Date(l.creado) >= desde).length;
+    const min = Math.min(...cand.map(u => carga(u.id)));
+    cand = cand.filter(u => carga(u.id) === min);
+  }
   return cand[Math.floor(Math.random() * cand.length)];
 }
 function nuevoLead(datos, vendedor, quien) {

@@ -90,7 +90,7 @@
     const leadsNuevos = S.leads.filter(l => l.estado === 'nuevo').length;
     const pendientes = S.ventas.filter(v => v.estado === 'pendiente').length;
     const menu = admin()
-      ? [['hoy', 'Hoy'], ['ventas', 'Ventas', pendientes], ['leads', 'Leads', leadsNuevos], ['vendedores', 'Vendedores'], ['ajustes', 'Ajustes']]
+      ? [['hoy', 'Hoy'], ['ventas', 'Ventas', pendientes], ['leads', 'Leads', leadsNuevos], ['vendedores', 'Usuarios'], ['ajustes', 'Ajustes']]
       : [['hoy', 'Hoy'], ['leads', 'Mis leads', leadsNuevos], ['ventas', 'Mis ventas', pendientes], ['cuenta', 'Mi cuenta']];
     const r = ruta();
     $('#app').innerHTML = `<div class="shell">
@@ -128,17 +128,45 @@
         <div class="kpi"><small>Leads nuevos</small><b>${nuevos.length}</b><span>${sinRespuesta.length} sin respuesta</span></div>
       </div>
       ${admin() && sinVendedor.length ? `<div class="aviso" style="margin-top:16px">Hay ${sinVendedor.length} lead${sinVendedor.length > 1 ? 's' : ''} sin vendedor. <a href="#" id="repartir">Repartir ahora</a> o da de alta vendedores que reciban leads.</div>` : ''}
-      ${!admin() && !S.yo.whatsapp ? `<div class="aviso" style="margin-top:16px">Tu cuenta no tiene WhatsApp registrado: los clientes del sitio llegan al número general. Pídele al administrador que lo agregue.</div>` : ''}
+      ${rapidaHtml()}
+      ${!admin() && !S.yo.whatsapp && !compartido() ? `<div class="aviso" style="margin-top:16px">Tu cuenta no tiene WhatsApp registrado: los clientes del sitio llegan al número general. Pídele al administrador que lo agregue.</div>` : ''}
       <div class="two" style="margin-top:16px">
         <div class="box"><h2>Qué hacer hoy</h2>${tareas.length ? `<ul class="lead-list" style="list-style:none;padding:0;margin:0">${tareas.join('')}</ul>` : '<div class="empty">Todo al día. No hay leads nuevos ni pedidos sin pago.</div>'}</div>
         <div class="box"><h2>Últimas ventas</h2>${S.ventas.length ? `<table class="table"><tbody>${S.ventas.slice(0, 8).map(v => `<tr class="row" data-venta="${v.folio}"><td><b>${v.folio}</b><small>${esc(v.cliente.nombre)}</small></td><td>${badge(v.estado)}</td><td class="num">${fmt(v.total)}</td></tr>`).join('')}</tbody></table>` : '<div class="empty">Aún no hay ventas.</div>'}</div>
       </div>`, `Hola, ${esc(S.yo.nombre.split(' ')[0])}`, new Date().toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' }),
-      `<button class="btn gold sm" id="nuevaVenta">+ Nueva venta</button><button class="btn sm" id="nuevoLead">+ Nuevo lead</button>`);
+      `${'Notification' in window && Notification.permission === 'default' ? '<button class="btn sm" id="avisos">🔔 Activar avisos</button>' : ''}<button class="btn gold sm" id="nuevaVenta">+ Nueva venta</button><button class="btn sm" id="nuevoLead">+ Nuevo lead</button>`);
     enlazarComunes();
+    const av = $('#avisos'); if (av) av.onclick = async () => { const p = await Notification.requestPermission(); toast(p === 'granted' ? 'Listo: te avisaremos cuando te llegue un lead' : 'No se activaron los avisos'); render(); };
     const rp = $('#repartir'); if (rp) rp.onclick = async e => { e.preventDefault(); const r = await api('/api/datos?c=leads', { accion: 'repartir' }); toast(r.asignados + ' leads asignados'); await cargar(); render(); };
   }
   const saludoLead = l => `Hola ${esc((l.nombre || '').split(' ')[0])}, soy ${S.yo.nombre.split(' ')[0]} de Cardian Muebles. Vi que pediste informes${l.producto ? ' de ' + l.producto : ''}. ¿Te paso el precio directo y los colores disponibles?`;
+  // Captura rápida: quien ve un chat nuevo en el WhatsApp Business pega el número aquí y el sistema
+  // lo asigna al azar parejo. Si el número ya es lead de alguien, avisa a quién le toca.
+  function rapidaHtml() {
+    return `<form class="box rapida" id="rapida" style="margin:16px 0;padding:14px 16px"><div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:baseline"><h2 style="margin:0 0 10px;font-size:14px">¿Llegó un chat nuevo al WhatsApp? Captúralo aquí</h2><span class="note">Pega el número tal como sale en WhatsApp; el sistema lo asigna solo.</span></div>
+      <div style="display:grid;grid-template-columns:1.1fr 1fr 1fr auto;gap:8px" class="rapida-g">
+        <input class="input" id="rT" inputmode="tel" placeholder="Número (+52 1 55…)" autocomplete="off">
+        <input class="input" id="rN" placeholder="Nombre" autocomplete="off">
+        <input class="input" id="rP" placeholder="¿Qué busca?" list="prodsR" autocomplete="off"><datalist id="prodsR">${S.catalogo.productos.map(p => `<option value="${esc(p.nombre)}">`).join('')}</datalist>
+        <button class="btn gold sm" type="submit">Agregar y asignar</button>
+      </div>${!admin() ? `<label class="chk" style="margin-top:8px"><input type="checkbox" id="rM"> Es un cliente que yo traje (me lo quedo)</label>` : ''}<div id="rRes" class="note" style="margin-top:8px"></div></form>`;
+  }
+  function enlazarRapida() {
+    const f = $('#rapida'); if (!f) return;
+    f.onsubmit = async e => {
+      e.preventDefault();
+      const tel = $('#rT').value.replace(/\D/g, '');
+      if (tel.length < 10) return toast('Pega el número completo');
+      try {
+        const r = await api('/api/datos?c=leads', { accion: 'crear', tel: $('#rT').value, nombre: $('#rN').value, producto: $('#rP').value, origen: 'whatsapp', mio: $('#rM') ? $('#rM').checked : false });
+        const quien = r.lead.vendedorId ? nombreU(r.lead.vendedorId) : null;
+        await cargar(); render();
+        const res = $('#rRes'); if (res) res.innerHTML = quien ? `<b style="color:var(--ok)">Listo:</b> ${esc(r.lead.nombre || r.lead.tel)} quedó asignado a <b>${esc(quien)}</b>. Ponle la etiqueta «${esc(quien.split(' ')[0])}» en WhatsApp Business.` : `<b style="color:var(--warn)">Guardado sin vendedor:</b> no hay vendedores activos que reciban leads.`;
+      } catch (x) { const res = $('#rRes'); if (res) res.innerHTML = `<b style="color:var(--warn)">${esc(x.message)}</b>`; else toast(x.message); }
+    };
+  }
   function enlazarComunes() {
+    enlazarRapida();
     $$('[data-venta]').forEach(el => el.onclick = e => { if (e.target.closest('a,button')) return; detalleVenta(el.dataset.venta); });
     $$('[data-lead]').forEach(el => el.onclick = e => { if (e.target.closest('a,button')) return; detalleLead(el.dataset.lead); });
     const nv = $('#nuevaVenta'); if (nv) nv.onclick = () => formVenta();
@@ -281,6 +309,7 @@
       && (!f.q || (l.nombre + ' ' + l.tel + ' ' + l.producto + ' ' + l.mensaje).toLowerCase().includes(f.q.toLowerCase())));
     const sinV = S.leads.filter(l => !l.vendedorId && !['compro', 'no-compro'].includes(l.estado)).length;
     shell(`
+      ${rapidaHtml()}
       <div class="filters">
         <input class="input buscar" id="fq" placeholder="Buscar nombre, teléfono, producto…" value="${esc(f.q)}">
         <div class="sel-estado">${[['', 'Todos'], ...Object.entries(ESTADO_L)].map(([k, t]) => `<button type="button" data-fe="${k}" class="${f.estado === k ? 'on' : ''}">${t}${k ? ` (${S.leads.filter(l => l.estado === k).length})` : ''}</button>`).join('')}</div>
@@ -311,11 +340,11 @@
         <div class="field"><label>¿Qué le interesa?</label><input class="input" id="lP" list="prods" placeholder="Sala Tokio, comedor…"><datalist id="prods">${S.catalogo.productos.map(p => `<option value="${esc(p.nombre)}">`).join('')}</datalist></div>
         <div class="field"><label>Origen</label><select class="input" id="lO">${opts(Object.entries(ORIGEN).filter(([k]) => k !== 'sitio' && k !== 'mercado-pago'), 'whatsapp')}</select></div>
         ${S.sucursales.length ? `<div class="field"><label>Sucursal</label><select class="input" id="lS">${opts(S.sucursales, S.yo.sucursal, 'Sin sucursal')}</select></div>` : ''}
-        ${admin() ? `<div class="field"><label>Asignar a</label><select class="input" id="lV">${opts([['', 'Al azar entre vendedores activos']].concat(S.usuarios.filter(u => u.activo).map(u => [u.id, u.nombre])), '')}</select></div>` : ''}
+        ${admin() ? `<div class="field"><label>Asignar a</label><select class="input" id="lV">${opts([['', 'Al azar parejo entre vendedores activos']].concat(S.usuarios.filter(u => u.activo).map(u => [u.id, u.nombre])), '')}</select></div>` : `<div class="field" style="display:flex;align-items:end"><label class="chk"><input type="checkbox" id="lMio"> Es un cliente que yo traje (me lo quedo)</label></div>`}
         <div class="field full"><label>Mensaje o nota</label><input class="input" id="lM" placeholder="Lo que preguntó"></div>
       </div>`, `<button class="btn primary sm" id="okL">Guardar lead</button>`);
     $('#okL').onclick = async () => {
-      try { const r = await api('/api/datos?c=leads', { accion: 'crear', nombre: $('#lN').value, tel: $('#lT').value, producto: $('#lP').value, origen: $('#lO').value, sucursal: $('#lS') ? $('#lS').value : '', vendedorId: $('#lV') ? $('#lV').value : undefined, mensaje: $('#lM').value }); m.cerrar(); toast('Lead guardado' + (r.lead.vendedorId ? ' · ' + nombreU(r.lead.vendedorId) : '')); await cargar(); render(); }
+      try { const r = await api('/api/datos?c=leads', { accion: 'crear', nombre: $('#lN').value, tel: $('#lT').value, producto: $('#lP').value, origen: $('#lO').value, sucursal: $('#lS') ? $('#lS').value : '', vendedorId: $('#lV') ? $('#lV').value : undefined, mio: $('#lMio') ? $('#lMio').checked : false, mensaje: $('#lM').value }); m.cerrar(); toast('Lead guardado' + (r.lead.vendedorId ? ' · ' + nombreU(r.lead.vendedorId) : '')); await cargar(); render(); }
       catch (e) { if (/ya está como lead/.test(e.message) && confirm(e.message + '\n¿Guardarlo de todos modos?')) { try { await api('/api/datos?c=leads', { accion: 'crear', nombre: $('#lN').value, tel: $('#lT').value, producto: $('#lP').value, origen: $('#lO').value, mensaje: $('#lM').value, forzar: true }); m.cerrar(); await cargar(); render(); } catch (x) { toast(x.message); } } else toast(e.message); }
     };
   }
@@ -352,43 +381,63 @@
   }
 
   // ───────── Vendedores y sucursales (admin) ─────────
+  const compartido = () => S.ajustes.numeroCompartido !== 'no';
   function vistaVendedores() {
-    const lista = S.usuarios.slice().sort((a, b) => (b.activo - a.activo) || a.nombre.localeCompare(b.nombre));
-    const cuenta = u => ({ leads: S.leads.filter(l => l.vendedorId === u.id).length, ventas: S.ventas.filter(v => v.vendedorId === u.id && v.estado !== 'cancelado').reduce((s, v) => s + v.total, 0) });
+    const lista = S.usuarios.slice().sort((a, b) => (b.activo - a.activo) || (a.rol === 'admin') - (b.rol === 'admin') || a.nombre.localeCompare(b.nombre));
+    const hace7 = Date.now() - 7 * 864e5;
+    const cuenta = u => ({ abiertos: S.leads.filter(l => l.vendedorId === u.id && !['compro', 'no-compro'].includes(l.estado)).length, semana: S.leads.filter(l => l.vendedorId === u.id && new Date(l.creado) >= hace7).length, ventas: S.ventas.filter(v => v.vendedorId === u.id && v.estado !== 'cancelado').reduce((s, v) => s + v.total, 0) });
     shell(`
       <div class="two">
-        <div class="table-wrap"><table class="table"><thead><tr><th>Nombre</th><th>Usuario</th><th>WhatsApp</th><th>Sucursal</th><th>Leads</th><th class="num">Ventas</th><th></th></tr></thead><tbody>
-          ${lista.map(u => { const c = cuenta(u); return `<tr><td><b>${esc(u.nombre)}</b><small>${u.rol === 'admin' ? 'Administrador' : 'Vendedor'}${!u.activo ? ' · desactivado' : u.rol === 'vendedor' && u.recibeLeads === false ? ' · no recibe leads' : ''}${u.cambiarClave ? ' · contraseña temporal' : ''}</small></td><td>${esc(u.usuario)}</td><td>${u.whatsapp || '<span style="color:var(--warn)">sin número</span>'}</td><td>${esc(u.sucursal || '—')}</td><td>${c.leads}</td><td class="num">${fmt(c.ventas)}</td><td><button class="btn sm" data-edit="${u.id}">Editar</button></td></tr>`; }).join('')}
+        <div class="table-wrap"><table class="table"><thead><tr><th>Nombre</th><th>Usuario</th><th>Sucursal</th><th>Leads abiertos</th><th>Leads 7 días</th><th class="num">Ventas</th><th></th></tr></thead><tbody>
+          ${lista.map(u => { const c = cuenta(u); return `<tr><td><b>${esc(u.nombre)}</b><small>${u.rol === 'admin' ? 'Administrador' : 'Vendedor'}${!u.activo ? ' · <b style="color:#b4322b">desactivado</b>' : u.rol === 'vendedor' && u.recibeLeads === false ? ' · no recibe leads' : ''}${u.cambiarClave ? ' · debe cambiar contraseña' : ''}${!compartido() && u.whatsapp ? ' · WA ' + u.whatsapp : ''}</small></td><td>${esc(u.usuario)}</td><td>${esc(u.sucursal || '—')}</td><td>${c.abiertos}</td><td>${c.semana}</td><td class="num">${fmt(c.ventas)}</td><td style="white-space:nowrap"><button class="btn sm" data-edit="${u.id}">Editar</button> <button class="btn sm" data-clave="${u.id}">Contraseña</button></td></tr>`; }).join('')}
         </tbody></table></div>
-        <div class="box"><h2>Sucursales</h2><p class="note" style="margin:0 0 10px">Para filtrar ventas y leads por sucursal. Una por línea.</p><textarea class="input" id="sucs" style="min-height:120px">${esc(S.sucursales.join('\n'))}</textarea><button class="btn sm" id="okSucs" style="margin-top:8px">Guardar sucursales</button>
-          <h2 style="margin-top:22px">Cómo se reparten los leads</h2><p class="note">Cada contacto nuevo (del sitio o dado de alta aquí) se asigna <b>al azar</b> entre los vendedores activos que «reciben leads». Si el lead trae sucursal y hay vendedores de esa sucursal, se reparte solo entre ellos. El vendedor ve el número, le escribe desde su WhatsApp Business y va marcando el estado.</p></div>
-      </div>`, 'Vendedores', 'Da de alta a tu equipo; cada quien entra con su usuario y ve solo sus leads y sus ventas.', `<button class="btn gold sm" id="nuevoU">+ Nuevo usuario</button>`);
+        <div class="box"><h2>Sucursales</h2><p class="note" style="margin:0 0 10px">Para filtrar ventas y leads por sucursal. Una por línea.</p><textarea class="input" id="sucs" style="min-height:110px">${esc(S.sucursales.join('\n'))}</textarea><button class="btn sm" id="okSucs" style="margin-top:8px">Guardar sucursales</button>
+          <h2 style="margin-top:22px">Cómo se reparten los leads</h2><p class="note">Cada contacto nuevo (del sitio o capturado aquí) se asigna <b>al azar parejo</b>: entre los vendedores activos que reciben leads, le toca a uno de los que llevan menos en la semana. Si el lead trae sucursal y hay vendedores de esa sucursal, se reparte entre ellos.${compartido() ? ' Todos contestan desde el mismo WhatsApp Business del negocio, firmando con su nombre.' : ''}</p></div>
+      </div>`, 'Usuarios', 'Agrega a tu equipo, asígnales contraseña y decide quién recibe leads. Cada quien ve solo sus leads y sus ventas.', `<button class="btn gold sm" id="nuevoU">+ Agregar usuario</button>`);
     $('#nuevoU').onclick = () => formUsuario();
     $$('[data-edit]').forEach(b => b.onclick = () => formUsuario(S.usuarios.find(u => u.id === b.dataset.edit)));
+    $$('[data-clave]').forEach(b => b.onclick = () => formClave(S.usuarios.find(u => u.id === b.dataset.clave)));
     $('#okSucs').onclick = async () => { try { await api('/api/datos?c=sucursales', { lista: $('#sucs').value.split('\n') }); toast('Sucursales guardadas'); await cargar(); render(); } catch (e) { toast(e.message); } };
   }
+  const datosAcceso = (nombre, usuario, clave, obligar) => `<div class="aviso ok">Pásale estos datos a ${esc(nombre)}:<br><br>Entrar en <span class="copy">${location.origin}/sistema</span><br>Usuario: <span class="copy">${esc(usuario)}</span> · Contraseña: <span class="copy">${esc(clave)}</span><br>${obligar ? 'Al entrar le pedirá crear su propia contraseña.' : 'Podrá seguir usando esta contraseña.'}</div>`;
   function formUsuario(u) {
-    const m = modal(u ? 'Editar a ' + esc(u.nombre) : 'Nuevo usuario', `
+    const m = modal(u ? 'Editar a ' + esc(u.nombre) : 'Agregar usuario', `
       <div class="fields">
-        <div class="field"><label>Nombre</label><input class="input" id="uN" value="${esc(u ? u.nombre : '')}"></div>
-        <div class="field"><label>Usuario para entrar</label><input class="input" id="uU" value="${esc(u ? u.usuario : '')}" ${u ? 'readonly' : 'placeholder="ej. maria"'}></div>
-        <div class="field"><label>WhatsApp (10 dígitos)</label><input class="input" id="uW" inputmode="tel" value="${u ? u.whatsapp || '' : ''}"><span class="note">A este número llegan los clientes del sitio que le toquen.</span></div>
+        <div class="field"><label>Nombre</label><input class="input" id="uN" value="${esc(u ? u.nombre : '')}" placeholder="Nombre y apellido"></div>
+        <div class="field"><label>Usuario para entrar</label><input class="input" id="uU" value="${esc(u ? u.usuario : '')}" ${u ? 'readonly' : 'placeholder="ej. maria (sin espacios)"'}></div>
+        <div class="field"><label>Rol</label><select class="input" id="uR" ${u && u.id === S.yo.id ? 'disabled' : ''}>${opts([['vendedor', 'Vendedor (ve solo lo suyo)'], ['admin', 'Administrador (ve todo)']], u ? u.rol : 'vendedor')}</select></div>
         <div class="field"><label>Sucursal</label>${S.sucursales.length ? `<select class="input" id="uS">${opts(S.sucursales, u ? u.sucursal : '', 'Sin sucursal')}</select>` : `<input class="input" id="uS" value="${esc(u ? u.sucursal : '')}" placeholder="Opcional">`}</div>
-        <div class="field"><label>Rol</label><select class="input" id="uR" ${u && u.id === S.yo.id ? 'disabled' : ''}>${opts([['vendedor', 'Vendedor'], ['admin', 'Administrador']], u ? u.rol : 'vendedor')}</select></div>
-        <div class="field" style="display:flex;flex-direction:column;justify-content:end;gap:8px"><label class="chk"><input type="checkbox" id="uL" ${!u || u.recibeLeads !== false ? 'checked' : ''}> Recibe leads del reparto</label>${u && u.id !== S.yo.id ? `<label class="chk"><input type="checkbox" id="uA" ${u.activo ? 'checked' : ''}> Cuenta activa</label>` : ''}</div>
-        ${!u ? `<div class="field full"><label>Contraseña inicial (opcional)</label><input class="input" id="uC" placeholder="Si la dejas vacía se genera una temporal"><span class="note">La primera vez que entre tendrá que cambiarla.</span></div>` : ''}
+        ${compartido() ? `<input type="hidden" id="uW" value="${u ? u.whatsapp || '' : ''}">` : `<div class="field"><label>WhatsApp propio (10 dígitos)</label><input class="input" id="uW" inputmode="tel" value="${u ? u.whatsapp || '' : ''}"><span class="note">A este número llegan los clientes del sitio que le toquen.</span></div>`}
+        <div class="field" style="display:flex;flex-direction:column;justify-content:end;gap:8px"><label class="chk"><input type="checkbox" id="uL" ${!u || u.recibeLeads !== false ? 'checked' : ''}> Recibe leads del reparto</label>${u && u.id !== S.yo.id ? `<label class="chk"><input type="checkbox" id="uA" ${u.activo ? 'checked' : ''}> Cuenta activa (si la quitas, ya no puede entrar)</label>` : ''}</div>
+        ${!u ? `<div class="field full"><label>Contraseña</label><input class="input" id="uC" placeholder="Escribe una (mínimo 8) o déjala vacía y se genera"><label class="chk" style="margin-top:8px"><input type="checkbox" id="uO" checked> Pedirle que la cambie la primera vez que entre</label></div>` : ''}
       </div>
       <div id="uTemp"></div>`,
-      `${u ? `<button class="btn sm" id="uClave">Nueva contraseña temporal</button>` : ''}<button class="btn primary sm" id="okU">Guardar</button>`);
+      `${u ? `<button class="btn sm" id="uClave">Asignar contraseña</button>` : ''}<button class="btn primary sm" id="okU">${u ? 'Guardar cambios' : 'Crear usuario'}</button>`);
     $('#okU').onclick = async () => {
       try {
         const datos = { nombre: $('#uN').value, whatsapp: $('#uW').value, sucursal: $('#uS').value, rol: $('#uR').value, recibeLeads: $('#uL').checked, activo: $('#uA') ? $('#uA').checked : undefined };
         if (u) { await api('/api/datos?c=usuarios', { accion: 'editar', id: u.id, ...datos }); m.cerrar(); toast('Guardado'); }
-        else { const r = await api('/api/datos?c=usuarios', { accion: 'crear', usuario: $('#uU').value, clave: $('#uC').value, ...datos }); $('#uTemp').innerHTML = `<div class="aviso ok">Usuario creado. Pásale estos datos a ${esc(r.usuario.nombre)}:<br><br>Entrar en <span class="copy">${location.origin}/sistema</span><br>Usuario: <span class="copy">${esc(r.usuario.usuario)}</span> · Contraseña temporal: <span class="copy">${esc(r.claveTemp)}</span></div>`; $('#okU').remove(); }
+        else { const r = await api('/api/datos?c=usuarios', { accion: 'crear', usuario: $('#uU').value, clave: $('#uC').value, obligar: $('#uO').checked, ...datos }); $('#uTemp').innerHTML = datosAcceso(r.usuario.nombre, r.usuario.usuario, r.claveTemp, $('#uO').checked); $('#okU').remove(); }
         await cargar(); if (u) render(); else vistaVendedores();
       } catch (e) { toast(e.message); }
     };
-    const uc = $('#uClave'); if (uc) uc.onclick = async () => { if (!confirm('Se genera una contraseña temporal nueva y la anterior deja de servir. ¿Continuar?')) return; try { const r = await api('/api/datos?c=usuarios', { accion: 'clave', id: u.id }); $('#uTemp').innerHTML = `<div class="aviso ok">Contraseña temporal: <span class="copy">${esc(r.claveTemp)}</span><br>Tendrá que cambiarla al entrar.</div>`; } catch (e) { toast(e.message); } };
+    const uc = $('#uClave'); if (uc) uc.onclick = () => formClave(u);
+  }
+  // El admin asigna o cambia la contraseña de cualquier usuario (la escribe él o se genera).
+  function formClave(u) {
+    const m = modal('Contraseña de ' + esc(u.nombre), `
+      <p class="note" style="margin:0 0 12px">Usuario <b>${esc(u.usuario)}</b>. La contraseña anterior deja de servir en cuanto guardes.</p>
+      <div class="field"><label>Nueva contraseña</label><div style="display:flex;gap:8px"><input class="input" id="kC" placeholder="Mínimo 8 caracteres"><button type="button" class="btn sm" id="kGen">Generar</button></div></div>
+      <label class="chk"><input type="checkbox" id="kO" ${u.id === S.yo.id ? '' : 'checked'}> Pedirle que la cambie al entrar</label>
+      <div id="kRes" style="margin-top:12px"></div>`,
+      `<button class="btn primary sm" id="kOk">Guardar contraseña</button>`);
+    $('#kGen').onclick = () => { $('#kC').value = 'Cardian' + Math.floor(1000 + Math.random() * 9000); };
+    $('#kOk').onclick = async () => {
+      const clave = $('#kC').value.trim();
+      if (clave && clave.length < 8) return toast('Mínimo 8 caracteres');
+      try { const r = await api('/api/datos?c=usuarios', { accion: 'clave', id: u.id, clave: clave || undefined, obligar: $('#kO').checked }); $('#kRes').innerHTML = datosAcceso(u.nombre, u.usuario, r.claveTemp, r.obligar); $('#kOk').remove(); await cargar(); }
+      catch (e) { toast(e.message); }
+    };
   }
 
   // ───────── Ajustes (admin) y Mi cuenta ─────────
@@ -403,7 +452,8 @@
           </div>
           <div class="box" style="margin-top:14px"><h2>Datos del negocio</h2>
             <div class="field"><label>Nombre en tickets</label><input class="input" id="aNeg" value="${esc(a.negocio || 'Cardian Muebles')}"></div>
-            <div class="field"><label>WhatsApp general (10 dígitos)</label><input class="input" id="aWa" value="${esc(a.waNegocio || '')}" placeholder="5570060233"><span class="note">Si un lead del sitio no tiene vendedor con WhatsApp, el cliente escribe a este número.</span></div>
+            <div class="field"><label>WhatsApp Business del negocio (10 dígitos)</label><input class="input" id="aWa" value="${esc(a.waNegocio || '')}" placeholder="5570060233"><span class="note">El número al que escriben los clientes desde el sitio.</span></div>
+            <div class="field"><label>¿Cómo atienden los vendedores?</label><select class="input" id="aComp">${opts([['si', 'Todos desde el mismo WhatsApp Business del negocio'], ['no', 'Cada vendedor con su propio número']], a.numeroCompartido === 'no' ? 'no' : 'si')}</select></div>
             <div class="field"><label>Leyenda del ticket</label><textarea class="input" id="aLey" style="min-height:80px">${esc(a.leyendaTicket || '')}</textarea></div>
             <button class="btn primary sm" id="okA">Guardar</button></div>
         </div>
@@ -415,21 +465,21 @@
             <h2 style="margin-top:18px">Mi contraseña</h2><button class="btn sm" id="clave">Cambiar mi contraseña</button>
             <h2 style="margin-top:18px">Cómo usar WhatsApp Business con el sistema</h2>
             <ol style="font-size:13.5px;padding-left:18px;line-height:1.6;margin:0">
-              <li>Los botones de WhatsApp del sitio piden nombre y número, crean el lead, lo asignan al azar y abren el chat con el vendedor que le tocó.</li>
-              <li>Si alguien escribe directo al WhatsApp Business del negocio, quien lo atienda lo da de alta en <b>Leads → Nuevo lead</b> (nombre, número y qué busca); el sistema lo asigna.</li>
-              <li>El vendedor abre su lead, pulsa <b>Escribirle por WhatsApp</b> (se abre su propia app) y al terminar marca el estado: contactado, sin respuesta, cotizado, compró o no compró.</li>
-              <li>Cuando compra, <b>Registrar venta</b> desde el lead: genera folio y ticket para mandárselo por WhatsApp.</li>
+              <li><b>Del sitio:</b> los botones de WhatsApp piden nombre y número; el lead entra solo al sistema, asignado al azar parejo, y el chat llega al WhatsApp Business del negocio.</li>
+              <li><b>Directo al WhatsApp:</b> quien vea un chat nuevo pega el número en «Captúralo aquí» (Hoy o Leads). El sistema dice a quién le tocó; ponle a ese chat la <b>etiqueta</b> con el nombre del vendedor en WhatsApp Business.</li>
+              <li>Cada vendedor usa el WhatsApp Business del negocio en su compu o celular como <b>dispositivo vinculado</b> (WhatsApp → Dispositivos vinculados) y ve en «Mis leads» los que le tocan; contesta firmando con su nombre.</li>
+              <li>Marca el estado de cada lead: contactado, sin respuesta, cotizado, compró o no compró. Si compra, <b>Registrar venta</b> genera folio y ticket.</li>
             </ol>
           </div>
         </div>
       </div>`, 'Ajustes', 'Conexiones, datos del negocio y cómo trabaja el equipo.');
-    $('#okA').onclick = async () => { try { await api('/api/datos?c=ajustes', { negocio: $('#aNeg').value, waNegocio: $('#aWa').value, leyendaTicket: $('#aLey').value }); toast('Guardado'); await cargar(); } catch (e) { toast(e.message); } };
+    $('#okA').onclick = async () => { try { await api('/api/datos?c=ajustes', { negocio: $('#aNeg').value, waNegocio: $('#aWa').value, numeroCompartido: $('#aComp').value, leyendaTicket: $('#aLey').value }); toast('Guardado'); await cargar(); } catch (e) { toast(e.message); } };
     $('#clave').onclick = () => pedirClave(false);
     const sy = $('#sync'); if (sy) sy.onclick = async () => { await sincronizarMP(); try { const r = await api('/api/mp', { accion: 'sincronizar', dias: 30 }); if (r.sueltos.length) $('#sueltos').innerHTML = `<h2 style="margin-top:14px">Pagos sin pedido (${r.sueltos.length})</h2><p class="note">Pagos aprobados en la cuenta que no traen folio (links manuales, cobros en tienda). Lígalos a su venta:</p>${r.sueltos.map(p => `<div class="pagos"><div><span>${fecha(p.cuando)} · ${esc(p.quien)}<br><small>${esc(p.metodo)} ${esc(p.descripcion)}</small></span><span><b>${fmt(p.monto)}</b> <input class="input" style="width:110px;padding:6px;display:inline-block" placeholder="CM-1001" data-lig="${p.id}"></span></div></div>`).join('')}`; $$('[data-lig]').forEach(i => i.onchange = async () => { try { await api('/api/mp', { accion: 'ligar', pagoId: i.dataset.lig, folio: i.value.trim().toUpperCase() }); toast('Pago ligado'); await cargar(); vistaAjustes(); } catch (e) { toast(e.message); } }); } catch (e) {} };
   }
   function vistaCuenta() {
     shell(`<div class="box" style="max-width:520px"><h2>${esc(S.yo.nombre)}</h2><p class="note">Usuario <b>${esc(S.yo.usuario)}</b>${S.yo.sucursal ? ' · ' + esc(S.yo.sucursal) : ''}${S.yo.whatsapp ? ' · WhatsApp ' + S.yo.whatsapp : ''}</p><button class="btn sm" id="clave" style="margin-top:10px">Cambiar mi contraseña</button>
-      <h2 style="margin-top:22px">Cómo trabajar</h2><ol style="font-size:13.5px;padding-left:18px;line-height:1.6;margin:0"><li>En <b>Mis leads</b> ves los contactos que te tocaron. Ábrelos y escríbeles con el botón de WhatsApp (se abre tu WhatsApp Business).</li><li>Marca el estado de cada uno: contactado, sin respuesta, cotizado, compró o no compró, y deja una nota.</li><li>Si compra, pulsa <b>Registrar venta</b>: el sistema genera el folio y el ticket para mandárselo.</li><li>En <b>Mis ventas</b> registras los pagos que vayan haciendo y ves el saldo.</li></ol></div>`, 'Mi cuenta');
+      <h2 style="margin-top:22px">Cómo trabajar</h2><ol style="font-size:13.5px;padding-left:18px;line-height:1.6;margin:0"><li>Abre el WhatsApp Business del negocio en tu compu o celular como <b>dispositivo vinculado</b> (en el teléfono del negocio: WhatsApp → Dispositivos vinculados → Vincular). Activa los avisos en <b>Hoy</b>.</li><li>En <b>Mis leads</b> ves los contactos que te tocaron. Escríbeles con el botón de WhatsApp y firma con tu nombre; si llega un chat nuevo, captúralo arriba.</li><li>Marca el estado de cada uno: contactado, sin respuesta, cotizado, compró o no compró, y deja una nota.</li><li>Si compra, pulsa <b>Registrar venta</b>: el sistema genera el folio y el ticket para mandárselo.</li><li>En <b>Mis ventas</b> registras los pagos que vayan haciendo y ves el saldo.</li></ol></div>`, 'Mi cuenta');
     $('#clave').onclick = () => pedirClave(false);
   }
 
@@ -445,6 +495,28 @@
   (async () => {
     try { const me = await api('/api/auth'); if (me.usuario) { await cargar(); render(); if (S.yo.cambiarClave) pedirClave(true); } else vistaLogin(); }
     catch (e) { vistaLogin(e.message); }
-    setInterval(async () => { if (S.yo && !$('#modal')) { try { await cargar(); render(); } catch (e) {} } }, 60000);
+    // Cada 30 s revisa si hay leads nuevos; avisa con notificación del navegador (si se permitió) y en el título.
+    let vistos = null;
+    const revisar = () => {
+      const mios = S.leads.filter(l => l.estado === 'nuevo' && (admin() ? true : l.vendedorId === S.yo.id));
+      document.title = (mios.length ? '(' + mios.length + ') ' : '') + 'Sistema · Cardian Muebles';
+      if (vistos) {
+        const nuevos = mios.filter(l => !vistos.has(l.id));
+        if (nuevos.length && 'Notification' in window && Notification.permission === 'granted') {
+          const l = nuevos[0];
+          const n = new Notification(nuevos.length > 1 ? nuevos.length + ' leads nuevos' : 'Lead nuevo: ' + (l.nombre || l.tel), { body: nuevos.length > 1 ? 'Ábrelos en el sistema' : (l.producto ? 'Le interesa ' + l.producto + ' · ' : '') + l.tel, icon: '/img/logo.png', tag: 'cardian-lead' });
+          n.onclick = () => { window.focus(); location.hash = '#/leads'; n.close(); };
+        }
+      }
+      vistos = new Set(mios.map(l => l.id));
+    };
+    if (S.yo) revisar();
+    setInterval(async () => {
+      if (!S.yo) return;
+      try { await cargar(); } catch (e) { return; }
+      revisar();
+      const escribiendo = document.activeElement && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName);
+      if (!$('#modal') && !escribiendo) render();
+    }, 30000);
   })();
 })();

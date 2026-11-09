@@ -81,7 +81,10 @@ module.exports = seguro(async (req, res) => {
       const repetido = leads.find(l => l.tel === tel && !['compro', 'no-compro'].includes(l.estado));
       if (repetido && !b.forzar) return error(res, 409, 'Ese número ya está como lead de ' + ((usuarios.find(x => x.id === repetido.vendedorId) || {}).nombre || 'nadie') + ' (' + repetido.estado + ')');
       let vend = null;
-      if (!esAdmin(u)) vend = u; else if (b.vendedorId) vend = usuarios.find(x => x.id === b.vendedorId) || null; else if (b.repartir !== false) vend = M.elegirVendedor(usuarios, b.sucursal);
+      // El admin puede escoger vendedor; un vendedor solo se lo queda si marca «lo atiendo yo». Si no, al azar parejo.
+      if (esAdmin(u) && b.vendedorId) vend = usuarios.find(x => x.id === b.vendedorId) || null;
+      else if (!esAdmin(u) && b.mio) vend = u;
+      else if (b.repartir !== false) vend = M.elegirVendedor(usuarios, b.sucursal, leads);
       const lead = M.nuevoLead({ ...b, tel, origen: b.origen || 'whatsapp' }, vend, u.nombre);
       await store.actualizar('leads', l => { l.unshift(lead); });
       return ok(res, { lead });
@@ -89,7 +92,7 @@ module.exports = seguro(async (req, res) => {
     if (ac === 'repartir') {
       if (!esAdmin(u)) return error(res, 403, 'Solo el administrador reparte leads');
       let n = 0;
-      await store.actualizar('leads', l => { l.forEach(x => { if (!x.vendedorId && !['compro', 'no-compro'].includes(x.estado)) { const v = M.elegirVendedor(usuarios, x.sucursal); if (v) { x.vendedorId = v.id; hist(x, u.nombre, 'Asignado a ' + v.nombre); n++; } } }); });
+      await store.actualizar('leads', l => { l.forEach(x => { if (!x.vendedorId && !['compro', 'no-compro'].includes(x.estado)) { const v = M.elegirVendedor(usuarios, x.sucursal, l); if (v) { x.vendedorId = v.id; hist(x, u.nombre, 'Asignado a ' + v.nombre); n++; } } }); });
       return ok(res, { asignados: n });
     }
     const leads = await store.get('leads', []);
@@ -125,8 +128,9 @@ module.exports = seguro(async (req, res) => {
       if (usuario.length < 3) return error(res, 400, 'El usuario debe tener al menos 3 letras (sin espacios ni acentos)');
       if (lista.some(x => x.usuario === usuario)) return error(res, 409, 'Ese usuario ya existe');
       if (!b.nombre) return error(res, 400, 'Escribe el nombre');
-      const claveTemp = b.clave && String(b.clave).length >= 8 ? String(b.clave) : 'Cardian' + Math.floor(1000 + Math.random() * 9000);
-      const nuevo = { id: id(8), nombre: String(b.nombre).slice(0, 80), usuario, rol: b.rol === 'admin' ? 'admin' : 'vendedor', sucursal: String(b.sucursal || '').slice(0, 60), whatsapp: tel10(b.whatsapp), activo: true, recibeLeads: b.recibeLeads !== false, cambiarClave: true, clave: A.hashear(claveTemp), creado: ahora() };
+      if (b.clave && String(b.clave).length < 8) return error(res, 400, 'La contraseña debe tener al menos 8 caracteres');
+      const claveTemp = b.clave ? String(b.clave) : 'Cardian' + Math.floor(1000 + Math.random() * 9000);
+      const nuevo = { id: id(8), nombre: String(b.nombre).slice(0, 80), usuario, rol: b.rol === 'admin' ? 'admin' : 'vendedor', sucursal: String(b.sucursal || '').slice(0, 60), whatsapp: tel10(b.whatsapp), activo: true, recibeLeads: b.recibeLeads !== false, cambiarClave: b.obligar !== false, clave: A.hashear(claveTemp), creado: ahora() };
       lista.push(nuevo); await store.set('usuarios', lista);
       return ok(res, { usuario: A.publico(nuevo), claveTemp });
     }
@@ -142,9 +146,11 @@ module.exports = seguro(async (req, res) => {
       return ok(res, { usuario: A.publico(x) });
     }
     if (ac === 'clave') {
-      const claveTemp = 'Cardian' + Math.floor(1000 + Math.random() * 9000);
-      x.clave = A.hashear(claveTemp); x.cambiarClave = true; await store.set('usuarios', lista);
-      return ok(res, { claveTemp });
+      // El admin escribe la contraseña que quiera (8+ caracteres) o se genera una al azar.
+      if (b.clave && String(b.clave).length < 8) return error(res, 400, 'La contraseña debe tener al menos 8 caracteres');
+      const claveTemp = b.clave ? String(b.clave) : 'Cardian' + Math.floor(1000 + Math.random() * 9000);
+      x.clave = A.hashear(claveTemp); x.cambiarClave = b.obligar !== false; await store.set('usuarios', lista);
+      return ok(res, { claveTemp, obligar: x.cambiarClave });
     }
     return error(res, 400, 'Acción desconocida');
   }
@@ -159,7 +165,7 @@ module.exports = seguro(async (req, res) => {
   if (c === 'ajustes') {
     if (!esAdmin(u)) return error(res, 403, 'Solo el administrador cambia ajustes');
     const cur = await store.get('ajustes', {});
-    const permitidos = ['negocio', 'leyendaTicket', 'waNegocio', 'msi'];
+    const permitidos = ['negocio', 'leyendaTicket', 'waNegocio', 'msi', 'numeroCompartido'];
     permitidos.forEach(k => { if (b[k] !== undefined) cur[k] = String(b[k]).slice(0, 300); });
     await store.set('ajustes', cur);
     return ok(res, { ajustes: cur });

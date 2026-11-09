@@ -21,12 +21,16 @@ module.exports = seguro(async (req, res) => {
     if (b.producto) previo.producto = String(b.producto).slice(0, 80);
     lead = previo;
   } else {
-    lead = M.nuevoLead({ ...b, tel, origen: 'sitio' }, M.elegirVendedor(usuarios), 'Sitio web');
+    lead = M.nuevoLead({ ...b, tel, origen: 'sitio' }, M.elegirVendedor(usuarios, '', leads), 'Sitio web');
     leads.unshift(lead);
   }
   await store.set('leads', leads);
   const vend = usuarios.find(x => x.id === lead.vendedorId);
   const ajustes = await store.get('ajustes', {});
-  const wa = (vend && vend.whatsapp) ? '52' + vend.whatsapp : (ajustes.waNegocio ? '52' + tel10(ajustes.waNegocio) : M.D().brand.wa);
+  // Con número compartido (lo normal en Cardian) el cliente siempre escribe al WhatsApp Business del negocio;
+  // el lead ya quedó asignado en el sistema y el vendedor le contesta desde ese mismo número.
+  const compartido = ajustes.numeroCompartido !== 'no';
+  const negocio = ajustes.waNegocio && tel10(ajustes.waNegocio) ? '52' + tel10(ajustes.waNegocio) : M.D().brand.wa;
+  const wa = (!compartido && vend && vend.whatsapp) ? '52' + vend.whatsapp : negocio;
   return ok(res, { id: lead.id, vendedor: vend ? vend.nombre.split(' ')[0] : null, wa });
 });

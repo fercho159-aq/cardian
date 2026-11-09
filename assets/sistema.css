@@ -131,3 +131,4 @@ body.sys{background:var(--bg);color:var(--fg);font-family:var(--font);margin:0;m
   .lead .acts{justify-content:flex-start}
 }
 @media print{.side,.top .acts,.menu-btn{display:none}.shell{grid-template-columns:1fr}}
+@media (max-width:860px){.rapida-g{grid-template-columns:1fr !important}}
