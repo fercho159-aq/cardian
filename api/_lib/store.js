@@ -49,5 +49,7 @@ async function actualizar(key, fn, def = []) {
 }
 // Modo de almacenamiento, para mostrarlo en Ajustes.
 function modo() { return remoto ? 'upstash' : 'local'; }
+// Token privado de la base, solo para derivar la llave de firma (secreto.js).
+function tokenBase() { return remoto ? TOKEN : ''; }
 
-module.exports = { get, set, actualizar, modo };
+module.exports = { get, set, actualizar, modo, tokenBase };

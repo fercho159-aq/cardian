@@ -61,7 +61,7 @@ function estadoPorPago(v) {
 // Llave pública del ticket: permite ver /ticket?f=CM-1001&k=… sin iniciar sesión.
 function llaveTicket(folio) {
   const crypto = require('crypto');
-  return crypto.createHmac('sha256', (process.env.CARDIAN_SECRET || 'dev-cardian-cambia-esta-llave') + '|ticket').update(folio).digest('base64url').slice(0, 12);
+  return crypto.createHmac('sha256', require('./secreto').SECRETO + '|ticket').update(folio).digest('base64url').slice(0, 12);
 }
 
 function nuevaVenta(datos, usuario) {

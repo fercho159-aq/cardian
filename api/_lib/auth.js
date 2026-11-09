@@ -1,11 +1,11 @@
 // Usuarios, contraseñas y sesión del sistema.
 // Sesión: cookie firmada (HMAC) con el id del usuario; dura 30 días. La llave de firma es
-// CARDIAN_SECRET en Vercel; si falta se usa una fija de desarrollo (y Ajustes lo avisa).
+// CARDIAN_SECRET o, si no existe, una derivada del token de la base (ver secreto.js).
 const crypto = require('crypto');
 const store = require('./store');
 const { cookies, id, ahora } = require('./http');
 
-const SECRET = process.env.CARDIAN_SECRET || 'dev-cardian-cambia-esta-llave';
+const { SECRETO: SECRET, esDesarrollo } = require('./secreto');
 const COOKIE = 'cardian_s';
 const DIAS = 30;
 
@@ -62,4 +62,4 @@ async function exigir(req, res, rol) {
   return u;
 }
 
-module.exports = { hashear, verificar, tokenDe, cookieSesion, usuarios, publico, usuarioActual, exigir, COOKIE, secretoDefault: !process.env.CARDIAN_SECRET };
+module.exports = { hashear, verificar, tokenDe, cookieSesion, usuarios, publico, usuarioActual, exigir, COOKIE, secretoDefault: esDesarrollo };
