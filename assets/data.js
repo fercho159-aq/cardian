@@ -4,8 +4,8 @@
 window.CARDIAN = (function () {
   const brand = {
     name: 'Cardian Muebles',
-    phone: '+52 1 55 7006 0233',
-    wa: '525570060233',
+    phone: '+52 1 33 4766 2784',
+    wa: '523347662784',
     email: 'atencion@cardianmuebles.com',
     site: 'cardianmuebles.com',
     ig: 'https://instagram.com/muebles.cardian',

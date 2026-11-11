@@ -456,7 +456,7 @@
           </div>
           <div class="box" style="margin-top:14px"><h2>Datos del negocio</h2>
             <div class="field"><label>Nombre en tickets</label><input class="input" id="aNeg" value="${esc(a.negocio || 'Cardian Muebles')}"></div>
-            <div class="field"><label>WhatsApp Business del negocio (10 dígitos)</label><input class="input" id="aWa" value="${esc(a.waNegocio || '')}" placeholder="5570060233"><span class="note">El número al que escriben los clientes desde el sitio.</span></div>
+            <div class="field"><label>WhatsApp Business del negocio (10 dígitos)</label><input class="input" id="aWa" value="${esc(a.waNegocio || '')}" placeholder="3347662784"><span class="note">El número al que escriben los clientes desde el sitio.</span></div>
             <div class="field"><label>¿Cómo atienden los vendedores?</label><select class="input" id="aComp">${opts([['si', 'Todos desde el mismo WhatsApp Business del negocio'], ['no', 'Cada vendedor con su propio número']], a.numeroCompartido === 'no' ? 'no' : 'si')}</select></div>
             <div class="field"><label>Leyenda del ticket</label><textarea class="input" id="aLey" style="min-height:80px">${esc(a.leyendaTicket || '')}</textarea></div>
             <button class="btn primary sm" id="okA">Guardar</button></div>
