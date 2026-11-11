@@ -46,7 +46,26 @@
 
   /* ---------- carrito ---------- */
   const CK = 'cardian_cart';
-  const getCart = () => { try { return JSON.parse(localStorage.getItem(CK) || '[]'); } catch (e) { return []; } };
+  // Limpia carritos guardados con productos o colores que ya no existen (versiones anteriores del catálogo).
+  function limpiarCarrito(c) {
+    const out = [];
+    for (const l of Array.isArray(c) ? c : []) {
+      const p = l && byId(l.id); if (!p) continue;
+      const tapiz = p.tapiz && p.tapiz.includes(l.tapiz) && D.TAPIZ[l.tapiz] ? l.tapiz : (p.tapiz ? (p.defaultColor && p.tapiz.includes(p.defaultColor) ? p.defaultColor : p.tapiz[0]) : null);
+      const mech = p.mech && p.mech.some(m => m.name === l.mech) ? l.mech : null;
+      const key = p.id + '|' + (tapiz || '') + '|' + (mech || '');
+      const qty = Math.max(1, Math.min(99, parseInt(l.qty, 10) || 1));
+      const prev = out.find(x => x.key === key);
+      if (prev) prev.qty = Math.min(99, prev.qty + qty); else out.push({ key, id: p.id, tapiz, mech, qty });
+    }
+    return out;
+  }
+  const getCart = () => {
+    let raw; try { raw = JSON.parse(localStorage.getItem(CK) || '[]'); } catch (e) { raw = []; }
+    const limpio = limpiarCarrito(raw);
+    if (JSON.stringify(limpio) !== JSON.stringify(raw)) { try { localStorage.setItem(CK, JSON.stringify(limpio)); } catch (e) {} }
+    return limpio;
+  };
   const setCart = c => { try { localStorage.setItem(CK, JSON.stringify(c)); } catch (e) {} renderCartCount(); };
   const cartCount = () => getCart().reduce((s, l) => s + l.qty, 0);
   function addToCart(id, opts, qty) {
