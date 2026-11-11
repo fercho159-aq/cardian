@@ -6,7 +6,9 @@ const M = require('./_lib/modelo');
 const MP = require('./_lib/mp');
 const { cuerpo, query, ok, error, seguro } = require('./_lib/http');
 
-module.exports = seguro(async (req, res) => {
+module.exports = seguro((req, res) => req.method === 'POST' ? store.conCandado('ventas', () => manejar(req, res)) : manejar(req, res));
+
+async function manejar(req, res) {
   const q = query(req);
   // Público: al regresar de MP (/gracias) se revisa el pago por folio + llave del ticket.
   if (req.method === 'GET' && q.f && q.k) {
@@ -67,4 +69,4 @@ module.exports = seguro(async (req, res) => {
     return ok(res, { venta });
   }
   return error(res, 400, 'Acción desconocida');
-});
+}

@@ -3,209 +3,200 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Cardian Muebles · Muy pronto</title>
-<meta name="description" content="Cardian Muebles: salas y comedores con precio directo. Muy pronto nuestra tienda en línea con envío a todo México.">
-<meta name="theme-color" content="#0d0c0a">
-<link rel="icon" href="img/logo.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap">
+<title>Cardian Muebles · Salas y comedores con precio directo</title>
+<meta name="description" content="Salas y comedores con precio directo, en el color que elijas. Envío gratis y armado en CDMX y Estado de México. Paga con Mercado Pago.">
+<meta property="og:title" content="Cardian Muebles · Salas y comedores con precio directo">
+<meta property="og:description" content="Envío gratis y armado en CDMX y Estado de México. Paga con Mercado Pago o pide por WhatsApp.">
+<meta property="og:image" content="https://cardianmuebles.com/img/sala-africa.jpg">
+<meta property="og:url" content="https://cardianmuebles.com/">
+<meta property="og:type" content="website">
+<link rel="icon" href="/img/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap">
+<link rel="stylesheet" href="/assets/site.css">
 <style>
-  :root{
-    --ink:#0d0c0a; --gold:#c6a15b; --gold-2:#e6c87d; --cream:#f3eadb; --muted:#b9ae99;
-    --wa:#25d366;
-  }
-  *{box-sizing:border-box;margin:0;padding:0}
-  html,body{height:100%}
-  body{
-    font-family:"Poppins","Segoe UI",system-ui,sans-serif;color:var(--cream);background:var(--ink);
-    -webkit-font-smoothing:antialiased;overflow-x:hidden
-  }
-
-  /* Fondo: la sala, recortada al centro para ocultar los textos impresos en la foto */
-  .bg{position:fixed;inset:0;overflow:hidden;z-index:0}
-  .bg::before{
-    content:"";position:absolute;inset:-4%;
-    background:url("sala.jpg") center 52% / cover no-repeat;
-    animation:kenburns 22s ease-in-out infinite alternate;
-  }
-  @media (max-aspect-ratio: 4/3){ .bg::before{background-size:auto 175%;background-position:center 50%} }
-  .bg::after{
-    content:"";position:absolute;inset:0;
-    background:
-      radial-gradient(ellipse at center, rgba(13,12,10,.35) 0%, rgba(13,12,10,.72) 60%, rgba(13,12,10,.92) 100%),
-      linear-gradient(180deg, rgba(13,12,10,.55) 0%, rgba(13,12,10,0) 30%, rgba(13,12,10,0) 70%, rgba(13,12,10,.75) 100%);
-  }
-  @keyframes kenburns{from{transform:scale(1)}to{transform:scale(1.07)}}
-
-  .wrap{
-    position:relative;z-index:1;min-height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;
-    padding:max(28px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(28px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
-    gap:22px
-  }
-
-  /* El letrero */
-  .sign{
-    position:relative;width:min(560px, 100%);text-align:center;
-    padding:38px 34px 32px;
-    background:rgba(13,12,10,.72);
-    -webkit-backdrop-filter:blur(10px) saturate(1.1);backdrop-filter:blur(10px) saturate(1.1);
-    border:1px solid rgba(198,161,91,.55);
-    box-shadow:0 30px 80px -30px rgba(0,0,0,.9), inset 0 0 0 6px rgba(13,12,10,.6), inset 0 0 0 7px rgba(198,161,91,.25);
-    animation:rise .9s cubic-bezier(.2,.7,.2,1) both
-  }
-  .sign::before,.sign::after{
-    content:"";position:absolute;width:22px;height:22px;border-color:var(--gold);border-style:solid
-  }
-  .sign::before{top:-1px;left:-1px;border-width:2px 0 0 2px}
-  .sign::after{bottom:-1px;right:-1px;border-width:0 2px 2px 0}
-  /* Cuerdas del letrero colgante */
-  .hang{position:absolute;top:-46px;left:0;right:0;height:46px;pointer-events:none}
-  .hang i{position:absolute;top:0;width:1px;height:46px;background:linear-gradient(rgba(198,161,91,0),var(--gold))}
-  .hang i:first-child{left:22%}
-  .hang i:last-child{right:22%}
-  .hang b{position:absolute;bottom:-4px;width:7px;height:7px;border-radius:50%;background:var(--gold)}
-  .hang b:nth-of-type(1){left:calc(22% - 3px)}
-  .hang b:nth-of-type(2){right:calc(22% - 3px)}
-
-  .logo{width:150px;margin:0 auto 10px}
-  .logo img{width:100%;height:auto;filter:drop-shadow(0 6px 18px rgba(0,0,0,.6))}
-
-  .badge{
-    display:inline-flex;align-items:center;gap:10px;margin-top:4px;
-    font-size:11px;letter-spacing:.32em;text-transform:uppercase;font-weight:500;
-    color:var(--ink);padding:7px 16px 7px 18px;
-    background:linear-gradient(110deg,var(--gold) 0%,var(--gold-2) 45%,var(--gold) 55%,var(--gold) 100%);
-    background-size:250% 100%;animation:shimmer 4s linear infinite
-  }
-  .badge svg{width:14px;height:14px}
-  @keyframes shimmer{from{background-position:120% 0}to{background-position:-120% 0}}
-
-  h1{font-size:clamp(24px,4.2vw,32px);font-weight:600;line-height:1.2;letter-spacing:-.01em;margin-top:18px;text-wrap:balance}
-  p.lead{font-size:14.5px;line-height:1.65;color:var(--muted);margin:12px auto 0;max-width:42ch;font-weight:300}
-
-  .progress{position:relative;height:2px;background:rgba(198,161,91,.18);margin:24px auto 0;width:72%;overflow:hidden}
-  .progress span{position:absolute;inset:0 auto 0 0;width:38%;background:linear-gradient(90deg,transparent,var(--gold-2),transparent);animation:slide 2.2s ease-in-out infinite}
-  @keyframes slide{from{transform:translateX(-100%)}to{transform:translateX(265%)}}
-
-  .cats{display:flex;justify-content:center;flex-wrap:wrap;gap:6px 14px;margin-top:20px;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold)}
-  .cats i{width:4px;height:4px;background:var(--gold);transform:rotate(45deg);align-self:center;opacity:.7}
-
-  .cta{display:flex;justify-content:center;flex-wrap:wrap;gap:10px;margin-top:26px}
-  .btn{
-    display:inline-flex;align-items:center;gap:9px;text-decoration:none;font-size:13.5px;font-weight:500;
-    padding:12px 20px;border-radius:999px;transition:transform .2s, background .2s, color .2s, box-shadow .2s
-  }
-  .btn svg{width:18px;height:18px;flex:none}
-  .btn.wa{background:var(--wa);color:#fff;animation:pulse 2.6s ease-out infinite}
-  .btn.mail{border:1px solid rgba(198,161,91,.6);color:var(--cream)}
-  .btn:hover{transform:translateY(-2px)}
-  .btn.mail:hover{background:var(--gold);color:var(--ink)}
-  .btn:focus-visible{outline:2px solid var(--gold-2);outline-offset:3px}
-  @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(37,211,102,.45)}60%{box-shadow:0 0 0 12px rgba(37,211,102,0)}}
-
-  .contact{margin-top:14px;font-size:12px;color:var(--muted);letter-spacing:.02em}
-  .contact span{white-space:nowrap}
-
-  footer{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:rgba(243,234,219,.6);text-align:center;animation:rise 1.2s .3s both}
-  footer span{white-space:nowrap}
-  footer i{display:inline-block;width:4px;height:4px;background:var(--gold);transform:rotate(45deg);margin:0 10px;vertical-align:2px}
-
-  /* Acceso del equipo, al pie del letrero */
-  .team{width:min(640px,100%);background:rgba(13,12,10,.72);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border:1px solid rgba(198,161,91,.35);padding:18px 22px;display:grid;gap:12px;animation:rise 1s .5s both}
-  .team-text{display:grid;gap:2px;text-align:center}
-  .team-eyebrow{font-size:10.5px;letter-spacing:.28em;text-transform:uppercase;color:var(--gold);font-weight:500}
-  .team h2{font-size:15px;font-weight:500;color:var(--cream)}
-  .team-fields{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end}
-  .team label{display:grid;gap:5px;text-align:left}
-  .team label span{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
-  .team input{width:100%;padding:11px 13px;border:1px solid rgba(198,161,91,.3);background:#0d0c0a;color:var(--cream);border-radius:4px;font:inherit;font-size:14px}
-  .team input::placeholder{color:#5e5648}
-  .team input:focus{outline:0;border-color:var(--gold-2);box-shadow:0 0 0 3px rgba(198,161,91,.2)}
-  .team .go{border:0;background:var(--gold);color:var(--ink);padding:12px 22px;font:inherit;font-weight:600;font-size:12.5px;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;border-radius:999px;transition:transform .2s,background .2s;height:43px}
-  .team .go:hover{transform:translateY(-2px);background:var(--gold-2)}
-  .team .go[disabled]{opacity:.6;transform:none}
-  .team .err{font-size:12.5px;color:#e07a7a;text-align:center}
-  @media (max-width:560px){.team-fields{grid-template-columns:1fr}.team .go{width:100%}}
-  @keyframes rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
-  @media (max-width:480px){
-    .sign{padding:30px 20px 26px}
-    .logo{width:120px}
-    .hang{display:none}
-  }
-  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+  .hero{position:relative;background:var(--ink);color:var(--ink-fg);overflow:hidden;min-height:560px;display:flex;align-items:center}
+  .hero .bg{position:absolute;inset:0;background:url("/img/sala-africa.jpg") center/cover no-repeat;animation:kenburns 18s ease-in-out infinite alternate}
+  .hero::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(13,12,10,.92) 0%,rgba(13,12,10,.75) 45%,rgba(13,12,10,.25) 100%)}
+  .hero .wrap{position:relative;z-index:1;padding-block:72px;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:32px;align-items:center}
+  .hero h1{font-size:clamp(32px,5vw,56px);font-weight:600;line-height:1.08;animation:rise .8s .1s both}
+  .hero h1 em{font-style:normal;color:var(--gold-bright)}
+  .hero p{font-size:16px;color:var(--ink-muted);max-width:48ch;margin-top:18px;font-weight:300;animation:rise .8s .25s both}
+  .hero .cta{display:flex;gap:12px;flex-wrap:wrap;margin-top:28px;animation:rise .8s .4s both}
+  .hero .eyebrow{animation:rise .8s both}
+  .hero-card{justify-self:end;background:rgba(13,12,10,.6);border:1px solid rgba(198,161,91,.5);backdrop-filter:blur(8px);padding:22px 24px;border-radius:8px;max-width:340px;animation:rise .9s .5s both;text-decoration:none;color:inherit}
+  .hero-card .pill{background:var(--gold);color:var(--ink)}
+  .hero-card h3{font-size:22px;margin-top:10px}
+  .hero-card p{font-size:13.5px;margin-top:6px;color:var(--ink-muted)}
+  .hero-card .price{font-size:26px;font-weight:600;margin-top:12px}
+  .hero-card .price small{font-size:13px;color:var(--ink-muted);font-weight:400;margin-left:6px}
+  .hero-card .msi{font-size:12.5px;color:var(--ink-muted)}
+  .hero-card .btn{margin-top:14px}
+  @media (max-width:860px){.hero .wrap{grid-template-columns:1fr}.hero-card{justify-self:start}}
+  .trust{background:var(--surface);border-bottom:1px solid var(--line)}
+  .trust .wrap{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;padding-block:18px}
+  .trust div{display:flex;gap:12px;align-items:center;font-size:13.5px}
+  .trust svg{width:26px;height:26px;color:var(--gold);flex:none}
+  .trust b{display:block;font-weight:500}
+  .trust span{color:var(--muted);font-size:12.5px}
+  @media (max-width:760px){.trust .wrap{grid-template-columns:1fr 1fr}}
+  .cats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+  .cat-card{position:relative;aspect-ratio:3/4;border-radius:var(--r);overflow:hidden;text-decoration:none;color:#fff;display:block;background:var(--ink)}
+  .cat-card img{width:100%;height:100%;object-fit:cover;transition:transform .8s ease}
+  .cat-card:hover img{transform:scale(1.06)}
+  .cat-card::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0) 40%,rgba(13,12,10,.9) 100%)}
+  .cat-card .t{position:absolute;left:18px;right:18px;bottom:18px;z-index:1}
+  .cat-card h3{font-size:22px}
+  .cat-card p{font-size:12.5px;color:var(--ink-muted);margin-top:4px}
+  .cat-card .from{font-size:12px;color:var(--gold-bright);letter-spacing:.1em;text-transform:uppercase;margin-top:8px;font-weight:500}
+  @media (max-width:760px){.cats{grid-template-columns:1fr 1fr}}
+  .taller{display:grid;grid-template-columns:1.1fr 1fr;gap:40px;align-items:center}
+  .taller .photo{aspect-ratio:4/3}
+  .taller h2{font-size:clamp(24px,3.2vw,34px)}
+  .taller p{color:var(--muted);margin-top:14px;max-width:52ch}
+  .taller ul{list-style:none;padding:0;margin:20px 0 0;display:grid;gap:10px}
+  .taller li{display:flex;gap:12px;align-items:flex-start;font-size:14px}
+  .taller li::before{content:"◆";color:var(--gold);font-size:9px;margin-top:6px}
+  @media (max-width:860px){.taller{grid-template-columns:1fr}}
+  .b2b .wrap{display:grid;grid-template-columns:1.3fr 1fr;gap:32px;align-items:center;padding-block:56px}
+  .b2b h2{font-size:clamp(24px,3.2vw,34px)}
+  .b2b p{color:var(--ink-muted);margin-top:12px;max-width:52ch}
+  .b2b .actions{justify-self:end;display:flex;flex-direction:column;gap:10px;align-items:flex-start}
+  .b2b .stats{display:flex;gap:28px;margin-top:22px;flex-wrap:wrap}
+  .b2b .stats b{display:block;font-size:24px;font-weight:600;color:var(--gold-bright)}
+  .b2b .stats span{font-size:12px;color:var(--ink-muted);letter-spacing:.08em;text-transform:uppercase}
+  @media (max-width:860px){.b2b .wrap{grid-template-columns:1fr}.b2b .actions{justify-self:start}}
 </style>
 </head>
 <body>
+<div id="site-header"></div>
+
+<section class="hero">
   <div class="bg" aria-hidden="true"></div>
-
   <div class="wrap">
-    <main class="sign">
-      <div class="hang" aria-hidden="true"><i></i><i></i><b></b><b></b></div>
-
-      <div class="logo"><img src="img/logo.png" alt="Cardian Muebles"></div>
-
-      <div class="badge">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
-        Muy pronto
-      </div>
-
-      <h1>Sitio en construcción</h1>
-      <p class="lead">Estamos preparando nuestra tienda en línea. Muy pronto podrás elegir tu sala o comedor, hechos en nuestra propia fábrica, con envío a todo México.</p>
-
-      <div class="progress" aria-hidden="true"><span></span></div>
-
-      <div class="cats" aria-label="Lo que fabricamos">
-        <span>Salas</span><i></i><span>Comedores</span><i></i><span>Precio directo</span>
-      </div>
-
+    <div>
+      <div class="eyebrow">Hecho en México · Fábrica propia</div>
+      <h1>Muebles hechos en nuestra fábrica, <em>entregados y armados</em> en tu casa.</h1>
+      <p>Salas y comedores con precio directo. Eliges tapiz y acabado en línea, pagas como prefieras y nosotros nos encargamos del resto.</p>
       <div class="cta">
-        <a class="btn wa" href="https://wa.me/525570060233?text=Hola%20Cardian%20Muebles%2C%20quiero%20informaci%C3%B3n" target="_blank" rel="noopener">
-          <svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16 3C9.4 3 4 8.3 4 14.9c0 2.3.7 4.5 1.9 6.4L4 29l7.9-2a12.3 12.3 0 0 0 4.1.7c6.6 0 12-5.3 12-11.9S22.6 3 16 3zm0 21.8c-1.3 0-2.6-.3-3.8-.9l-.3-.2-4.6 1.2 1.2-4.4-.2-.3a9.7 9.7 0 0 1-1.6-5.3c0-5.4 4.4-9.8 9.8-9.8s9.8 4.4 9.8 9.8-4.4 9.9-9.8 9.9zm5.4-7.3c-.3-.1-1.8-.9-2-1-.3-.1-.5-.1-.7.1-.2.3-.8 1-.9 1.2-.2.2-.3.2-.6.1-.3-.1-1.2-.5-2.4-1.5-.9-.8-1.5-1.8-1.6-2.1-.2-.3 0-.5.1-.6l.4-.5.3-.5c.1-.2 0-.4 0-.5l-.9-2.2c-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.5s1.1 2.9 1.2 3.1c.1.2 2.1 3.2 5.1 4.5.7.3 1.3.5 1.7.6.7.2 1.4.2 1.9.1.6-.1 1.8-.7 2-1.4.2-.7.2-1.3.2-1.4-.1-.2-.3-.3-.6-.4z"/></svg>
-          Escríbenos por WhatsApp
-        </a>
-        <a class="btn mail" href="mailto:atencion@cardianmuebles.com">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 6-10 7L2 6"/></svg>
-          Enviar correo
-        </a>
+        <a class="btn gold" href="/catalogo?c=salas">Ver salas desde $8,500</a>
+        <a class="btn light" href="/catalogo?c=comedores">Ver comedores</a>
       </div>
-
-      <div class="contact"><span>+52 1 55 7006 0233</span> · <span>atencion@cardianmuebles.com</span></div>
-    </main>
-
-    <form class="team" id="loginForm" novalidate aria-labelledby="loginTitle">
-      <div class="team-text">
-        <span class="team-eyebrow">Equipo Cardian</span>
-        <h2 id="loginTitle">Ingresa tu usuario y contraseña para navegar el sitio</h2>
-      </div>
-      <div class="team-fields">
-        <label><span>Usuario</span><input type="text" id="user" autocomplete="username" autocapitalize="none" placeholder="usuario" required></label>
-        <label><span>Contraseña</span><input type="password" id="pass" autocomplete="current-password" placeholder="••••••••" required></label>
-        <button type="submit" class="go" id="loginGo">Entrar</button>
-      </div>
-      <div class="err" id="loginErr" hidden>Usuario o contraseña incorrectos. Inténtalo de nuevo.</div>
-    </form>
-
-    <footer><span>© 2026 Cardian Muebles</span> <i></i> <span>Hecho en México</span></footer>
+    </div>
+    <a class="hero-card" href="/producto?id=sala-modular-africa">
+      <span class="pill">Precio directo</span>
+      <h3>Sala modular África</h3>
+      <p>Modular con reposet y consola central con portavasos. En seis colores de tapiz.</p>
+      <div class="price num">$25,000<small>MXN</small></div>
+      <div class="msi num">Paga a meses con Mercado Pago</div>
+      <span class="btn light sm">Ver la sala</span>
+    </a>
   </div>
+</section>
 
-  <script src="assets/gate.js"></script>
-  <script>
-    (function () {
-      const $ = s => document.querySelector(s);
-      const ir = new URLSearchParams(location.search).get('ir') || '/inicio';
-      const dest = ir.startsWith('/') && !ir.startsWith('//') ? ir : '/inicio';
-      if (CardianGate.isOpen()) { $('#loginTitle').textContent = 'Tu sesión sigue abierta'; $('#loginGo').textContent = 'Seguir navegando'; $('.team-fields').classList.add('open'); }
-      $('#loginForm').addEventListener('submit', async e => {
-        e.preventDefault();
-        if (CardianGate.isOpen() && !$('#pass').value) { location.href = dest; return; }
-        const b = $('#loginGo'); b.disabled = true; b.textContent = 'Verificando…'; $('#loginErr').hidden = true;
-        const ok = await CardianGate.check($('#user').value, $('#pass').value);
-        if (ok) { b.textContent = 'Entrando…'; location.href = dest; }
-        else { $('#loginErr').hidden = false; b.disabled = false; b.textContent = 'Entrar'; $('#pass').value = ''; $('#pass').focus(); }
-      });
-      if (new URLSearchParams(location.search).has('ir')) { $('#loginForm').scrollIntoView({ behavior: 'smooth', block: 'center' }); setTimeout(() => $('#user').focus(), 400); }
-    })();
-  </script>
+<div class="trust">
+  <div class="wrap">
+    <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h11v9H3zM14 10h4l3 3v3h-7z"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></svg><div><b>Envío gratis en CDMX y EdoMex</b><span>Y tarifa fija por zona al resto del país</span></div></div>
+    <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg><div><b>Paga a meses</b><span>Con tarjeta en Mercado Pago, o en OXXO</span></div></div>
+    <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg><div><b>Armado incluido</b><span>Lo llevamos, lo armamos y nos llevamos el empaque</span></div></div>
+    <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6z"/><path d="m9 12 2 2 4-4"/></svg><div><b>Garantía de 1 año</b><span>Directa de la fábrica, en estructura y mecanismos</span></div></div>
+  </div>
+</div>
+
+<section class="section">
+  <div class="wrap">
+    <div class="section-head reveal"><div><div class="eyebrow">Catálogo</div><h2>¿Qué espacio vas a amueblar?</h2></div></div>
+    <div class="cats" id="cats"></div>
+  </div>
+</section>
+
+<section class="section band-soft">
+  <div class="wrap">
+    <div class="section-head reveal"><div><div class="eyebrow">Precio directo de fábrica</div><h2>Nuestras salas, sin intermediarios</h2><p>Las fabricamos nosotros, así que el precio que ves es el de fábrica. Envío gratis en CDMX y Estado de México.</p></div><a class="more" href="/catalogo?c=salas">Ver todas las salas →</a></div>
+    <div class="cards" id="inmediata"></div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap taller">
+    <div class="photo reveal"><img src="/img/cocina-nocturna.jpg" alt="Cocina integral fabricada por Cardian Muebles"></div>
+    <div class="reveal" style="--d:120ms">
+      <div class="eyebrow">Fábrica propia</div>
+      <h2>Lo que compras aquí se fabrica aquí</h2>
+      <p>No revendemos muebles de importación. Cada sala, cocina o comedor sale de nuestras manos con número de serie, y podemos ajustar medidas o tapices sin intermediarios. Por eso damos garantía directa.</p>
+      <ul>
+        <li>Estructuras de pino y triplay de 15 mm, resortes en zig-zag y espuma de alta densidad.</li>
+        <li>Laminados y cubiertas de piedra, cuarzo u ónix a elección.</li>
+        <li>Proyectos para hoteles, oficinas y desarrollos: se cotizan por volumen en 24 horas.</li>
+      </ul>
+      <div style="margin-top:22px"><a class="btn ghost" href="/nosotros">Conoce la fábrica</a></div>
+    </div>
+  </div>
+</section>
+
+<section class="section band-soft">
+  <div class="wrap">
+    <div class="section-head reveal"><div><div class="eyebrow">Cómo funciona</div><h2>Comprar un mueble en línea sin sorpresas</h2></div><a class="more" href="/como-comprar">Ver el proceso completo →</a></div>
+    <div class="steps">
+      <div class="step reveal"><h3>Elige tu mueble</h3><p>Escoge modelo, tapiz y mecanismo. Revisa las medidas y calcula el envío a tu estado antes de pagar.</p></div>
+      <div class="step reveal" style="--d:100ms"><h3>Paga como prefieras</h3><p>Con Mercado Pago: tarjeta de crédito o débito, a meses con tarjetas participantes, OXXO o saldo.</p></div>
+      <div class="step reveal" style="--d:200ms"><h3>Lo recibes armado</h3><p>Te avisamos por WhatsApp el día de entrega. Lo llevamos, lo armamos en tu casa y nos llevamos el empaque.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <div class="section-head reveal"><div><div class="eyebrow">Más vendidos</div><h2>Los favoritos de nuestros clientes</h2></div><a class="more" href="/catalogo">Ver todo el catálogo →</a></div>
+    <div class="cards" id="featured"></div>
+  </div>
+</section>
+
+<section class="band b2b">
+  <div class="wrap">
+    <div class="reveal">
+      <div class="eyebrow">Proyectos</div>
+      <h2>¿Amueblas un hotel, una oficina o varios departamentos?</h2>
+      <p>Producimos por volumen con el mismo acabado de esta tienda. Precio por cantidad desde 10 piezas, entregas por etapas y factura CFDI.</p>
+      <div class="stats"><div><b>Desde 10</b><span>piezas</span></div><div><b>Por etapas</b><span>entregas</span></div><div><b>CFDI 4.0</b><span>factura</span></div></div>
+    </div>
+    <div class="actions reveal" style="--d:120ms">
+      <a class="btn gold" href="/proyectos">Cotizar un proyecto</a>
+      <a class="btn light" href="/proyectos#como">Ver cómo trabajamos</a>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap two">
+    <div class="reveal">
+      <div class="eyebrow">Preguntas frecuentes</div>
+      <h2 style="font-size:clamp(22px,3vw,30px)">Lo que más nos preguntan</h2>
+      <p class="muted" style="margin-top:10px">Si tu duda no está aquí, escríbenos por WhatsApp y te contestamos en minutos.</p>
+      <div style="margin-top:18px"><a class="btn ghost" href="/preguntas">Ver todas las preguntas</a></div>
+    </div>
+    <div class="faq reveal" style="--d:120ms">
+      <details open><summary>¿Cuánto tarda en llegar mi mueble?</summary><div class="a">Piezas de entrega inmediata: 3 a 5 días hábiles en CDMX y Estado de México, y de 5 a 20 en el resto del país según la zona. Piezas sobre pedido: suma los días de fabricación que ves en cada ficha.</div></details>
+      <details><summary>¿Puedo cambiar el tapiz o las medidas?</summary><div class="a">Sí. Cada sala tiene seis tapices a elegir y cada comedor sus acabados de madera. Para proyectos por volumen también adaptamos medidas.</div></details>
+      <details><summary>¿Qué pasa si no me cabe o llega dañado?</summary><div class="a">Antes de comprar te ayudamos a revisar accesos con fotos. Si llega con un golpe, lo reparamos o reponemos sin costo: todos los envíos van asegurados.</div></details>
+      <details><summary>¿Facturan?</summary><div class="a">Sí, factura CFDI 4.0 al momento de pagar. Pon tus datos fiscales en el resumen de compra.</div></details>
+      <details><summary>¿Puedo pagar en OXXO?</summary><div class="a">Sí. En Mercado Pago eliges pagar en OXXO; tu pedido se confirma en cuanto se acredita el pago.</div></details>
+    </div>
+  </div>
+</section>
+
+<div id="site-footer"></div>
+<script src="/assets/data.js"></script>
+<script src="/assets/site.js"></script>
+<script>
+(function(){
+  const { $, card, fmt } = window.Cardian; const D = window.CARDIAN;
+  const minBy = cat => Math.min(...D.products.filter(p => p.cat === cat).map(p => p.price));
+  $('#cats').innerHTML = D.categories.map((c, i) => `<a class="cat-card reveal" style="--d:${i*90}ms" href="/catalogo?c=${c.id}"><img src="/${c.img}" alt="${c.name}"><div class="t"><h3>${c.name}</h3><p>${c.desc}</p><div class="from">Desde ${fmt(minBy(c.id))}</div></div></a>`).join('');
+  $('#inmediata').innerHTML = D.products.filter(p => p.cat === 'salas' && p.price).sort((a, b) => a.price - b.price).slice(0, 8).map(card).join('');
+  $('#featured').innerHTML = D.products.filter(p => p.featured).slice(0, 8).map(card).join('');
+  Cardian.reveal();
+})();
+</script>
 </body>
 </html>

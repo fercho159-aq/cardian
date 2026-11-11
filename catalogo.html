@@ -1,15 +1,13 @@
 <!doctype html>
-<html lang="es" data-gated>
+<html lang="es">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Catálogo · Cardian Muebles</title>
-<meta name="robots" content="noindex, nofollow">
 <link rel="icon" href="/img/logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap">
 <link rel="stylesheet" href="/assets/site.css">
-<script src="/assets/gate.js"></script>
 <style>
   .cat-hero{background:var(--ink);color:var(--ink-fg);position:relative;overflow:hidden}
   .cat-hero .bg{position:absolute;inset:0;background:center/cover no-repeat;opacity:.45}
@@ -75,12 +73,6 @@
       <label><input type="radio" name="price" value="15000-30000"> $15,000 a $30,000</label>
       <label><input type="radio" name="price" value="30000-"> Más de $30,000</label>
     </div>
-    <div><h4>Mensualidad a 12 MSI</h4>
-      <label><input type="radio" name="msi" value="" checked> Cualquiera</label>
-      <label><input type="radio" name="msi" value="1000"> Hasta $1,000 al mes</label>
-      <label><input type="radio" name="msi" value="2000"> Hasta $2,000 al mes</label>
-      <label><input type="radio" name="msi" value="3000"> Hasta $3,000 al mes</label>
-    </div>
     <div id="fTapiz"><h4>Color y acabado</h4></div>
     <div id="fLargo"><h4>Largo total</h4>
       <label><input type="radio" name="largo" value="" checked> Cualquiera</label>
@@ -137,7 +129,7 @@
 
   function apply() {
     const stock = $$('input[name=stock]:checked').map(i => i.value);
-    const price = $('input[name=price]:checked').value, msi = $('input[name=msi]:checked').value;
+    const price = $('input[name=price]:checked').value, msi = '';
     const tap = $$('input[name=tapiz]:checked').map(i => i.value);
     const largo = ($('input[name=largo]:checked') || {}).value || '';
     const inRange = (v, r) => { if (!r) return true; const [a, b] = r.split('-'); return v >= +a && (b === '' || v <= +b); };

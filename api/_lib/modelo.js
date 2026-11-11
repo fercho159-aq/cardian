@@ -47,7 +47,7 @@ function calcular(lineasIn, envio) {
 }
 
 async function folioNuevo() {
-  const n = await store.actualizar('folio', cur => (cur || 1000) + 1, 1000);
+  const n = await store.incr('folio', 1000);
   return 'CM-' + n;
 }
 function pagado(v) { return (v.pagos || []).reduce((s, p) => s + (+p.monto || 0), 0); }

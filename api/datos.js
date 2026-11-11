@@ -11,7 +11,14 @@ const visiblesVentas = (lista, u) => esAdmin(u) ? lista : lista.filter(v => v.ve
 const visiblesLeads = (lista, u) => esAdmin(u) ? lista : lista.filter(l => l.vendedorId === u.id);
 const hist = (obj, quien, que) => { (obj.historial = obj.historial || []).push({ cuando: ahora(), quien, que }); };
 
+const COLECCIONES = ['ventas', 'leads', 'usuarios', 'sucursales', 'ajustes'];
 module.exports = seguro(async (req, res) => {
+  const col = query(req).c;
+  if (req.method === 'POST' && COLECCIONES.includes(col)) return store.conCandado(col, () => manejar(req, res));
+  return manejar(req, res);
+});
+
+async function manejar(req, res) {
   const u = await A.exigir(req, res); if (!u) return;
   const q = query(req); const c = q.c || 'todo';
 
@@ -23,6 +30,7 @@ module.exports = seguro(async (req, res) => {
     if (c === 'usuarios' || c === 'todo') out.usuarios = usuarios.map(x => esAdmin(u) ? A.publico(x) : { id: x.id, nombre: x.nombre, rol: x.rol, sucursal: x.sucursal, activo: x.activo });
     if (c === 'sucursales' || c === 'todo') out.sucursales = await store.get('sucursales', []);
     if (c === 'ajustes' || c === 'todo') out.ajustes = { almacen: store.modo(), secretoDefault: A.secretoDefault, mpConfigurado: !!process.env.MP_ACCESS_TOKEN, mpPrueba: !!(process.env.MP_ACCESS_TOKEN || '').startsWith('TEST-'), mpWebhook: !!process.env.MP_WEBHOOK_SECRET, waConfigurado: !!process.env.WA_VERIFY_TOKEN, waFirma: !!process.env.WA_APP_SECRET, ...(await store.get('ajustes', {})) };
+    if (esAdmin(u) && (c === 'ajustes' || c === 'todo')) out.accesos = (await store.get('accesos', [])).slice(0, 40);
     out.yo = A.publico(u);
     out.catalogo = { productos: M.D().products.map(p => ({ id: p.id, nombre: p.name, precio: p.price || 0, cat: p.cat, tapiz: p.tapiz || [] })), tapiz: M.D().TAPIZ, estados: M.D().states, estadosVenta: M.ESTADOS_VENTA, estadosLead: M.ESTADOS_LEAD, origenes: M.ORIGENES };
     return ok(res, out);
@@ -128,7 +136,7 @@ module.exports = seguro(async (req, res) => {
       if (usuario.length < 3) return error(res, 400, 'El usuario debe tener al menos 3 letras (sin espacios ni acentos)');
       if (lista.some(x => x.usuario === usuario)) return error(res, 409, 'Ese usuario ya existe');
       if (!b.nombre) return error(res, 400, 'Escribe el nombre');
-      if (b.clave && String(b.clave).length < 8) return error(res, 400, 'La contraseña debe tener al menos 8 caracteres');
+      if (b.clave && String(b.clave).length < 10) return error(res, 400, 'La contraseña debe tener al menos 10 caracteres');
       const claveTemp = b.clave ? String(b.clave) : 'Cardian' + Math.floor(1000 + Math.random() * 9000);
       const nuevo = { id: id(8), nombre: String(b.nombre).slice(0, 80), usuario, rol: b.rol === 'admin' ? 'admin' : 'vendedor', sucursal: String(b.sucursal || '').slice(0, 60), whatsapp: tel10(b.whatsapp), activo: true, recibeLeads: b.recibeLeads !== false, cambiarClave: b.obligar !== false, clave: A.hashear(claveTemp), creado: ahora() };
       lista.push(nuevo); await store.set('usuarios', lista);
@@ -147,7 +155,7 @@ module.exports = seguro(async (req, res) => {
     }
     if (ac === 'clave') {
       // El admin escribe la contraseña que quiera (8+ caracteres) o se genera una al azar.
-      if (b.clave && String(b.clave).length < 8) return error(res, 400, 'La contraseña debe tener al menos 8 caracteres');
+      if (b.clave && String(b.clave).length < 10) return error(res, 400, 'La contraseña debe tener al menos 10 caracteres');
       const claveTemp = b.clave ? String(b.clave) : 'Cardian' + Math.floor(1000 + Math.random() * 9000);
       x.clave = A.hashear(claveTemp); x.cambiarClave = b.obligar !== false; await store.set('usuarios', lista);
       return ok(res, { claveTemp, obligar: x.cambiarClave });
@@ -171,4 +179,4 @@ module.exports = seguro(async (req, res) => {
     return ok(res, { ajustes: cur });
   }
   return error(res, 400, 'Colección desconocida');
-});
+}

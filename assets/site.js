@@ -27,7 +27,7 @@
       <div class="ph"><img class="bgblur" src="/${p.imgs[0]}" alt="" aria-hidden="true" loading="lazy"><img src="/${p.imgs[0]}" alt="${p.name}" loading="lazy">${alt}<span class="tag ${stockClass(p)}">${p.stock === 'inmediata' ? 'Entrega inmediata' : p.stock === 'medida' ? 'A medida' : 'Hecho para ti'}</span></div>
       <div class="c"><div class="cat">${c.name}</div><h3>${p.name}</h3><div class="type">${p.type}</div>${sw ? `<div class="sw">${sw}</div>` : ''}
       <div class="price num">${p.quote ? 'Cotiza a tu medida' : fmt(p.price) + '<small>MXN</small>'}</div>
-      <div class="msi num">${p.quote ? 'Precio según tus medidas, sin compromiso' : '12 × ' + fmt2(p.price / 12) + ' sin intereses'}</div></div></a>`;
+      <div class="msi num">${p.quote ? 'Precio según tus medidas, sin compromiso' : 'Paga a meses con Mercado Pago'}</div></div></a>`;
   }
 
   /* ---------- envío ---------- */
@@ -71,17 +71,16 @@
 
   function header() {
     const path = location.pathname.replace(/\/$/, '') || '/';
-    const here = path + location.search; const cur = (h) => (here === h || (h.indexOf('?') < 0 && h !== '/inicio' && path.startsWith(h))) ? ' aria-current="page"' : '';
+    const here = path + location.search; const cur = (h) => (here === h || (h.indexOf('?') < 0 && h !== '/' && path.startsWith(h))) ? ' aria-current="page"' : '';
     const links = [['/catalogo?c=salas', 'Salas'], ['/catalogo?c=comedores', 'Comedores'], ['/envios', 'Envíos'], ['/proyectos', 'Proyectos']];
     const nav = links.map(([h, t]) => `<a href="${h}"${cur(h)}>${t}</a>`).join('');
     return `
-    <div class="preview-bar"><div class="wrap"><span>Vista previa · sitio en construcción · datos de muestra</span><button type="button" id="gateOut">Salir</button></div></div>
     <div class="promo" aria-label="Promociones"><div class="wrap"><div class="track">
-      <span>Envío gratis en CDMX y Estado de México</span><span>Hasta 12 meses sin intereses con Mercado Pago</span><span>5 % de descuento pagando por transferencia</span><span>Hecho en México · Garantía de 1 año</span>
-      <span aria-hidden="true">Envío gratis en CDMX y Estado de México</span><span aria-hidden="true">Hasta 12 meses sin intereses con Mercado Pago</span><span aria-hidden="true">5 % de descuento pagando por transferencia</span><span aria-hidden="true">Hecho en México · Garantía de 1 año</span>
+      <span>Envío gratis en CDMX y Estado de México</span><span>Paga a meses con tarjeta en Mercado Pago</span><span>Precio directo, sin intermediarios</span><span>Hecho en México · Garantía de 1 año</span>
+      <span aria-hidden="true">Envío gratis en CDMX y Estado de México</span><span aria-hidden="true">Paga a meses con tarjeta en Mercado Pago</span><span aria-hidden="true">Precio directo, sin intermediarios</span><span aria-hidden="true">Hecho en México · Garantía de 1 año</span>
     </div></div></div>
     <header class="site"><div class="wrap">
-      <a class="logo" href="/inicio" aria-label="Cardian Muebles, inicio"><img src="/img/logo.png" alt="Cardian Muebles"></a>
+      <a class="logo" href="/" aria-label="Cardian Muebles, inicio"><img src="/img/logo.png" alt="Cardian Muebles"></a>
       <nav class="main" aria-label="Categorías">${nav}</nav>
       <div class="hdr-actions">
         <a class="cart-btn" href="/carrito" aria-label="Carrito"><span>Carrito</span><b id="cartCount" hidden>0</b></a>
@@ -98,7 +97,7 @@
         <div><h4>Ayuda</h4><ul><li><a href="/como-comprar">Cómo comprar</a></li><li><a href="/envios">Envíos y entregas</a></li><li><a href="/pagos">Pagos y garantía</a></li><li><a href="/preguntas">Preguntas frecuentes</a></li><li><a href="/contacto">Contacto</a></li></ul></div>
         <div><h4>Empresa</h4><ul><li><a href="/nosotros">Nosotros y fábrica</a></li><li><a href="/proyectos">Hoteles y oficinas</a></li><li><a href="${D.brand.ig}" target="_blank" rel="noopener">Instagram</a></li><li><a href="${D.brand.fb}" target="_blank" rel="noopener">Facebook</a></li><li><a href="/privacidad">Aviso de privacidad</a></li><li><a href="/terminos">Términos de compra</a></li></ul></div>
       </div>
-      <div class="bottom"><span>© 2026 Cardian Muebles · Hecho en México · ${D.brand.email} · WhatsApp ${D.brand.phone}</span><div class="pay-logos"><span>Mercado Pago</span><span>SPEI</span><span>Efectivo</span><span>CFDI 4.0</span></div></div>
+      <div class="bottom"><span>© 2026 Cardian Muebles · Hecho en México · ${D.brand.email} · WhatsApp ${D.brand.phone}</span><div class="pay-logos"><span>Mercado Pago</span><span>Tarjeta</span><span>OXXO</span><span>CFDI 4.0</span></div></div>
     </div></footer>
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
     <a class="wa-float" id="waFloat" href="${wa()}" target="_blank" rel="noopener" aria-label="Escríbenos por WhatsApp"><span class="tip">¿Dudas? Escríbenos</span>${WA_SVG}</a>`;
@@ -121,7 +120,6 @@
     if (hdr) addEventListener('scroll', () => hdr.classList.toggle('scrolled', scrollY > 40), { passive: true });
     const bg = $('#burger'), mn = $('#mobileNav');
     if (bg) bg.onclick = () => { const o = mn.classList.toggle('open'); bg.setAttribute('aria-expanded', String(o)); };
-    const out = $('#gateOut'); if (out && window.CardianGate) out.onclick = () => CardianGate.close();
     reveal();
   }
   // ── Leads: antes de abrir WhatsApp se piden nombre y número; el contacto queda en el sistema
@@ -136,6 +134,7 @@
       <div class="bd"><p class="muted" style="font-size:14px;margin:0 0 14px">Dinos cómo te llamas y tu WhatsApp; te contesta un asesor con el precio directo${producto ? ' de ' + producto : ''}.</p>
         <div style="margin-bottom:10px"><label for="ldN" style="${lbl}">Nombre</label><input class="input" id="ldN" autocomplete="name" value="${(prev.nombre || '').replace(/"/g, '&quot;')}" required></div>
         <div style="margin-bottom:14px"><label for="ldT" style="${lbl}">WhatsApp (10 dígitos)</label><input class="input" id="ldT" inputmode="tel" autocomplete="tel" value="${prev.tel || ''}" required></div>
+        <input type="text" name="web" id="ldW" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0">
         <button class="btn primary" type="submit" style="width:100%;background:var(--wa);border-color:var(--wa);color:#fff">Abrir WhatsApp</button>
         <p class="muted" style="font-size:12px;margin:12px 0 0;text-align:center">Solo usamos tus datos para atender tu solicitud.</p></div></form>`;
     document.body.appendChild(m);
@@ -151,7 +150,7 @@
       try { localStorage.setItem('cardian_lead', JSON.stringify({ nombre, tel })); } catch (x) {}
       const btn = $('button[type=submit]', m); btn.disabled = true; btn.textContent = 'Un momento…';
       let num = D.brand.wa;
-      try { const r = await fetch('/api/lead', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nombre, tel, producto, mensaje: texto }) }); const j = await r.json(); if (r.ok && j.wa) num = j.wa; } catch (x) {}
+      try { const r = await fetch('/api/lead', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nombre, tel, producto, mensaje: texto, web: $('#ldW', m) ? $('#ldW', m).value : '' }) }); const j = await r.json(); if (r.ok && j.wa) num = j.wa; } catch (x) {}
       cerrar();
       window.open('https://wa.me/' + num + '?text=' + encodeURIComponent('Hola, soy ' + nombre + '. ' + (texto || 'Quiero información.')), '_blank', 'noopener');
     };

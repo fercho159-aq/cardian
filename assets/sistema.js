@@ -26,7 +26,7 @@
   }
   async function cargar() {
     const d = await api('/api/datos?c=todo');
-    Object.assign(S, { ventas: d.ventas, leads: d.leads, usuarios: d.usuarios, sucursales: d.sucursales, ajustes: d.ajustes || {}, catalogo: d.catalogo, yo: d.yo });
+    Object.assign(S, { ventas: d.ventas, leads: d.leads, usuarios: d.usuarios, sucursales: d.sucursales, ajustes: d.ajustes || {}, catalogo: d.catalogo, yo: d.yo, accesos: d.accesos || [] });
   }
   const admin = () => S.yo && S.yo.rol === 'admin';
   const nombreU = id => (S.usuarios.find(u => u.id === id) || {}).nombre || '—';
@@ -66,7 +66,7 @@
   }
   function pedirClave(forzado) {
     const m = modal(forzado ? 'Crea tu contraseña' : 'Cambiar mi contraseña', `
-      ${forzado ? '<p class="note" style="margin-bottom:12px">Esta cuenta tiene una contraseña temporal. Escribe una nueva de al menos 8 caracteres.</p>' : `<div class="field"><label>Contraseña actual</label><input class="input" id="c0" type="password"></div>`}
+      ${forzado ? '<p class="note" style="margin-bottom:12px">Esta cuenta tiene una contraseña temporal. Escribe una nueva de al menos 10 caracteres.</p>' : `<div class="field"><label>Contraseña actual</label><input class="input" id="c0" type="password"></div>`}
       <div class="field"><label>Nueva contraseña</label><input class="input" id="c1" type="password" autocomplete="new-password"></div>
       <div class="field"><label>Repítela</label><input class="input" id="c2" type="password" autocomplete="new-password"></div>`,
       `<button class="btn primary sm" id="okc">Guardar</button>`);
@@ -409,7 +409,7 @@
         <div class="field"><label>Sucursal</label>${S.sucursales.length ? `<select class="input" id="uS">${opts(S.sucursales, u ? u.sucursal : '', 'Sin sucursal')}</select>` : `<input class="input" id="uS" value="${esc(u ? u.sucursal : '')}" placeholder="Opcional">`}</div>
         ${compartido() ? `<input type="hidden" id="uW" value="${u ? u.whatsapp || '' : ''}">` : `<div class="field"><label>WhatsApp propio (10 dígitos)</label><input class="input" id="uW" inputmode="tel" value="${u ? u.whatsapp || '' : ''}"><span class="note">A este número llegan los clientes del sitio que le toquen.</span></div>`}
         <div class="field" style="display:flex;flex-direction:column;justify-content:end;gap:8px"><label class="chk"><input type="checkbox" id="uL" ${!u || u.recibeLeads !== false ? 'checked' : ''}> Recibe leads del reparto</label>${u && u.id !== S.yo.id ? `<label class="chk"><input type="checkbox" id="uA" ${u.activo ? 'checked' : ''}> Cuenta activa (si la quitas, ya no puede entrar)</label>` : ''}</div>
-        ${!u ? `<div class="field full"><label>Contraseña</label><input class="input" id="uC" placeholder="Escribe una (mínimo 8) o déjala vacía y se genera"><label class="chk" style="margin-top:8px"><input type="checkbox" id="uO" checked> Pedirle que la cambie la primera vez que entre</label></div>` : ''}
+        ${!u ? `<div class="field full"><label>Contraseña</label><input class="input" id="uC" placeholder="Escribe una (mínimo 10) o déjala vacía y se genera"><label class="chk" style="margin-top:8px"><input type="checkbox" id="uO" checked> Pedirle que la cambie la primera vez que entre</label></div>` : ''}
       </div>
       <div id="uTemp"></div>`,
       `${u ? `<button class="btn sm" id="uClave">Asignar contraseña</button>` : ''}<button class="btn primary sm" id="okU">${u ? 'Guardar cambios' : 'Crear usuario'}</button>`);
@@ -427,14 +427,14 @@
   function formClave(u) {
     const m = modal('Contraseña de ' + esc(u.nombre), `
       <p class="note" style="margin:0 0 12px">Usuario <b>${esc(u.usuario)}</b>. La contraseña anterior deja de servir en cuanto guardes.</p>
-      <div class="field"><label>Nueva contraseña</label><div style="display:flex;gap:8px"><input class="input" id="kC" placeholder="Mínimo 8 caracteres"><button type="button" class="btn sm" id="kGen">Generar</button></div></div>
+      <div class="field"><label>Nueva contraseña</label><div style="display:flex;gap:8px"><input class="input" id="kC" placeholder="Mínimo 10 caracteres"><button type="button" class="btn sm" id="kGen">Generar</button></div></div>
       <label class="chk"><input type="checkbox" id="kO" ${u.id === S.yo.id ? '' : 'checked'}> Pedirle que la cambie al entrar</label>
       <div id="kRes" style="margin-top:12px"></div>`,
       `<button class="btn primary sm" id="kOk">Guardar contraseña</button>`);
     $('#kGen').onclick = () => { $('#kC').value = 'Cardian' + Math.floor(1000 + Math.random() * 9000); };
     $('#kOk').onclick = async () => {
       const clave = $('#kC').value.trim();
-      if (clave && clave.length < 8) return toast('Mínimo 8 caracteres');
+      if (clave && clave.length < 10) return toast('Mínimo 10 caracteres');
       try { const r = await api('/api/datos?c=usuarios', { accion: 'clave', id: u.id, clave: clave || undefined, obligar: $('#kO').checked }); $('#kRes').innerHTML = datosAcceso(u.nombre, u.usuario, r.claveTemp, r.obligar); $('#kOk').remove(); await cargar(); }
       catch (e) { toast(e.message); }
     };
@@ -467,6 +467,7 @@
             ${a.almacen !== 'upstash' ? `<div class="aviso" style="margin-top:10px">En producción hace falta la base de datos: en Vercel → Storage → <b>Upstash for Redis</b> (plan gratis) → conectar al proyecto. Crea solas las variables KV_REST_API_URL y KV_REST_API_TOKEN.</div>` : ''}
             ${a.secretoDefault ? `<div class="aviso" style="margin-top:10px">Falta <span class="copy">CARDIAN_SECRET</span> en Vercel (cualquier texto largo al azar). Firma las sesiones y los enlaces de ticket.</div>` : ''}
             <h2 style="margin-top:18px">Mi contraseña</h2><button class="btn sm" id="clave">Cambiar mi contraseña</button>
+            <h2 style="margin-top:18px">Últimos accesos</h2>${(S.accesos || []).length ? `<ul class="hist">${S.accesos.slice(0, 15).map(x => `<li><time>${fecha(x.cuando)}</time><span><b>${esc(x.usuario)}</b> · ${x.ok ? '<span style="color:var(--ok)">entró</span>' : '<span style="color:#b4322b">' + esc(x.motivo || 'falló') + '</span>'} · ${esc(x.ip)}</span></li>`).join('')}</ul>` : '<div class="note">Sin registros todavía.</div>'}
             <h2 style="margin-top:18px">Cómo usar WhatsApp Business con el sistema</h2>
             <ol style="font-size:13.5px;padding-left:18px;line-height:1.6;margin:0">
               <li><b>Del sitio:</b> los botones de WhatsApp piden nombre y número; el lead entra solo al sistema, asignado al azar parejo, y el chat llega al WhatsApp Business del negocio.</li>

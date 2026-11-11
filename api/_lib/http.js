@@ -45,4 +45,7 @@ function tel10(t) {
 // Envoltura de un manejador: los errores salen como JSON 500 legible.
 function seguro(fn) { return async (req, res) => { try { await fn(req, res); } catch (e) { console.error(e); if (!res.headersSent) json(res, 500, { error: e.message || 'Error del servidor' }); } }; }
 
-module.exports = { cuerpo, query, cookies, json, ok, error, id, ahora, tel10, seguro };
+// IP del visitante (Vercel la pone en x-forwarded-for).
+function ip(req) { return String(req.headers['x-real-ip'] || (req.headers['x-forwarded-for'] || '').split(',')[0] || (req.socket && req.socket.remoteAddress) || '?').trim(); }
+
+module.exports = { cuerpo, query, cookies, json, ok, error, id, ahora, tel10, seguro, ip };

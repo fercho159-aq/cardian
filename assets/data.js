@@ -166,9 +166,7 @@ window.CARDIAN = (function () {
   const states = Object.keys(rates).sort((a, b) => a.localeCompare(b, 'es'));
 
   const payments = [
-    { id: 'mp',   name: 'Mercado Pago', badge: '12 MSI', desc: 'Tarjeta de crédito o débito, hasta 12 meses sin intereses' },
-    { id: 'spei', name: 'Transferencia SPEI', badge: '5 % de descuento', desc: 'Te enviamos CLABE; el pedido se confirma al acreditar' },
-    { id: 'cash', name: 'Efectivo', badge: 'Apartado', desc: 'Anticipo del 50 % en OXXO o por depósito, el resto al recibir' }
+    { id: 'mp',   name: 'Mercado Pago', badge: 'Pago seguro', desc: 'Tarjeta de crédito o débito, a meses con tarjetas participantes, OXXO o saldo de Mercado Pago' }
   ];
 
   return { brand, categories, products, zones, rates, transit, states, payments, TAPIZ };

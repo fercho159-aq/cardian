@@ -41,15 +41,91 @@ async function set(key, val) {
   if (remoto) { await llamar(['SET', PREFIX + key, JSON.stringify(val)]); return val; }
   const all = leerLocal(); all[key] = val; escribirLocal(all); return val;
 }
-// Lee, modifica y guarda una colección (lista). fn recibe la lista y devuelve la lista nueva o undefined.
-async function actualizar(key, fn, def = []) {
-  const cur = await get(key, def);
-  const out = await fn(cur);
-  return set(key, out === undefined ? cur : out);
+async function del(key) {
+  sinBase();
+  if (remoto) { await llamar(['DEL', PREFIX + key]); return; }
+  const all = leerLocal(); delete all[key]; escribirLocal(all);
 }
+
+// ── Candado por colección ──
+// Mientras una petición lee-modifica-guarda «ventas», otra que llegue al mismo tiempo espera su turno,
+// así nadie pisa los cambios de otro. Es reentrante: dentro del mismo flujo se puede volver a pedir
+// el mismo candado sin bloquearse (por ejemplo, actualizar() dentro de un manejador que ya lo tiene).
+const { AsyncLocalStorage } = require('async_hooks');
+const crypto = require('crypto');
+const tenidos = new AsyncLocalStorage();
+const colasLocales = new Map();
+const espera = ms => new Promise(r => setTimeout(r, ms));
+const LIBERAR = "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', KEYS[1]) else return 0 end";
+
+async function conCandado(key, fn) {
+  const actuales = tenidos.getStore() || new Set();
+  if (actuales.has(key)) return fn();
+  const dentro = () => tenidos.run(new Set([...actuales, key]), fn);
+  if (!remoto) {
+    // desarrollo local: cola en memoria por llave
+    const previa = colasLocales.get(key) || Promise.resolve();
+    let soltar; const turno = new Promise(r => { soltar = r; });
+    colasLocales.set(key, previa.then(() => turno));
+    await previa;
+    try { return await dentro(); } finally { soltar(); }
+  }
+  const lk = PREFIX + 'lock:' + key, token = crypto.randomBytes(8).toString('hex');
+  const limite = Date.now() + 8000;
+  while (true) {
+    const ok = await llamar(['SET', lk, token, 'NX', 'PX', '10000']);
+    if (ok === 'OK') break;
+    if (Date.now() > limite) throw new Error('El sistema está ocupado, intenta de nuevo en unos segundos');
+    await espera(80 + Math.random() * 120);
+  }
+  try { return await dentro(); } finally { try { await llamar(['EVAL', LIBERAR, '1', lk, token]); } catch (e) {} }
+}
+
+// Lee, modifica y guarda una colección (lista) con candado. fn recibe la lista y devuelve la lista nueva o undefined.
+async function actualizar(key, fn, def = []) {
+  return conCandado(key, async () => {
+    const cur = await get(key, def);
+    const out = await fn(cur);
+    return set(key, out === undefined ? cur : out);
+  });
+}
+
+// Contador atómico (folios): nunca da el mismo número a dos pedidos simultáneos.
+async function incr(key, inicio) {
+  sinBase();
+  if (remoto) {
+    await llamar(['SET', PREFIX + key, String(inicio), 'NX']);
+    return Number(await llamar(['INCR', PREFIX + key]));
+  }
+  return conCandado(key, async () => { const all = leerLocal(); const n = (Number(all[key]) || inicio) + 1; all[key] = n; escribirLocal(all); return n; });
+}
+
+// Límite de frecuencia: cuenta eventos por llave en una ventana de tiempo. Devuelve el conteo actual.
+
+async function contar(key, ventanaSeg) {
+  if (remoto) {
+    const k = PREFIX + 'rl:' + key;
+    const n = Number(await llamar(['INCR', k]));
+    if (n === 1) await llamar(['EXPIRE', k, String(ventanaSeg)]);
+    return n;
+  }
+  // local: en el archivo de datos, para que sobreviva a la recarga del servidor de pruebas
+  const all = leerLocal(); const rl = all._rl || {}; const ahora = Date.now(); const c = rl[key];
+  if (!c || c.hasta < ahora) rl[key] = { n: 1, hasta: ahora + ventanaSeg * 1000 }; else c.n++;
+  all._rl = rl; escribirLocal(all); return rl[key].n;
+}
+async function verConteo(key) {
+  if (remoto) return Number(await llamar(['GET', PREFIX + 'rl:' + key]) || 0);
+  const c = (leerLocal()._rl || {})[key]; return c && c.hasta >= Date.now() ? c.n : 0;
+}
+async function borrarConteo(key) {
+  if (remoto) { await llamar(['DEL', PREFIX + 'rl:' + key]); return; }
+  const all = leerLocal(); if (all._rl) { delete all._rl[key]; escribirLocal(all); }
+}
+
 // Modo de almacenamiento, para mostrarlo en Ajustes.
 function modo() { return remoto ? 'upstash' : 'local'; }
 // Token privado de la base, solo para derivar la llave de firma (secreto.js).
 function tokenBase() { return remoto ? TOKEN : ''; }
 
-module.exports = { get, set, actualizar, modo, tokenBase };
+module.exports = { get, set, del, actualizar, conCandado, incr, contar, verConteo, borrarConteo, modo, tokenBase };

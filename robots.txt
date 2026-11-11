@@ -1,0 +1,9 @@
+User-agent: *
+Disallow: /sistema
+Disallow: /ticket
+Disallow: /api/
+Disallow: /checkout
+Disallow: /carrito
+Disallow: /gracias
+
+Sitemap: https://cardianmuebles.com/sitemap.xml

@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="es" data-gated>
+<html lang="es">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -9,7 +9,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap">
 <link rel="stylesheet" href="/assets/site.css">
-<script src="/assets/gate.js"></script>
 <style>
   .cart{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(300px,.8fr);gap:32px;align-items:start;padding-block:28px 48px}
   @media (max-width:860px){.cart{grid-template-columns:1fr}}
@@ -42,7 +41,7 @@
 <div id="site-header"></div>
 
 <main class="wrap">
-  <nav class="crumbs" aria-label="Ruta"><a href="/inicio">Inicio</a><span>/</span>Carrito</nav>
+  <nav class="crumbs" aria-label="Ruta"><a href="/">Inicio</a><span>/</span>Carrito</nav>
   <div class="cart" id="cart"></div>
 </main>
 
@@ -79,9 +78,9 @@
         </div>
         <div class="row"><span>Envío<small>${delivery === 'store' ? 'Recoger en bodega' : ship.zone.name + ' · ' + ship.zone.days}</small></span><span class="num ${ship.cost === 0 ? 'free' : ''}">${ship.cost === 0 ? 'Gratis' : fmt(ship.cost)}</span></div>
         <div class="row total"><span>Total</span><span class="num">${fmt(total)}</span></div>
-        <div class="note num">o 12 × ${fmt2(total / 12)} sin intereses con Mercado Pago · 5 % menos por transferencia</div>
+        <div class="note num">Paga con tarjeta, a meses, en OXXO o con saldo de Mercado Pago</div>
         <div style="display:grid;gap:10px;margin-top:16px"><a class="btn primary block" href="/checkout">Continuar con la compra</a><a class="btn ghost block sm" href="/como-comprar">¿Cómo funciona?</a></div>
-        <div class="note" style="margin-top:12px">Pagas con Mercado Pago, transferencia SPEI o efectivo con 50 % de anticipo. Sin cargos ocultos.</div>
+        <div class="note" style="margin-top:12px">Pagas con Mercado Pago: tarjeta de crédito o débito, a meses, OXXO o saldo. Sin cargos ocultos.</div>
       </aside>`;
     $$('.line [data-act]').forEach(b => b.addEventListener('click', () => {
       const key = b.closest('.line').dataset.key; const cart = C.getCart(); const i = cart.findIndex(l => l.key === key); if (i < 0) return;

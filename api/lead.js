@@ -3,11 +3,16 @@
 const A = require('./_lib/auth');
 const store = require('./_lib/store');
 const M = require('./_lib/modelo');
-const { cuerpo, ok, error, tel10, seguro } = require('./_lib/http');
+const { cuerpo, ok, error, tel10, seguro, ip } = require('./_lib/http');
 
-module.exports = seguro(async (req, res) => {
+module.exports = seguro((req, res) => store.conCandado('leads', () => manejar(req, res)));
+
+async function manejar(req, res) {
   if (req.method !== 'POST') return error(res, 405, 'Método no permitido');
   const b = await cuerpo(req);
+  // Anti-spam: campo trampa invisible (solo los bots lo llenan) y máximo 8 envíos por IP cada 10 minutos.
+  if (b.web) return ok(res, { id: 'ok', vendedor: null, wa: M.D().brand.wa });
+  if ((await store.contar('lead:' + ip(req), 600)) > 8) return error(res, 429, 'Ya recibimos tus datos; en un momento te escribimos.');
   const tel = tel10(b.tel);
   if (!tel) return error(res, 400, 'Escribe tu WhatsApp a 10 dígitos');
   if (String(b.nombre || '').trim().length < 2) return error(res, 400, 'Escribe tu nombre');
@@ -33,4 +38,4 @@ module.exports = seguro(async (req, res) => {
   const negocio = ajustes.waNegocio && tel10(ajustes.waNegocio) ? '52' + tel10(ajustes.waNegocio) : M.D().brand.wa;
   const wa = (!compartido && vend && vend.whatsapp) ? '52' + vend.whatsapp : negocio;
   return ok(res, { id: lead.id, vendedor: vend ? vend.nombre.split(' ')[0] : null, wa });
-});
+}
