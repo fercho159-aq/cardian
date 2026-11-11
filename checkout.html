@@ -70,6 +70,14 @@
   .secure svg{width:16px;height:16px;color:var(--ok)}
   label.chk{display:flex;gap:10px;align-items:flex-start;font-size:13px;color:var(--muted);margin-top:14px}
   label.chk input{accent-color:var(--gold-deep);margin-top:3px}
+  @media (max-width:560px){
+    .opt{grid-template-columns:22px 1fr;row-gap:6px}
+    .opt .b{grid-column:2;justify-self:start;white-space:normal}
+    .actions{flex-direction:column-reverse}
+    .actions .btn{width:100%;justify-content:center}
+    .review dl{grid-template-columns:1fr;gap:2px 0}
+    .review dt{margin-top:10px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+  }
 </style>
 </head>
 <body>
@@ -124,14 +132,14 @@
 
   function step1() {
     $('#panel').innerHTML = `<div class="panel"><h2>Tus datos</h2>
-      <div class="grid2">${inp('name', 'Nombre completo', { attrs: 'autocomplete="name"' })}${inp('phone', 'WhatsApp (10 dígitos)', { attrs: 'inputmode="tel" autocomplete="tel"' })}${inp('email', 'Correo electrónico', { full: true, attrs: 'type="email" autocomplete="email"' })}</div>
+      <div class="grid2">${inp('name', 'Nombre completo', { attrs: 'autocomplete="name" autocapitalize="words"' })}${inp('phone', 'WhatsApp (10 dígitos)', { attrs: 'type="tel" inputmode="numeric" autocomplete="tel"' })}${inp('email', 'Correo electrónico', { full: true, attrs: 'type="email" autocomplete="email"' })}</div>
       <h2 style="margin-top:24px">Entrega</h2>
       <div class="opts">
         <button type="button" class="opt" data-d="ship" aria-pressed="${o.delivery === 'ship'}"><span class="radio"></span><span><span class="t">Envío a domicilio</span><br><span class="d">Incluye maniobra hasta planta baja, armado y retiro del empaque</span></span><span class="b">Gratis en CDMX y EdoMex</span></button>
         <button type="button" class="opt" data-d="store" aria-pressed="${o.delivery === 'store'}"><span class="radio"></span><span><span class="t">Recoger en bodega</span><br><span class="d">Te confirmamos punto de entrega, horario y fecha por WhatsApp</span></span><span class="b">Sin costo</span></button>
       </div>
       <div id="addr" ${o.delivery === 'store' ? 'hidden' : ''} style="margin-top:16px"><div class="grid2">
-        ${inp('street', 'Calle y número', { full: true, attrs: 'autocomplete="street-address"' })}${inp('colonia', 'Colonia')}${inp('cp', 'Código postal', { attrs: 'inputmode="numeric" autocomplete="postal-code"' })}${inp('city', 'Ciudad o municipio')}
+        ${inp('street', 'Calle y número', { full: true, attrs: 'autocomplete="street-address"' })}${inp('colonia', 'Colonia', { attrs: 'autocomplete="address-level3"' })}${inp('cp', 'Código postal', { attrs: 'inputmode="numeric" autocomplete="postal-code"' })}${inp('city', 'Ciudad o municipio', { attrs: 'autocomplete="address-level2"' })}
         <div class="field"><label for="state">Estado</label><select class="input" id="state">${D.states.map(s => `<option ${s === o.state ? 'selected' : ''}>${s}</option>`).join('')}</select></div>
         <div class="field full"><label for="floor">Acceso al domicilio</label><select class="input" id="floor"><option value="pb" ${o.floor === 'pb' ? 'selected' : ''}>Planta baja o con elevador de servicio</option><option value="1" ${o.floor === '1' ? 'selected' : ''}>Primer piso sin elevador (se cotiza maniobra)</option><option value="2" ${o.floor === '2' ? 'selected' : ''}>Segundo piso o más sin elevador (se cotiza maniobra)</option></select></div>
         <div class="field full"><label for="notes">Referencias para llegar (opcional)</label><input class="input" id="notes" value="${(o.notes || '').replace(/"/g, '&quot;')}" placeholder="Entre qué calles, color de la fachada, caseta…"></div>
@@ -141,6 +149,15 @@
       <div class="actions"><a class="btn ghost sm" href="/carrito">← Volver al carrito</a><button type="button" class="btn primary" id="next1">Continuar al pago</button></div></div>`;
     $$('.opt[data-d]').forEach(b => b.onclick = () => { o.delivery = b.dataset.d; $$('.opt[data-d]').forEach(x => x.setAttribute('aria-pressed', String(x === b))); $('#addr').hidden = o.delivery === 'store'; summary(); });
     $('#state').onchange = e => { o.state = e.target.value; summary(); };
+    // Con el código postal detectamos el estado (los dos primeros dígitos lo determinan en México).
+    const ESTADO_CP = [[0, 16, 'Ciudad de México'], [20, 20, 'Aguascalientes'], [21, 22, 'Baja California'], [23, 23, 'Baja California Sur'], [24, 24, 'Campeche'], [25, 27, 'Coahuila'], [28, 28, 'Colima'], [29, 30, 'Chiapas'], [31, 33, 'Chihuahua'], [34, 35, 'Durango'], [36, 38, 'Guanajuato'], [39, 41, 'Guerrero'], [42, 43, 'Hidalgo'], [44, 49, 'Jalisco'], [50, 57, 'Estado de México'], [58, 61, 'Michoacán'], [62, 62, 'Morelos'], [63, 63, 'Nayarit'], [64, 67, 'Nuevo León'], [68, 71, 'Oaxaca'], [72, 75, 'Puebla'], [76, 76, 'Querétaro'], [77, 77, 'Quintana Roo'], [78, 79, 'San Luis Potosí'], [80, 82, 'Sinaloa'], [83, 85, 'Sonora'], [86, 86, 'Tabasco'], [87, 89, 'Tamaulipas'], [90, 90, 'Tlaxcala'], [91, 96, 'Veracruz'], [97, 97, 'Yucatán'], [98, 99, 'Zacatecas']];
+    $('#cp').addEventListener('input', e => {
+      const v = e.target.value.replace(/\D/g, '').slice(0, 5); e.target.value = v;
+      if (v.length !== 5) return;
+      const n = +v.slice(0, 2); const m = ESTADO_CP.find(([a, b]) => n >= a && n <= b);
+      if (m && D.states.includes(m[2]) && o.state !== m[2]) { o.state = m[2]; $('#state').value = m[2]; summary(); C.toast('Estado: ' + m[2]); }
+    });
+    $('#phone').addEventListener('input', e => { e.target.value = e.target.value.replace(/\D/g, '').slice(0, 10); });
     $('#invoice').onchange = e => { o.invoice = e.target.checked; $('#inv').hidden = !o.invoice; };
     $('#next1').onclick = () => {
       ['name', 'phone', 'email', 'street', 'colonia', 'cp', 'city', 'notes', 'razon', 'rfc'].forEach(k => { const el = $('#' + k); if (el) o[k] = el.value.trim(); });
