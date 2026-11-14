@@ -44,6 +44,10 @@ async function manejar(req, res) {
       if (!b.lineas || !b.lineas.length) return error(res, 400, 'Agrega al menos un artículo');
       const folio = await M.folioNuevo();
       const v = M.nuevaVenta({ ...b, folio, origen: b.origen || 'sucursal', vendedorId: esAdmin(u) && b.vendedorId ? b.vendedorId : u.id, sucursal: b.sucursal || u.sucursal }, u);
+      // etapa inicial y fecha estimada que eligió el vendedor (pedido capturado a mano)
+      if (b.etapa && M.ETAPAS.includes(b.etapa) && b.etapa !== 'recibido') { v.etapa = b.etapa; v.etapas.push({ etapa: b.etapa, cuando: ahora(), quien: u.nombre }); }
+      if (/^\d{4}-\d{2}-\d{2}$/.test(String(b.fechaEntrega || ''))) v.fechaEntrega = String(b.fechaEntrega);
+      if (b.notaCliente) v.notaCliente = String(b.notaCliente).slice(0, 240);
       if (b.pagoInicial && +b.pagoInicial.monto > 0) { v.pagos.push({ id: id(6), cuando: ahora(), monto: Math.round(+b.pagoInicial.monto), metodo: String(b.pagoInicial.metodo || 'efectivo'), ref: String(b.pagoInicial.ref || '').slice(0, 60), quien: u.nombre }); v.estado = M.estadoPorPago(v); }
       await store.actualizar('ventas', l => { l.unshift(v); });
       if (v.leadId) await store.actualizar('leads', l => { const x = l.find(y => y.id === v.leadId); if (x) { x.estado = 'compro'; x.ventaFolio = folio; hist(x, u.nombre, 'Compró · venta ' + folio); } });
