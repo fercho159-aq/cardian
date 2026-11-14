@@ -69,6 +69,21 @@ body.sys{background:var(--bg);color:var(--fg);font-family:var(--font);margin:0;m
 .badge.contactado{background:var(--gold-soft);color:var(--gold-deep)}
 .badge.sin-respuesta{background:var(--warn-soft);color:var(--warn)}
 .badge.cotizado{background:#ece6f7;color:#5a3d9a}
+.badge.recibido{background:#e3ecf7;color:#2c5282}
+.badge.fabricando{background:var(--gold-soft);color:var(--gold-deep)}
+.badge.listo{background:#ece6f7;color:#5a3d9a}
+.badge.en-camino{background:var(--warn-soft);color:var(--warn)}
+.etapas{display:grid;gap:6px;margin-top:8px}
+.etapas button{display:flex;align-items:center;gap:10px;width:100%;text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:9px 12px;font-size:13.5px;cursor:pointer}
+.etapas button i{width:20px;height:20px;border-radius:50%;border:2px solid var(--line);flex:none;display:grid;place-items:center;font-style:normal;font-size:11px;color:#fff}
+.etapas button.hecho i{background:var(--gold);border-color:var(--gold)}
+.etapas button.on{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold);background:var(--gold-soft);font-weight:600}
+.etapas button small{margin-left:auto;color:var(--muted);font-size:11.5px;font-weight:400}
+.envio-prev{display:grid;grid-template-columns:minmax(0,300px) 1fr;gap:18px;align-items:start}
+.envio-prev img{width:100%;border-radius:10px;box-shadow:0 10px 30px -12px rgba(0,0,0,.4)}
+.envio-prev textarea{min-height:170px;font-size:13.5px}
+.envio-prev .acts{display:grid;gap:8px;margin-top:10px}
+@media (max-width:700px){.envio-prev{grid-template-columns:1fr}.envio-prev img{max-width:280px;margin:0 auto}}
 .badge.origen{background:var(--surface-2);color:var(--muted)}
 .empty{padding:34px;text-align:center;color:var(--muted);font-size:14px}
 .lead-list{display:grid;gap:10px}

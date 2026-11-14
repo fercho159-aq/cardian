@@ -10,6 +10,7 @@
   const dia = s => s ? new Date(s).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: '2-digit' }) : '';
   const hace = s => { const m = Math.round((Date.now() - new Date(s)) / 6e4); if (m < 60) return 'hace ' + m + ' min'; const h = Math.round(m / 60); if (h < 48) return 'hace ' + h + ' h'; return 'hace ' + Math.round(h / 24) + ' días'; };
   const ESTADO_V = { pendiente: 'Pendiente de pago', apartado: 'Apartado', pagado: 'Pagado', 'en-produccion': 'En producción', entregado: 'Entregado', cancelado: 'Cancelado' };
+  const ETAPA_V = { recibido: 'Recibido', fabricando: 'En fabricación', listo: 'Listo para entrega', 'en-camino': 'En camino', entregado: 'Entregado' };
   const ESTADO_L = { nuevo: 'Nuevo', contactado: 'Contactado', 'sin-respuesta': 'Sin respuesta', cotizado: 'Cotizado', compro: 'Compró', 'no-compro': 'No compró' };
   const ORIGEN = { sitio: 'Sitio web', 'mercado-pago': 'Mercado Pago', whatsapp: 'WhatsApp', sucursal: 'Sucursal', telefono: 'Teléfono', otro: 'Otro' };
   const METODOS = ['efectivo', 'transferencia', 'tarjeta', 'mercado-pago', 'deposito', 'otro'];
@@ -175,27 +176,28 @@
 
   // ───────── Ventas ─────────
   function vistaVentas() {
-    const f = S.filtros.v || (S.filtros.v = { q: '', estado: '', sucursal: '', origen: '', vendedor: '' });
-    const lista = S.ventas.filter(v => (!f.estado || v.estado === f.estado) && (!f.sucursal || v.sucursal === f.sucursal) && (!f.origen || v.origen === f.origen) && (!f.vendedor || v.vendedorId === f.vendedor)
+    const f = S.filtros.v || (S.filtros.v = { q: '', estado: '', etapa: '', sucursal: '', origen: '', vendedor: '' });
+    const lista = S.ventas.filter(v => (!f.estado || v.estado === f.estado) && (!f.etapa || (v.etapa || 'recibido') === f.etapa) && (!f.sucursal || v.sucursal === f.sucursal) && (!f.origen || v.origen === f.origen) && (!f.vendedor || v.vendedorId === f.vendedor)
       && (!f.q || (v.folio + ' ' + v.cliente.nombre + ' ' + v.cliente.tel + ' ' + v.lineas.map(l => l.nombre).join(' ')).toLowerCase().includes(f.q.toLowerCase())));
     const tot = lista.reduce((s, v) => s + (v.estado === 'cancelado' ? 0 : v.total), 0), cob = lista.reduce((s, v) => s + pagado(v), 0);
     shell(`
       <div class="filters">
         <input class="input buscar" id="fq" placeholder="Buscar folio, cliente, teléfono…" value="${esc(f.q)}">
-        <select class="input" id="fe">${opts(Object.entries(ESTADO_V), f.estado, 'Todos los estados')}</select>
+        <select class="input" id="fe">${opts(Object.entries(ESTADO_V), f.estado, 'Todos los pagos')}</select>
+        <select class="input" id="fet">${opts(Object.entries(ETAPA_V), f.etapa || '', 'Todas las etapas')}</select>
         ${S.sucursales.length ? `<select class="input" id="fs">${opts(S.sucursales, f.sucursal, 'Todas las sucursales')}</select>` : ''}
         <select class="input" id="fo">${opts(Object.entries(ORIGEN), f.origen, 'Todos los orígenes')}</select>
         ${admin() ? `<select class="input" id="fv">${opts(S.usuarios.filter(u => u.rol === 'vendedor' || S.ventas.some(v => v.vendedorId === u.id)).map(u => [u.id, u.nombre]), f.vendedor, 'Todos los vendedores')}</select>` : ''}
         <span class="note">${lista.length} venta${lista.length === 1 ? '' : 's'} · ${fmt(tot)} · cobrado ${fmt(cob)}</span>
       </div>
-      <div class="table-wrap">${lista.length ? `<table class="table"><thead><tr><th>Folio</th><th>Cliente</th><th>Artículos</th><th>Estado</th><th>Origen</th>${admin() ? '<th>Vendedor</th>' : ''}<th>Sucursal</th><th class="num">Total</th><th class="num">Saldo</th></tr></thead><tbody>
-        ${lista.map(v => `<tr class="row" data-venta="${v.folio}"><td><b>${v.folio}</b><small>${dia(v.creado)}</small></td><td>${esc(v.cliente.nombre)}<small>${v.cliente.tel}</small></td><td>${v.lineas.map(l => `${l.qty} × ${esc(l.nombre)}${l.colorNombre ? ' · ' + esc(l.colorNombre) : ''}`).join('<br>')}</td><td>${badge(v.estado)}</td><td><span class="badge origen">${ORIGEN[v.origen] || v.origen}</span></td>${admin() ? `<td>${esc(nombreU(v.vendedorId))}</td>` : ''}<td>${esc(v.sucursal || '—')}</td><td class="num">${fmt(v.total)}</td><td class="num">${saldo(v) ? `<b style="color:var(--warn)">${fmt(saldo(v))}</b>` : '<span style="color:var(--ok)">Pagado</span>'}</td></tr>`).join('')}
+      <div class="table-wrap">${lista.length ? `<table class="table"><thead><tr><th>Folio</th><th>Cliente</th><th>Artículos</th><th>Pago</th><th>Pedido</th><th>Origen</th>${admin() ? '<th>Vendedor</th>' : ''}<th>Sucursal</th><th class="num">Total</th><th class="num">Saldo</th></tr></thead><tbody>
+        ${lista.map(v => `<tr class="row" data-venta="${v.folio}"><td><b>${v.folio}</b><small>${dia(v.creado)}</small></td><td>${esc(v.cliente.nombre)}<small>${v.cliente.tel}</small></td><td>${v.lineas.map(l => `${l.qty} × ${esc(l.nombre)}${l.colorNombre ? ' · ' + esc(l.colorNombre) : ''}`).join('<br>')}</td><td>${badge(v.estado)}</td><td>${badge(v.etapa || 'recibido', ETAPA_V)}</td><td><span class="badge origen">${ORIGEN[v.origen] || v.origen}</span></td>${admin() ? `<td>${esc(nombreU(v.vendedorId))}</td>` : ''}<td>${esc(v.sucursal || '—')}</td><td class="num">${fmt(v.total)}</td><td class="num">${saldo(v) ? `<b style="color:var(--warn)">${fmt(saldo(v))}</b>` : '<span style="color:var(--ok)">Pagado</span>'}</td></tr>`).join('')}
       </tbody></table>` : '<div class="empty">No hay ventas con esos filtros.</div>'}</div>`,
       admin() ? 'Ventas' : 'Mis ventas', 'Pedidos del sitio, ventas de sucursal y pagos de Mercado Pago, en un solo lugar.',
       `<button class="btn gold sm" id="nuevaVenta">+ Nueva venta</button>${admin() && S.ajustes.mpConfigurado ? '<button class="btn sm" id="sync">Sincronizar Mercado Pago</button>' : ''}`);
     enlazarComunes();
     const on = (id, k) => { const el = $('#' + id); if (el) el.oninput = el.onchange = () => { f[k] = el.value; vistaVentas(); if (k === 'q') { const i = $('#fq'); i.focus(); i.setSelectionRange(i.value.length, i.value.length); } }; };
-    on('fq', 'q'); on('fe', 'estado'); on('fs', 'sucursal'); on('fo', 'origen'); on('fv', 'vendedor');
+    on('fq', 'q'); on('fe', 'estado'); on('fet', 'etapa'); on('fs', 'sucursal'); on('fo', 'origen'); on('fv', 'vendedor');
     const sy = $('#sync'); if (sy) sy.onclick = sincronizarMP;
   }
   async function sincronizarMP() {
@@ -280,18 +282,27 @@
             <h2 style="font-size:14px;margin:16px 0 6px">Historial</h2><ul class="hist">${(vv.historial || []).slice().reverse().slice(0, 12).map(h => `<li><time>${fecha(h.cuando)}</time><span><b>${esc(h.quien)}</b> · ${esc(h.que)}</span></li>`).join('')}</ul>
           </div>
           <div>
+            <div class="box" style="padding:14px 16px;margin-bottom:12px;border-color:var(--gold)"><h2 style="font-size:14px">Seguimiento del pedido</h2>
+              <div class="etapas">${EstadoPedido.etapasDe(vv).map((e, n) => `<button type="button" data-et="${e.id}" class="${n < EstadoPedido.indice(vv) ? 'hecho' : ''} ${n === EstadoPedido.indice(vv) ? 'on hecho' : ''}"><i>${n <= EstadoPedido.indice(vv) ? '✓' : ''}</i>${e.t}<small>${n <= EstadoPedido.indice(vv) ? EstadoPedido.fechaCorta(EstadoPedido.cuandoEtapa(vv, e.id)) : ''}</small></button>`).join('')}</div>
+              <div class="fields" style="margin-top:12px"><div class="field"><label>Fecha estimada de entrega</label><input class="input" type="date" id="feEnt" value="${vv.fechaEntrega || ''}"></div><div class="field"><label>Nota para el cliente (opcional)</label><input class="input" id="notaCli" maxlength="240" value="${esc(vv.notaCliente || '')}" placeholder="Ej. Te llamamos un día antes"></div></div>
+              <div style="display:grid;gap:8px;margin-top:10px"><button class="btn sm" id="guardaSeg">Guardar fecha y nota</button><button class="btn gold sm" id="enviarEstado">Enviar estado al cliente</button></div>
+            </div>
             <div class="box" style="padding:14px 16px"><h2 style="font-size:14px">Pagos</h2>
               <div class="pagos">${(vv.pagos || []).map(p => `<div><span>${fecha(p.cuando)}<br><small>${esc(p.metodo)}${p.ref ? ' · ' + esc(p.ref) : ''} · ${esc(p.quien || '')}</small></span><span class="num"><b>${fmt(p.monto)}</b>${admin() ? ` <button class="x" data-qp="${p.id}" title="Quitar" style="border:none;background:none;cursor:pointer;color:var(--muted)">×</button>` : ''}</span></div>`).join('') || '<div class="note">Sin pagos todavía.</div>'}</div>
               <div class="saldo"><span>${saldo(vv) > 0 ? 'Saldo por cobrar' : 'Pagado completo'}</span><b>${saldo(vv) > 0 ? fmt(saldo(vv)) : fmt(pagado(vv))}</b></div>
               ${saldo(vv) > 0 && vv.estado !== 'cancelado' ? `<div class="fields" style="margin-top:12px"><div class="field"><label>Registrar pago</label><input class="input" id="abMonto" type="number" min="1" placeholder="${saldo(vv)}"></div><div class="field"><label>Método</label><select class="input" id="abMet">${opts(METODOS, 'efectivo')}</select></div><div class="field full"><input class="input" id="abRef" placeholder="Referencia o nota (opcional)"></div></div><button class="btn primary sm" id="abonar" style="width:100%">Guardar pago</button>${S.ajustes.mpConfigurado ? `<button class="btn sm" id="mpLink" style="width:100%;margin-top:8px">Enlace de pago Mercado Pago</button>` : ''}` : ''}
             </div>
-            <div class="box" style="padding:14px 16px;margin-top:12px"><h2 style="font-size:14px">Estado</h2><select class="input" id="estV">${opts(Object.entries(ESTADO_V), vv.estado)}</select>
+            <div class="box" style="padding:14px 16px;margin-top:12px"><h2 style="font-size:14px">Estado del pago</h2><select class="input" id="estV">${opts(Object.entries(ESTADO_V), vv.estado)}</select>
               <div style="display:grid;gap:8px;margin-top:12px"><a class="btn ink sm" style="background:var(--ink);color:var(--ink-fg)" href="${ticketUrl(folio, k)}" target="_blank" rel="noopener">Ver / imprimir ticket</a>${vv.cliente.tel ? `<a class="btn wa sm" href="${waLink(vv.cliente.tel, waTicket)}" target="_blank" rel="noopener">Mandar ticket por WhatsApp</a>` : ''}<button class="btn sm" id="editV">Editar datos del cliente</button><button class="btn sm" id="notaV">Agregar nota</button></div>
             </div>
           </div>
         </div>`;
       const ab = $('#abonar'); if (ab) ab.onclick = async () => { const monto = +$('#abMonto').value; if (!monto) return toast('Escribe el monto'); try { await api('/api/datos?c=ventas', { accion: 'abonar', folio, monto, metodo: $('#abMet').value, ref: $('#abRef').value }); toast('Pago registrado'); await cargar(); pintar(); } catch (e) { toast(e.message); } };
       $$('[data-qp]').forEach(b => b.onclick = async () => { if (!confirm('¿Quitar este pago?')) return; try { await api('/api/datos?c=ventas', { accion: 'quitarPago', folio, pagoId: b.dataset.qp }); await cargar(); pintar(); } catch (e) { toast(e.message); } });
+      const guardarSeg = async datos => { await api('/api/datos?c=ventas', { accion: 'etapa', folio, ...datos }); await cargar(); pintar(); };
+      $$('[data-et]').forEach(b => b.onclick = async () => { try { await guardarSeg({ etapa: b.dataset.et, fechaEntrega: $('#feEnt').value, notaCliente: $('#notaCli').value }); toast('Pedido: ' + ETAPA_V[b.dataset.et]); enviarEstado(folio, k); } catch (e) { toast(e.message); } });
+      $('#guardaSeg').onclick = async () => { try { await guardarSeg({ fechaEntrega: $('#feEnt').value, notaCliente: $('#notaCli').value }); toast('Guardado'); } catch (e) { toast(e.message); } };
+      $('#enviarEstado').onclick = async () => { try { await guardarSeg({ fechaEntrega: $('#feEnt').value, notaCliente: $('#notaCli').value }); } catch (e) {} enviarEstado(folio, k); };
       $('#estV').onchange = async () => { try { await api('/api/datos?c=ventas', { accion: 'estado', folio, estado: $('#estV').value }); toast('Estado actualizado'); await cargar(); pintar(); } catch (e) { toast(e.message); } };
       const mpb = $('#mpLink'); if (mpb) mpb.onclick = async () => { try { const r = await api('/api/mp', { accion: 'enlace', folio }); await navigator.clipboard.writeText(r.url).catch(() => {}); toast('Enlace de pago copiado'); window.open(r.url, '_blank'); } catch (e) { toast(e.message); } };
       $('#editV').onclick = () => { const vv2 = S.ventas.find(x => x.folio === folio); const m2 = modal('Editar venta ' + folio, `<div class="fields"><div class="field"><label>Nombre</label><input class="input" id="eN" value="${esc(vv2.cliente.nombre)}"></div><div class="field"><label>WhatsApp</label><input class="input" id="eT" value="${vv2.cliente.tel}"></div><div class="field"><label>Correo</label><input class="input" id="eE" value="${esc(vv2.cliente.email || '')}"></div><div class="field"><label>Sucursal</label><input class="input" id="eS" value="${esc(vv2.sucursal || '')}"></div>${admin() ? `<div class="field"><label>Vendedor</label><select class="input" id="eV">${opts(S.usuarios.map(u => [u.id, u.nombre]), vv2.vendedorId, 'Sin vendedor')}</select></div>` : ''}<div class="field full"><label>Dirección de entrega</label><input class="input" id="eD" value="${esc(vv2.envio.direccion || '')}"></div><div class="field full"><label>Notas</label><input class="input" id="eNo" value="${esc(vv2.notas || '')}"></div></div>`, `<button class="btn primary sm" id="okE">Guardar</button>`);
@@ -300,6 +311,31 @@
     };
     modal('Venta ' + folio, '<div id="dv"></div>', '', { wide: true });
     pintar();
+  }
+
+  // Enviar el estado del pedido al cliente: imagen, PDF y WhatsApp con el mensaje listo.
+  async function enviarEstado(folio, k) {
+    const v0 = S.ventas.find(x => x.folio === folio); if (!v0) return;
+    const v = { ...v0, saldo: saldo(v0) };
+    const linkTicket = location.origin + ticketUrl(folio, k);
+    const puedeCompartir = !!(navigator.canShare && window.File && navigator.canShare({ files: [new File([new Blob(['x'])], 'x.png', { type: 'image/png' })] }));
+    const m = modal('Enviar estado del pedido ' + folio, `<div class="envio-prev"><div><img id="prevEst" alt="Vista previa del estado"><div class="note" style="margin-top:8px;text-align:center">Imagen lista para WhatsApp</div></div>
+      <div><div class="field"><label>Mensaje para ${esc((v.cliente.nombre || '').split(' ')[0] || 'el cliente')} · WhatsApp ${v.cliente.tel || 'sin número'}</label><textarea class="input" id="msgEst">${esc(EstadoPedido.mensaje(v, k))}</textarea></div>
+        <div class="acts">
+          ${puedeCompartir ? '<button class="btn wa" id="shEst">Compartir imagen y mensaje por WhatsApp</button>' : ''}
+          ${v.cliente.tel ? '<a class="btn ' + (puedeCompartir ? '' : 'wa') + '" id="waEst" target="_blank" rel="noopener">Abrir WhatsApp del cliente con el mensaje</a>' : '<div class="aviso">Esta venta no tiene WhatsApp del cliente. Agrégalo en «Editar datos del cliente».</div>'}
+          <button class="btn" id="dlEst">Descargar imagen</button>
+          <a class="btn" href="${linkTicket}&imprimir=1" target="_blank" rel="noopener">Ver o guardar PDF</a>
+          <button class="btn" id="cpEst">Copiar enlace de seguimiento</button>
+        </div>
+        <p class="note" style="margin-top:10px">${puedeCompartir ? 'En el celular, «Compartir» manda la imagen y el texto juntos: elige WhatsApp y al cliente.' : 'En computadora: descarga la imagen, abre el WhatsApp del cliente y adjúntala. El mensaje ya lleva el enlace de seguimiento.'}</p></div></div>`, '', { wide: true });
+    EstadoPedido.dibujar(v).then(c => { const img = $('#prevEst'); if (img) img.src = c.toDataURL('image/png'); });
+    const txt = () => $('#msgEst').value;
+    const wa = $('#waEst'); if (wa) { const act = () => { wa.href = waLink(v.cliente.tel, txt()); }; act(); $('#msgEst').oninput = act; }
+    const sh = $('#shEst'); if (sh) sh.onclick = async () => { const ok = await EstadoPedido.compartir({ ...v }, k).catch(() => false); if (!ok) toast('No se pudo compartir; descarga la imagen'); };
+    $('#dlEst').onclick = () => EstadoPedido.descargar(v);
+    $('#cpEst').onclick = () => navigator.clipboard.writeText(linkTicket).then(() => toast('Enlace copiado'));
+    return m;
   }
 
   // ───────── Leads ─────────

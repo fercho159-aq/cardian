@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<title>Ticket · Cardian Muebles</title>
+<title>Tu pedido · Cardian Muebles</title>
 <link rel="icon" href="/img/logo.png">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap">
 <style>
@@ -40,11 +40,25 @@
   .btn.wa{background:#25d366;border-color:#25d366;color:#fff}
   .btn.ink{background:var(--ink);color:#f3eadb}
   .err{text-align:center;padding:60px 20px;color:var(--muted)}
+  .seg{background:var(--ink);color:#f3eadb;border-radius:12px;padding:18px 20px;margin:14px 0 4px}
+  .seg small{display:block;font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:#a79d8a}
+  .seg .act{font-size:22px;font-weight:600;color:#d2ad58;margin-top:4px}
+  .seg .fe{font-size:12.5px;color:#f3eadb;margin-top:2px}
+  .seg ol{list-style:none;margin:14px 0 0;padding:0;display:grid;gap:0}
+  .seg li{display:flex;align-items:center;gap:12px;font-size:13px;color:#a79d8a;position:relative;padding:6px 0}
+  .seg li i{width:18px;height:18px;border-radius:50%;border:2px solid #5d564a;flex:none;display:grid;place-items:center;font-style:normal;font-size:10px;color:#0d0c0a;background:#0d0c0a;z-index:1}
+  .seg li:not(:last-child)::after{content:"";position:absolute;left:8px;top:24px;bottom:-6px;width:2px;background:#3a352d}
+  .seg li.ok{color:#f3eadb}.seg li.ok i{background:#b08a35;border-color:#b08a35}
+  .seg li.ok:not(:last-child)::after{background:#b08a35}
+  .seg li.on{font-weight:600}.seg li.on i{background:#d2ad58;border-color:#d2ad58}
+  .seg li span{margin-left:auto;font-size:11.5px;color:#a79d8a;font-weight:400}
+  .seg .nota{margin-top:10px;font-size:12.5px;color:#f3eadb;border-top:1px solid #3a352d;padding-top:10px}
   @media print{body{background:#fff}.wrap{max-width:none;margin:0;padding:0}.ticket{box-shadow:none;border-radius:0}.acts{display:none}}
 </style>
 </head>
 <body>
 <div class="wrap" id="t"><div class="err">Cargando ticket…</div></div>
+<script src="/assets/estado-pedido.js"></script>
 <script>
 (async function(){
   const q = new URLSearchParams(location.search); const f = q.get('f'), k = q.get('k');
@@ -58,6 +72,9 @@
   const estadoTxt = { pendiente: 'Pendiente de pago', apartado: 'Apartado · con abono', pagado: 'Pagado', 'en-produccion': 'En producción', entregado: 'Entregado', cancelado: 'Cancelado' }[v.estado] || v.estado;
   const pagos = (v.pagos || []).map(p => `<div class="row"><span>${fecha(p.cuando)}<small>${p.metodo}${p.ref ? ' · ' + p.ref : ''}</small></span><span class="num">${fmt(p.monto)}</span></div>`).join('') || '<div class="row"><span style="color:var(--muted)">Sin pagos registrados</span></div>';
   const enlace = location.origin + '/ticket?f=' + v.folio + '&k=' + j.k;
+  // Seguimiento: etapa actual, fecha estimada y línea de tiempo
+  const EP = window.EstadoPedido, ets = EP.etapasDe(v), iA = EP.indice(v);
+  const segHtml = v.estado === 'cancelado' ? '' : `<div class="seg"><small>Estado de tu pedido</small><div class="act">${ets[iA].t}</div>${v.fechaEntrega && ets[iA].id !== 'entregado' ? `<div class="fe">Entrega estimada: ${EP.fechaLarga(v.fechaEntrega)}</div>` : ''}<ol>${ets.map((e, n) => `<li class="${n <= iA ? 'ok' : ''} ${n === iA ? 'on' : ''}"><i>${n <= iA ? '✓' : ''}</i>${e.t}<span>${n <= iA ? EP.fechaCorta(EP.cuandoEtapa(v, e.id)) : ''}</span></li>`).join('')}</ol>${v.notaCliente ? `<div class="nota">${v.notaCliente.replace(/</g, '&lt;')}</div>` : ''}</div>`;
   const waTxt = `Hola ${v.cliente.nombre.split(' ')[0]}, te comparto tu ticket ${v.folio} de ${aj.negocio}: total ${fmt(v.total)}, ${v.saldo > 0 ? 'pagado ' + fmt(v.pagado) + ', saldo ' + fmt(v.saldo) : 'pagado completo'}. Lo puedes ver aquí: ${enlace}`;
   el.innerHTML = `
   <div class="ticket">
@@ -65,6 +82,7 @@
     <div class="body">
       <div class="folio"><b>${v.folio}</b><span>${fecha(v.creado)}<br>${v.sucursal ? 'Sucursal ' + v.sucursal : v.origen === 'sitio' ? 'Compra en línea' : ''}</span></div>
       <span class="estado ${v.estado}">${estadoTxt}</span>
+      ${segHtml}
       <div class="sec"><h3>Cliente</h3><div>${v.cliente.nombre}</div><small style="color:var(--muted)">${v.cliente.tel ? 'WhatsApp ' + v.cliente.tel : ''}${v.cliente.email ? ' · ' + v.cliente.email : ''}</small>
         ${v.envio && v.envio.tipo === 'domicilio' ? `<div style="margin-top:6px;font-size:12.5px"><b>Entrega:</b> ${v.envio.direccion || ''} ${v.envio.estado ? '· ' + v.envio.estado : ''}</div>` : '<div style="margin-top:6px;font-size:12.5px"><b>Entrega:</b> recoger en bodega (se confirma por WhatsApp)</div>'}</div>
       <div class="sec"><h3>Artículos</h3>${v.lineas.map(l => `<div class="row"><span>${l.qty} × ${l.nombre}${l.colorNombre ? '<small>Color ' + l.colorNombre + '</small>' : ''}</span><span class="num">${fmt(l.unit * l.qty)}</span></div>`).join('')}</div>
@@ -76,10 +94,13 @@
     <div class="foot">${aj.leyendaTicket || 'Garantía de 6 meses en estructura y mecanismos. Conserva este ticket para cualquier aclaración.'}<br>${aj.negocio} · 33 4766 2784 · atencion@cardianmuebles.com</div>
   </div>
   <div class="acts">
-    <button class="btn ink" onclick="print()">Imprimir o guardar PDF</button>
+    <button class="btn ink" onclick="print()">Guardar PDF</button>
+    <button class="btn" id="img">Descargar imagen</button>
     ${v.cliente.tel ? `<a class="btn wa" href="https://wa.me/52${v.cliente.tel}?text=${encodeURIComponent(waTxt)}" target="_blank" rel="noopener">Enviar por WhatsApp</a>` : ''}
     <button class="btn" id="cp">Copiar enlace</button>
   </div>`;
+  document.getElementById('img').onclick = () => window.EstadoPedido.descargar(v);
+  if (q.get('imprimir')) setTimeout(() => print(), 700);
   document.getElementById('cp').onclick = () => navigator.clipboard.writeText(enlace).then(() => { document.getElementById('cp').textContent = 'Enlace copiado'; });
 })();
 </script>

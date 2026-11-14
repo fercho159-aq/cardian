@@ -62,6 +62,13 @@ async function manejar(req, res) {
       if (!esAdmin(u)) return error(res, 403, 'Solo el administrador quita pagos');
       const i = v.pagos.findIndex(p => p.id === b.pagoId); if (i < 0) return error(res, 404, 'No existe ese pago');
       const [p] = v.pagos.splice(i, 1); v.estado = M.estadoPorPago(v); hist(v, u.nombre, 'Quitó pago de $' + p.monto.toLocaleString('es-MX'));
+    } else if (ac === 'etapa') {
+      // Seguimiento del pedido: etapa, fecha estimada de entrega y nota para el cliente.
+      if (b.etapa !== undefined && !M.ETAPAS.includes(b.etapa)) return error(res, 400, 'Etapa inválida');
+      const NOM = { recibido: 'Recibido', fabricando: 'En fabricación', listo: 'Listo para entrega', 'en-camino': 'En camino', entregado: 'Entregado' };
+      if (b.etapa && b.etapa !== (v.etapa || 'recibido')) { v.etapa = b.etapa; (v.etapas = v.etapas || []).push({ etapa: b.etapa, cuando: ahora(), quien: u.nombre }); hist(v, u.nombre, 'Pedido: ' + NOM[b.etapa]); if (b.etapa === 'entregado' && v.estado !== 'cancelado') v.estado = 'entregado'; }
+      if (b.fechaEntrega !== undefined) { const fe = /^\d{4}-\d{2}-\d{2}$/.test(String(b.fechaEntrega)) ? String(b.fechaEntrega) : ''; if (fe !== (v.fechaEntrega || '')) { v.fechaEntrega = fe; hist(v, u.nombre, fe ? 'Fecha estimada de entrega: ' + fe : 'Quitó la fecha de entrega'); } }
+      if (b.notaCliente !== undefined) v.notaCliente = String(b.notaCliente).slice(0, 240);
     } else if (ac === 'estado') {
       if (!M.ESTADOS_VENTA.includes(b.estado)) return error(res, 400, 'Estado inválido');
       v.estado = b.estado; hist(v, u.nombre, 'Estado: ' + b.estado);

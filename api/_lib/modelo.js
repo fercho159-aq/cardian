@@ -13,6 +13,8 @@ function catalogo() {
 const D = () => catalogo();
 
 const ESTADOS_VENTA = ['pendiente', 'apartado', 'pagado', 'en-produccion', 'entregado', 'cancelado'];
+// Etapas de entrega del pedido (aparte del estado de pago): lo que ve el cliente en su seguimiento.
+const ETAPAS = ['recibido', 'fabricando', 'listo', 'en-camino', 'entregado'];
 const ESTADOS_LEAD = ['nuevo', 'contactado', 'sin-respuesta', 'cotizado', 'compro', 'no-compro'];
 const ORIGENES = ['sitio', 'mercado-pago', 'whatsapp', 'sucursal', 'telefono', 'otro'];
 
@@ -76,6 +78,7 @@ function nuevaVenta(datos, usuario) {
     cliente: { nombre: String((datos.cliente && datos.cliente.nombre) || '').slice(0, 80), tel: tel10(datos.cliente && datos.cliente.tel), email: String((datos.cliente && datos.cliente.email) || '').slice(0, 100) },
     envio: { tipo: datos.envio && datos.envio.tipo === 'domicilio' ? 'domicilio' : 'bodega', estado: (datos.envio && datos.envio.estado) || '', direccion: String((datos.envio && datos.envio.direccion) || '').slice(0, 240) },
     lineas: c.lineas, sub: c.sub, costoEnvio: c.envio, descuento: c.descuento, iva: c.iva, total: c.total,
+    etapa: 'recibido', etapas: [{ etapa: 'recibido', cuando: ahora() }], fechaEntrega: '',
     pagos: [], estado: 'pendiente', notas: String(datos.notas || '').slice(0, 500), factura: datos.factura ? { razon: String(datos.factura.razon || '').slice(0, 120), rfc: String(datos.factura.rfc || '').slice(0, 13) } : null,
     leadId: datos.leadId || null, mp: null, historial: [{ cuando: ahora(), quien: usuario ? usuario.nombre : 'Sitio web', que: 'Venta creada' }]
   };
@@ -108,4 +111,4 @@ function nuevoLead(datos, vendedor, quien) {
   };
 }
 
-module.exports = { D, calcular, folioNuevo, pagado, saldo, estadoPorPago, llaveTicket, nuevaVenta, elegirVendedor, nuevoLead, ESTADOS_VENTA, ESTADOS_LEAD, ORIGENES };
+module.exports = { D, calcular, folioNuevo, pagado, saldo, estadoPorPago, llaveTicket, nuevaVenta, elegirVendedor, nuevoLead, ESTADOS_VENTA, ESTADOS_LEAD, ETAPAS, ORIGENES };
