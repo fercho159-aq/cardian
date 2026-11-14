@@ -33,6 +33,11 @@
   const nombreU = id => (S.usuarios.find(u => u.id === id) || {}).nombre || '—';
   const pagado = v => (v.pagos || []).reduce((s, p) => s + p.monto, 0);
   const saldo = v => Math.max(0, v.total - pagado(v));
+  // Una venta cuenta como venta cuando ya tiene al menos un pago; las demás viven en «Sin pago».
+  const conPago = v => pagado(v) > 0;
+  const sinPago = v => !conPago(v) && v.estado !== 'cancelado';
+  const METODO_N = { efectivo: 'Efectivo', transferencia: 'Transferencia', tarjeta: 'Tarjeta', 'mercado-pago': 'Mercado Pago', deposito: 'Depósito', otro: 'Otro' };
+  const pagoCon = v => [...new Set((v.pagos || []).map(p => (METODO_N[p.metodo] || p.metodo) + (p.metodo === 'mercado-pago' && p.ref ? ' · ' + p.ref : '')))].join(', ');
   const waLink = (tel, txt) => `https://wa.me/52${tel}?text=${encodeURIComponent(txt)}`;
   const ticketUrl = (folio, k) => `/ticket?f=${folio}&k=${k}`;
   const badge = (e, map) => `<span class="badge ${e}">${esc((map || ESTADO_V)[e] || e)}</span>`;
@@ -84,15 +89,16 @@
     leads: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-5A8 8 0 1 1 21 12z"/></svg>',
     vendedores: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17" cy="9" r="2.5"/><path d="M15.5 14.5a5 5 0 0 1 6 5"/></svg>',
     ajustes: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
+    sinpago: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
     cuenta: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>'
   };
   function ruta() { return (location.hash.replace('#/', '') || 'hoy').split('?')[0]; }
   function shell(contenido, titulo, sub, acciones) {
     const leadsNuevos = S.leads.filter(l => l.estado === 'nuevo').length;
-    const pendientes = S.ventas.filter(v => v.estado === 'pendiente').length;
+    const pendientes = S.ventas.filter(sinPago).length;
     const menu = admin()
-      ? [['hoy', 'Hoy'], ['ventas', 'Ventas', pendientes], ['leads', 'Leads', leadsNuevos], ['vendedores', 'Usuarios'], ['ajustes', 'Ajustes']]
-      : [['hoy', 'Hoy'], ['leads', 'Mis leads', leadsNuevos], ['ventas', 'Mis ventas', pendientes], ['cuenta', 'Mi cuenta']];
+      ? [['hoy', 'Hoy'], ['ventas', 'Ventas'], ['sinpago', 'Sin pago', pendientes], ['leads', 'Leads', leadsNuevos], ['vendedores', 'Usuarios'], ['ajustes', 'Ajustes']]
+      : [['hoy', 'Hoy'], ['leads', 'Mis leads', leadsNuevos], ['ventas', 'Mis ventas'], ['sinpago', 'Sin pago', pendientes], ['cuenta', 'Mi cuenta']];
     const r = ruta();
     $('#app').innerHTML = `<div class="shell">
       <nav class="side" id="side"><div class="brand"><img src="/img/logo.png" alt=""><span>Sistema</span></div>
@@ -110,12 +116,13 @@
   // ───────── Hoy ─────────
   function vistaHoy() {
     const ini = new Date(); ini.setDate(1); ini.setHours(0, 0, 0, 0);
-    const mes = S.ventas.filter(v => new Date(v.creado) >= ini && v.estado !== 'cancelado');
+    const mes = S.ventas.filter(v => new Date(v.creado) >= ini && v.estado !== 'cancelado' && conPago(v));
     const cobrado = mes.reduce((s, v) => s + pagado(v), 0);
-    const porCobrar = S.ventas.filter(v => !['cancelado', 'entregado'].includes(v.estado)).reduce((s, v) => s + saldo(v), 0);
+    const porCobrar = S.ventas.filter(v => conPago(v) && v.estado !== 'cancelado').reduce((s, v) => s + saldo(v), 0);
+    const sinPagoL = S.ventas.filter(sinPago);
     const nuevos = S.leads.filter(l => l.estado === 'nuevo');
     const sinRespuesta = S.leads.filter(l => l.estado === 'sin-respuesta');
-    const sitioPend = S.ventas.filter(v => v.origen === 'sitio' && v.estado === 'pendiente');
+    const sitioPend = S.ventas.filter(v => sinPago(v) && Date.now() - new Date(v.creado) < 7 * 864e5);
     const sinVendedor = S.leads.filter(l => !l.vendedorId && !['compro', 'no-compro'].includes(l.estado));
     const tareas = [];
     nuevos.slice(0, 6).forEach(l => tareas.push(`<li class="lead" data-lead="${l.id}"><div><b>${esc(l.nombre || 'Sin nombre')}</b> pidió informes ${l.producto ? 'de ' + esc(l.producto) : ''} <span class="badge origen">${ORIGEN[l.origen]}</span><div class="meta"><span>${hace(l.creado)}</span>${admin() ? `<span>${esc(nombreU(l.vendedorId))}</span>` : ''}</div></div><div class="acts"><a class="btn wa sm" target="_blank" rel="noopener" href="${waLink(l.tel, saludoLead(l))}" onclick="event.stopPropagation()">WhatsApp</a></div></li>`));
@@ -125,15 +132,16 @@
       <div class="grid kpis">
         <div class="kpi"><small>Ventas del mes</small><b>${fmt(mes.reduce((s, v) => s + v.total, 0))}</b><span>${mes.length} venta${mes.length === 1 ? '' : 's'}</span></div>
         <div class="kpi ok"><small>Cobrado este mes</small><b>${fmt(cobrado)}</b><span>pagos registrados</span></div>
-        <div class="kpi warn"><small>Por cobrar</small><b>${fmt(porCobrar)}</b><span>saldos de ventas abiertas</span></div>
+        <div class="kpi warn"><small>Por cobrar</small><b>${fmt(porCobrar)}</b><span>saldos de ventas con anticipo</span></div>
         <div class="kpi"><small>Leads nuevos</small><b>${nuevos.length}</b><span>${sinRespuesta.length} sin respuesta</span></div>
       </div>
+      ${sinPagoL.length ? `<div class="aviso" style="margin-top:16px">${sinPagoL.length} pedido${sinPagoL.length > 1 ? 's' : ''} sin pago por ${fmt(sinPagoL.reduce((s, v) => s + v.total, 0))} (no cuentan en ventas). <a href="#/sinpago">Ver y contactar</a></div>` : ''}
       ${admin() && sinVendedor.length ? `<div class="aviso" style="margin-top:16px">Hay ${sinVendedor.length} lead${sinVendedor.length > 1 ? 's' : ''} sin vendedor. <a href="#" id="repartir">Repartir ahora</a> o da de alta vendedores que reciban leads.</div>` : ''}
       ${rapidaHtml()}
       ${!admin() && !S.yo.whatsapp && !compartido() ? `<div class="aviso" style="margin-top:16px">Tu cuenta no tiene WhatsApp registrado: los clientes del sitio llegan al número general. Pídele al administrador que lo agregue.</div>` : ''}
       <div class="two" style="margin-top:16px">
         <div class="box"><h2>Qué hacer hoy</h2>${tareas.length ? `<ul class="lead-list" style="list-style:none;padding:0;margin:0">${tareas.join('')}</ul>` : '<div class="empty">Todo al día. No hay leads nuevos ni pedidos sin pago.</div>'}</div>
-        <div class="box"><h2>Últimas ventas</h2>${S.ventas.length ? `<table class="table"><tbody>${S.ventas.slice(0, 8).map(v => `<tr class="row" data-venta="${v.folio}"><td><b>${v.folio}</b><small>${esc(v.cliente.nombre)}</small></td><td>${badge(v.estado)}</td><td class="num">${fmt(v.total)}</td></tr>`).join('')}</tbody></table>` : '<div class="empty">Aún no hay ventas.</div>'}</div>
+        <div class="box"><h2>Últimas ventas</h2>${S.ventas.some(conPago) ? `<table class="table"><tbody>${S.ventas.filter(conPago).slice(0, 8).map(v => `<tr class="row" data-venta="${v.folio}"><td><b>${v.folio}</b><small>${esc(v.cliente.nombre)}</small></td><td>${badge(v.estado)}</td><td class="num">${fmt(v.total)}</td></tr>`).join('')}</tbody></table>` : '<div class="empty">Aún no hay ventas.</div>'}</div>
       </div>`, `Hola, ${esc(S.yo.nombre.split(' ')[0])}`, new Date().toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' }),
       `${'Notification' in window && Notification.permission === 'default' ? '<button class="btn sm" id="avisos">🔔 Activar avisos</button>' : ''}<button class="btn gold sm" id="nuevaVenta">+ Nuevo pedido</button><button class="btn sm" id="nuevoLead">+ Nuevo lead</button>`);
     enlazarComunes();
@@ -177,23 +185,23 @@
   // ───────── Ventas ─────────
   function vistaVentas() {
     const f = S.filtros.v || (S.filtros.v = { q: '', estado: '', etapa: '', sucursal: '', origen: '', vendedor: '' });
-    const lista = S.ventas.filter(v => (!f.estado || v.estado === f.estado) && (!f.etapa || (v.etapa || 'recibido') === f.etapa) && (!f.sucursal || v.sucursal === f.sucursal) && (!f.origen || v.origen === f.origen) && (!f.vendedor || v.vendedorId === f.vendedor)
+    const lista = S.ventas.filter(v => conPago(v) && (!f.estado || v.estado === f.estado) && (!f.etapa || (v.etapa || 'recibido') === f.etapa) && (!f.sucursal || v.sucursal === f.sucursal) && (!f.origen || v.origen === f.origen) && (!f.vendedor || v.vendedorId === f.vendedor)
       && (!f.q || (v.folio + ' ' + v.cliente.nombre + ' ' + v.cliente.tel + ' ' + v.lineas.map(l => l.nombre).join(' ')).toLowerCase().includes(f.q.toLowerCase())));
     const tot = lista.reduce((s, v) => s + (v.estado === 'cancelado' ? 0 : v.total), 0), cob = lista.reduce((s, v) => s + pagado(v), 0);
     shell(`
       <div class="filters">
         <input class="input buscar" id="fq" placeholder="Buscar folio, cliente, teléfono…" value="${esc(f.q)}">
-        <select class="input" id="fe">${opts(Object.entries(ESTADO_V), f.estado, 'Todos los pagos')}</select>
+        <select class="input" id="fe">${opts(Object.entries(ESTADO_V).filter(([k]) => k !== 'pendiente'), f.estado, 'Todos los pagos')}</select>
         <select class="input" id="fet">${opts(Object.entries(ETAPA_V), f.etapa || '', 'Todas las etapas')}</select>
         ${S.sucursales.length ? `<select class="input" id="fs">${opts(S.sucursales, f.sucursal, 'Todas las sucursales')}</select>` : ''}
         <select class="input" id="fo">${opts(Object.entries(ORIGEN), f.origen, 'Todos los orígenes')}</select>
         ${admin() ? `<select class="input" id="fv">${opts(S.usuarios.filter(u => u.rol === 'vendedor' || S.ventas.some(v => v.vendedorId === u.id)).map(u => [u.id, u.nombre]), f.vendedor, 'Todos los vendedores')}</select>` : ''}
         <span class="note">${lista.length} venta${lista.length === 1 ? '' : 's'} · ${fmt(tot)} · cobrado ${fmt(cob)}</span>
       </div>
-      <div class="table-wrap">${lista.length ? `<table class="table"><thead><tr><th>Folio</th><th>Cliente</th><th>Artículos</th><th>Pago</th><th>Pedido</th><th>Origen</th>${admin() ? '<th>Vendedor</th>' : ''}<th>Sucursal</th><th class="num">Total</th><th class="num">Saldo</th></tr></thead><tbody>
-        ${lista.map(v => `<tr class="row" data-venta="${v.folio}"><td><b>${v.folio}</b><small>${dia(v.creado)}</small></td><td>${esc(v.cliente.nombre)}<small>${v.cliente.tel}</small></td><td>${v.lineas.map(l => `${l.qty} × ${esc(l.nombre)}${l.colorNombre ? ' · ' + esc(l.colorNombre) : ''}`).join('<br>')}</td><td>${badge(v.estado)}</td><td>${badge(v.etapa || 'recibido', ETAPA_V)}</td><td><span class="badge origen">${ORIGEN[v.origen] || v.origen}</span></td>${admin() ? `<td>${esc(nombreU(v.vendedorId))}</td>` : ''}<td>${esc(v.sucursal || '—')}</td><td class="num">${fmt(v.total)}</td><td class="num">${saldo(v) ? `<b style="color:var(--warn)">${fmt(saldo(v))}</b>` : '<span style="color:var(--ok)">Pagado</span>'}</td></tr>`).join('')}
+      <div class="table-wrap">${lista.length ? `<table class="table"><thead><tr><th>Folio</th><th>Cliente</th><th>Artículos</th><th>Pago</th><th>Pagó con</th><th>Pedido</th><th>Origen</th>${admin() ? '<th>Vendedor</th>' : ''}<th>Sucursal</th><th class="num">Total</th><th class="num">Saldo</th></tr></thead><tbody>
+        ${lista.map(v => `<tr class="row" data-venta="${v.folio}"><td><b>${v.folio}</b><small>${dia(v.creado)}</small></td><td>${esc(v.cliente.nombre)}<small>${v.cliente.tel}</small></td><td>${v.lineas.map(l => `${l.qty} × ${esc(l.nombre)}${l.colorNombre ? ' · ' + esc(l.colorNombre) : ''}`).join('<br>')}</td><td>${badge(v.estado)}</td><td><small style="display:block;max-width:180px;white-space:normal">${esc(pagoCon(v))}</small></td><td>${badge(v.etapa || 'recibido', ETAPA_V)}</td><td><span class="badge origen">${ORIGEN[v.origen] || v.origen}</span></td>${admin() ? `<td>${esc(nombreU(v.vendedorId))}</td>` : ''}<td>${esc(v.sucursal || '—')}</td><td class="num">${fmt(v.total)}</td><td class="num">${saldo(v) ? `<b style="color:var(--warn)">${fmt(saldo(v))}</b>` : '<span style="color:var(--ok)">Pagado</span>'}</td></tr>`).join('')}
       </tbody></table>` : '<div class="empty">No hay ventas con esos filtros.</div>'}</div>`,
-      admin() ? 'Ventas' : 'Mis ventas', 'Pedidos del sitio, ventas de sucursal y pagos de Mercado Pago, en un solo lugar.',
+      admin() ? 'Ventas' : 'Mis ventas', 'Solo pedidos con pago o anticipo. Los que no han pagado están en «Sin pago».',
       `<button class="btn gold sm" id="nuevaVenta">+ Nuevo pedido</button>${admin() && S.ajustes.mpConfigurado ? '<button class="btn sm" id="sync">Sincronizar Mercado Pago</button>' : ''}`);
     enlazarComunes();
     const on = (id, k) => { const el = $('#' + id); if (el) el.oninput = el.onchange = () => { f[k] = el.value; vistaVentas(); if (k === 'q') { const i = $('#fq'); i.focus(); i.setSelectionRange(i.value.length, i.value.length); } }; };
@@ -353,6 +361,34 @@
     $('#dlEst').onclick = () => EstadoPedido.descargar(v);
     $('#cpEst').onclick = () => navigator.clipboard.writeText(linkTicket).then(() => toast('Enlace copiado'));
     return m;
+  }
+
+  // ───────── Sin pago ─────────
+  // Pedidos que nadie ha pagado: no cuentan como venta. Al registrar un pago (o al aprobarse en Mercado Pago) pasan solos a Ventas.
+  function vistaSinPago() {
+    const f = S.filtros.sp || (S.filtros.sp = { q: '', desc: false });
+    const lista = S.ventas.filter(v => pagado(v) === 0 && (f.desc ? v.estado === 'cancelado' : v.estado !== 'cancelado'))
+      .filter(v => !f.q || (v.folio + ' ' + v.cliente.nombre + ' ' + v.cliente.tel).toLowerCase().includes(f.q.toLowerCase()));
+    const msg = v => `Hola ${(v.cliente.nombre || '').split(' ')[0]}, te escribo de Cardian Muebles. Vi que tu pedido ${v.folio} (${v.lineas.map(l => l.nombre).join(', ')}) por ${fmt(v.total)} quedó pendiente de pago. ¿Te ayudo a terminarlo o tienes alguna duda?`;
+    shell(`
+      <div class="filters">
+        <input class="input buscar" id="spq" placeholder="Buscar folio, cliente, teléfono…" value="${esc(f.q)}">
+        <label class="chk" style="margin:0"><input type="checkbox" id="spd" ${f.desc ? 'checked' : ''}> Ver descartados</label>
+        <span class="note">${lista.length} pedido${lista.length === 1 ? '' : 's'} · ${fmt(lista.reduce((s, v) => s + v.total, 0))}</span>
+      </div>
+      <div class="table-wrap">${lista.length ? `<table class="table"><thead><tr><th>Folio</th><th>Cliente</th><th>Artículos</th><th>Origen</th>${admin() ? '<th>Vendedor</th>' : ''}<th class="num">Total</th><th></th></tr></thead><tbody>
+        ${lista.map(v => `<tr data-sp="${v.folio}"><td><b>${v.folio}</b><small>${hace(v.creado)}</small></td><td>${esc(v.cliente.nombre)}<small>${v.cliente.tel}</small></td><td>${v.lineas.map(l => `${l.qty} × ${esc(l.nombre)}${l.colorNombre ? ' · ' + esc(l.colorNombre) : ''}`).join('<br>')}</td><td><span class="badge origen">${ORIGEN[v.origen] || v.origen}</span></td>${admin() ? `<td>${esc(nombreU(v.vendedorId))}</td>` : ''}<td class="num">${fmt(v.total)}</td>
+          <td><div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end">${v.cliente.tel ? `<a class="btn wa sm" target="_blank" rel="noopener" href="${waLink(v.cliente.tel, msg(v))}">Escribirle</a>` : ''}<button class="btn sm" data-ver="${v.folio}">Ver / cobrar</button>${f.desc ? `<button class="btn sm" data-rec="${v.folio}">Recuperar</button>` : `<button class="btn sm" data-desc="${v.folio}">Descartar</button>`}</div></td></tr>`).join('')}
+      </tbody></table>` : `<div class="empty">${f.desc ? 'No hay pedidos descartados.' : 'No hay pedidos sin pago. 🎉'}</div>`}</div>`,
+      'Sin pago', 'Pedidos que aún no pagan. No cuentan en ventas; en cuanto registras un pago pasan a Ventas.',
+      `<button class="btn gold sm" id="nuevaVenta">+ Nuevo pedido</button>`);
+    enlazarComunes();
+    const q = $('#spq'); q.oninput = () => { f.q = q.value; vistaSinPago(); const i = $('#spq'); i.focus(); i.setSelectionRange(i.value.length, i.value.length); };
+    $('#spd').onchange = () => { f.desc = $('#spd').checked; vistaSinPago(); };
+    $$('[data-ver]').forEach(b => b.onclick = () => detalleVenta(b.dataset.ver));
+    const cambiar = async (folio, estado, txt) => { try { await api('/api/datos?c=ventas', { accion: 'estado', folio, estado }); toast(txt); await cargar(); vistaSinPago(); } catch (e) { toast(e.message); } };
+    $$('[data-desc]').forEach(b => b.onclick = () => { if (confirm('¿Descartar el pedido ' + b.dataset.desc + '? Se marca como cancelado y sale de esta lista.')) cambiar(b.dataset.desc, 'cancelado', 'Pedido descartado'); });
+    $$('[data-rec]').forEach(b => b.onclick = () => cambiar(b.dataset.rec, 'pendiente', 'Pedido recuperado'));
   }
 
   // ───────── Leads ─────────
@@ -545,7 +581,7 @@
   function render() {
     if (!S.yo) return vistaLogin();
     const r = ruta();
-    const vistas = { hoy: vistaHoy, ventas: vistaVentas, leads: vistaLeads, vendedores: admin() ? vistaVendedores : vistaHoy, ajustes: admin() ? vistaAjustes : vistaCuenta, cuenta: vistaCuenta };
+    const vistas = { hoy: vistaHoy, ventas: vistaVentas, sinpago: vistaSinPago, leads: vistaLeads, vendedores: admin() ? vistaVendedores : vistaHoy, ajustes: admin() ? vistaAjustes : vistaCuenta, cuenta: vistaCuenta };
     (vistas[r] || vistaHoy)();
     const m = location.hash.match(/venta=([\w-]+)/); if (m) { detalleVenta(m[1]); history.replaceState(null, '', '#/' + r); }
   }
