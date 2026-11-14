@@ -25,6 +25,7 @@ async function crearPreferencia(v, req) {
   const items = v.lineas.map(l => ({ id: l.id || 'manual', title: l.nombre + (l.colorNombre ? ' · ' + l.colorNombre : ''), quantity: l.qty, unit_price: l.unit, currency_id: 'MXN' }));
   if (v.costoEnvio) items.push({ id: 'envio', title: 'Envío y armado', quantity: 1, unit_price: v.costoEnvio, currency_id: 'MXN' });
   if (v.descuento) items.push({ id: 'descuento', title: 'Descuento', quantity: 1, unit_price: -v.descuento, currency_id: 'MXN' });
+  if (v.iva) items.push({ id: 'iva', title: 'IVA 16 % (factura)', quantity: 1, unit_price: v.iva, currency_id: 'MXN' });
   const body = {
     items, external_reference: v.folio, statement_descriptor: 'CARDIAN MUEBLES',
     payer: { name: v.cliente.nombre, email: v.cliente.email || undefined, phone: v.cliente.tel ? { area_code: '52', number: v.cliente.tel } : undefined },
@@ -53,6 +54,8 @@ async function aplicarPago(p) {
     if ((v.pagos || []).some(x => x.mpId === String(p.id))) { afectada = v; return; }
     v.pagos.push({ id: crypto.randomBytes(4).toString('hex'), mpId: String(p.id), cuando: p.date_approved || p.date_created, monto: Math.round(p.transaction_amount), metodo: 'mercado-pago', ref: (p.payment_method_id || '') + (p.installments > 1 ? ' · ' + p.installments + ' meses' : ''), quien: 'Mercado Pago' });
     v.estado = M.estadoPorPago(v);
+    // el correo ya no se pide en el sitio: lo tomamos del pago (Mercado Pago lo pide al pagar)
+    if (!v.cliente.email && p.payer && p.payer.email) v.cliente.email = String(p.payer.email).slice(0, 100);
     v.mp = { ...(v.mp || {}), ultimoPago: String(p.id), estado: p.status };
     (v.historial = v.historial || []).push({ cuando: new Date().toISOString(), quien: 'Mercado Pago', que: 'Pago aprobado $' + Math.round(p.transaction_amount).toLocaleString('es-MX') });
     afectada = v;

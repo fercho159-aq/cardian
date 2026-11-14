@@ -20,7 +20,9 @@ const precioUnitario = (p, color) => (p.price || 0) + (p.extras && color && p.ex
 
 // Calcula las líneas y totales de una venta a partir de ids del catálogo (o de líneas libres
 // para ventas manuales: {nombre, unit, qty}).
-function calcular(lineasIn, envio) {
+// opts.iva: el cliente pidió factura → se agrega el 16 % de IVA sobre (subtotal + envío − descuento).
+const TASA_IVA = 0.16;
+function calcular(lineasIn, envio, opts) {
   const d = D();
   const lineas = (lineasIn || []).map(l => {
     const p = l.id ? d.products.find(x => x.id === l.id) : null;
@@ -43,7 +45,9 @@ function calcular(lineasIn, envio) {
   }
   if (envio && envio.costo !== undefined && envio.costo !== null && envio.costo !== '') costoEnvio = Math.max(0, Math.round(+envio.costo || 0));
   const descuento = Math.max(0, Math.round(+(envio && envio.descuento) || 0));
-  return { lineas, sub, envio: costoEnvio, descuento, total: Math.max(0, sub + costoEnvio - descuento) };
+  const base = Math.max(0, sub + costoEnvio - descuento);
+  const iva = opts && opts.iva ? Math.round(base * TASA_IVA) : 0;
+  return { lineas, sub, envio: costoEnvio, descuento, iva, total: base + iva };
 }
 
 async function folioNuevo() {
@@ -65,13 +69,13 @@ function llaveTicket(folio) {
 }
 
 function nuevaVenta(datos, usuario) {
-  const c = calcular(datos.lineas, datos.envio);
+  const c = calcular(datos.lineas, datos.envio, { iva: !!datos.factura });
   const v = {
     folio: datos.folio, creado: ahora(), origen: ORIGENES.includes(datos.origen) ? datos.origen : 'otro',
     sucursal: String(datos.sucursal || '').slice(0, 60), vendedorId: datos.vendedorId || (usuario ? usuario.id : null),
     cliente: { nombre: String((datos.cliente && datos.cliente.nombre) || '').slice(0, 80), tel: tel10(datos.cliente && datos.cliente.tel), email: String((datos.cliente && datos.cliente.email) || '').slice(0, 100) },
     envio: { tipo: datos.envio && datos.envio.tipo === 'domicilio' ? 'domicilio' : 'bodega', estado: (datos.envio && datos.envio.estado) || '', direccion: String((datos.envio && datos.envio.direccion) || '').slice(0, 240) },
-    lineas: c.lineas, sub: c.sub, costoEnvio: c.envio, descuento: c.descuento, total: c.total,
+    lineas: c.lineas, sub: c.sub, costoEnvio: c.envio, descuento: c.descuento, iva: c.iva, total: c.total,
     pagos: [], estado: 'pendiente', notas: String(datos.notas || '').slice(0, 500), factura: datos.factura ? { razon: String(datos.factura.razon || '').slice(0, 120), rfc: String(datos.factura.rfc || '').slice(0, 13) } : null,
     leadId: datos.leadId || null, mp: null, historial: [{ cuando: ahora(), quien: usuario ? usuario.nombre : 'Sitio web', que: 'Venta creada' }]
   };

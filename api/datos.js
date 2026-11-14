@@ -71,7 +71,7 @@ async function manejar(req, res) {
       if (b.notas !== undefined) v.notas = String(b.notas).slice(0, 500);
       if (b.envio) v.envio = { ...v.envio, ...{ tipo: b.envio.tipo === 'domicilio' ? 'domicilio' : 'bodega', estado: String(b.envio.estado || ''), direccion: String(b.envio.direccion || '').slice(0, 240) } };
       if (esAdmin(u) && b.vendedorId !== undefined) v.vendedorId = b.vendedorId || null;
-      if (b.lineas && esAdmin(u)) { const cal = M.calcular(b.lineas, { tipo: v.envio.tipo, estado: v.envio.estado, costo: b.costoEnvio ?? v.costoEnvio, descuento: b.descuento ?? v.descuento }); Object.assign(v, { lineas: cal.lineas, sub: cal.sub, costoEnvio: cal.envio, descuento: cal.descuento, total: cal.total }); v.estado = M.estadoPorPago(v); }
+      if (b.lineas && esAdmin(u)) { const cal = M.calcular(b.lineas, { tipo: v.envio.tipo, estado: v.envio.estado, costo: b.costoEnvio ?? v.costoEnvio, descuento: b.descuento ?? v.descuento }, { iva: !!v.factura }); Object.assign(v, { lineas: cal.lineas, sub: cal.sub, costoEnvio: cal.envio, descuento: cal.descuento, iva: cal.iva, total: cal.total }); v.estado = M.estadoPorPago(v); }
       hist(v, u.nombre, 'Editó la venta');
     } else if (ac === 'nota') {
       hist(v, u.nombre, 'Nota: ' + String(b.texto || '').slice(0, 300));

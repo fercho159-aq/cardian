@@ -91,12 +91,12 @@
   function header() {
     const path = location.pathname.replace(/\/$/, '') || '/';
     const here = path + location.search; const cur = (h) => (here === h || (h.indexOf('?') < 0 && h !== '/' && path.startsWith(h))) ? ' aria-current="page"' : '';
-    const links = [['/catalogo?c=salas', 'Salas'], ['/catalogo?c=comedores', 'Comedores'], ['/envios', 'Envíos'], ['/proyectos', 'Proyectos']];
+    const links = [['/catalogo?c=salas', 'Salas'], ['/catalogo?c=comedores', 'Comedores'], ['/catalogos', 'Catálogos'], ['/envios', 'Envíos'], ['/proyectos', 'Proyectos']];
     const nav = links.map(([h, t]) => `<a href="${h}"${cur(h)}>${t}</a>`).join('');
     return `
     <div class="promo" aria-label="Promociones"><div class="wrap"><div class="track">
-      <span>Envío gratis en CDMX y Estado de México</span><span>Paga a meses con tarjeta en Mercado Pago</span><span>Precio directo, sin intermediarios</span><span>Hecho en México · Garantía de 1 año</span>
-      <span aria-hidden="true">Envío gratis en CDMX y Estado de México</span><span aria-hidden="true">Paga a meses con tarjeta en Mercado Pago</span><span aria-hidden="true">Precio directo, sin intermediarios</span><span aria-hidden="true">Hecho en México · Garantía de 1 año</span>
+      <span>Envío gratis en CDMX y Estado de México</span><span>Paga a meses con tarjeta en Mercado Pago</span><span>Precio directo, sin intermediarios</span><span>Hecho en México · Garantía de 6 meses</span>
+      <span aria-hidden="true">Envío gratis en CDMX y Estado de México</span><span aria-hidden="true">Paga a meses con tarjeta en Mercado Pago</span><span aria-hidden="true">Precio directo, sin intermediarios</span><span aria-hidden="true">Hecho en México · Garantía de 6 meses</span>
     </div></div></div>
     <header class="site"><div class="wrap">
       <a class="logo" href="/" aria-label="Cardian Muebles, inicio"><img src="/img/logo.png" alt="Cardian Muebles"></a>
@@ -112,7 +112,7 @@
     return `<footer class="site"><div class="wrap">
       <div class="top">
         <div class="brand"><img src="/img/logo.png" alt="Cardian Muebles"><p>Salas y comedores con precio directo. Envío a todo México.</p></div>
-        <div><h4>Catálogo</h4><ul><li><a href="/catalogo?c=salas">Salas</a></li><li><a href="/catalogo?c=comedores">Comedores</a></li><li><a href="/catalogo?stock=inmediata">Entrega inmediata</a></li></ul></div>
+        <div><h4>Catálogo</h4><ul><li><a href="/catalogo?c=salas">Salas</a></li><li><a href="/catalogo?c=comedores">Comedores</a></li><li><a href="/catalogo?stock=inmediata">Entrega inmediata</a></li><li><a href="/catalogos">Catálogos en PDF</a></li></ul></div>
         <div><h4>Ayuda</h4><ul><li><a href="/como-comprar">Cómo comprar</a></li><li><a href="/envios">Envíos y entregas</a></li><li><a href="/pagos">Pagos y garantía</a></li><li><a href="/preguntas">Preguntas frecuentes</a></li><li><a href="/contacto">Contacto</a></li></ul></div>
         <div><h4>Empresa</h4><ul><li><a href="/nosotros">Nosotros y fábrica</a></li><li><a href="/proyectos">Hoteles y oficinas</a></li><li><a href="${D.brand.ig}" target="_blank" rel="noopener">Instagram</a></li><li><a href="${D.brand.fb}" target="_blank" rel="noopener">Facebook</a></li><li><a href="/privacidad">Aviso de privacidad</a></li><li><a href="/terminos">Términos de compra</a></li></ul></div>
       </div>

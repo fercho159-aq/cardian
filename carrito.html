@@ -60,7 +60,7 @@
     const total = sub + ship.cost;
     const big = lines.find(l => l.qty >= 10);
     $('#cart').innerHTML = `
-      <section><h1>Tu carrito</h1><p class="muted" style="margin:6px 0 20px">${lines.reduce((s, l) => s + l.qty, 0)} pieza(s). Los precios ya incluyen IVA.</p>
+      <section><h1>Tu carrito</h1><p class="muted" style="margin:6px 0 20px">${lines.reduce((s, l) => s + l.qty, 0)} pieza(s). Precios sin IVA; si necesitas factura, el 16 % se agrega al pagar.</p>
         <div class="lines">${lines.map(l => `<div class="line" data-key="${l.key}">
           <img src="/${l.p.imgs[0]}" alt="">
           <div><h3>${l.p.name}</h3><div class="d">${l.p.type}${l.tapiz ? ' · ' + D.TAPIZ[l.tapiz].name : ''}${l.mech ? ' · ' + l.mech : ''}<br>${C.stockLabel(l.p)} · <a href="/producto?id=${l.p.id}">Ver ficha</a></div></div>

@@ -68,12 +68,12 @@
       <div class="sec"><h3>Cliente</h3><div>${v.cliente.nombre}</div><small style="color:var(--muted)">${v.cliente.tel ? 'WhatsApp ' + v.cliente.tel : ''}${v.cliente.email ? ' · ' + v.cliente.email : ''}</small>
         ${v.envio && v.envio.tipo === 'domicilio' ? `<div style="margin-top:6px;font-size:12.5px"><b>Entrega:</b> ${v.envio.direccion || ''} ${v.envio.estado ? '· ' + v.envio.estado : ''}</div>` : '<div style="margin-top:6px;font-size:12.5px"><b>Entrega:</b> recoger en bodega (se confirma por WhatsApp)</div>'}</div>
       <div class="sec"><h3>Artículos</h3>${v.lineas.map(l => `<div class="row"><span>${l.qty} × ${l.nombre}${l.colorNombre ? '<small>Color ' + l.colorNombre + '</small>' : ''}</span><span class="num">${fmt(l.unit * l.qty)}</span></div>`).join('')}</div>
-      <div class="sec tot"><div class="row"><span>Subtotal</span><span class="num">${fmt(v.sub)}</span></div><div class="row"><span>Envío y armado</span><span class="num">${v.costoEnvio ? fmt(v.costoEnvio) : 'Gratis'}</span></div>${v.descuento ? `<div class="row"><span>Descuento</span><span class="num">−${fmt(v.descuento)}</span></div>` : ''}<div class="row t"><span>Total</span><span class="num">${fmt(v.total)}</span></div></div>
+      <div class="sec tot"><div class="row"><span>Subtotal</span><span class="num">${fmt(v.sub)}</span></div><div class="row"><span>Envío y armado</span><span class="num">${v.costoEnvio ? fmt(v.costoEnvio) : 'Gratis'}</span></div>${v.descuento ? `<div class="row"><span>Descuento</span><span class="num">−${fmt(v.descuento)}</span></div>` : ''}${v.iva ? `<div class="row"><span>IVA 16 %</span><span class="num">${fmt(v.iva)}</span></div>` : ''}<div class="row t"><span>Total</span><span class="num">${fmt(v.total)}</span></div></div>
       <div class="sec"><h3>Pagos</h3>${pagos}<div class="saldo"><span>${v.saldo > 0 ? 'Saldo por pagar' : 'Pagado completo'}</span><b class="num">${v.saldo > 0 ? fmt(v.saldo) : fmt(v.pagado)}</b></div></div>
       ${v.factura ? `<div class="sec"><h3>Factura</h3>${v.factura.razon} · ${v.factura.rfc}</div>` : ''}
       ${j.vendedor ? `<div class="sec"><h3>Te atiende</h3>${j.vendedor.nombre}${j.vendedor.whatsapp ? ' · WhatsApp ' + j.vendedor.whatsapp : ''}</div>` : ''}
     </div>
-    <div class="foot">${aj.leyendaTicket || 'Garantía de 1 año en estructura y mecanismos. Conserva este ticket para cualquier aclaración.'}<br>${aj.negocio} · 33 4766 2784 · atencion@cardianmuebles.com</div>
+    <div class="foot">${aj.leyendaTicket || 'Garantía de 6 meses en estructura y mecanismos. Conserva este ticket para cualquier aclaración.'}<br>${aj.negocio} · 33 4766 2784 · atencion@cardianmuebles.com</div>
   </div>
   <div class="acts">
     <button class="btn ink" onclick="print()">Imprimir o guardar PDF</button>

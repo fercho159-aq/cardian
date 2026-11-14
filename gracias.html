@@ -53,7 +53,7 @@
     // Datos reales del pedido desde el sistema (sirve aunque se abra en otro dispositivo o al volver de Mercado Pago)
     let tk = null; try { const r = await fetch('/api/ticket?f=' + F + '&k=' + K); if (r.ok) tk = await r.json(); } catch (e) {}
     if (tk) { const v = tk.venta; d = { ...(d && d.num === F ? d : {}), num: v.folio, k: K, name: v.cliente.nombre, phone: v.cliente.tel, email: v.cliente.email, pay: v.pagoElegido || (d && d.pay) || 'mp', delivery: v.envio.tipo === 'domicilio' ? 'ship' : 'store', city: v.envio.direccion || '', state: v.envio.estado || '', invoice: !!v.factura, razon: v.factura ? v.factura.razon : '',
-      lines: v.lineas.map(l => ({ id: l.id, name: l.nombre, qty: l.qty, unit: l.unit, tapiz: l.colorNombre || '' })), totals: { sub: v.sub, ship: { cost: v.costoEnvio }, disc: v.descuento, total: v.total }, pagado: v.pagado, saldo: v.saldo, estado: v.estado }; }
+      lines: v.lineas.map(l => ({ id: l.id, name: l.nombre, qty: l.qty, unit: l.unit, tapiz: l.colorNombre || '' })), totals: { sub: v.sub, ship: { cost: v.costoEnvio }, disc: v.descuento, total: v.total, iva: v.iva || 0 }, pagado: v.pagado, saldo: v.saldo, estado: v.estado }; }
     if (qs.get('mp') === 'ok' && d) { try { const r = await fetch('/api/mp?f=' + F + '&k=' + K + (qs.get('payment_id') ? '&payment_id=' + qs.get('payment_id') : '')); if (r.ok) { const j = await r.json(); if (j.estado) { d.estado = j.estado; d.pagado = j.pagado; d.saldo = Math.max(0, j.total - j.pagado); } } } catch (e) {} }
   }
   if (!d) { $('#ty').innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:60px 20px"><h1>No hay un pedido reciente</h1><p class="muted" style="margin:10px 0 20px">Si ya compraste, revisa tu WhatsApp o correo para ver la confirmación.</p><a class="btn gold" href="/catalogo">Ver el catálogo</a></div>`; return; }
@@ -63,7 +63,7 @@
   $('#ty').innerHTML = `<section>
       <div class="ok-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg></div>
       <h1>Recibimos tu pedido, ${d.name.split(' ')[0]}</h1>
-      <p class="muted" style="margin-top:8px">Te enviamos la confirmación a ${d.email} y por WhatsApp al ${d.phone}. Guarda tu número de pedido.</p>
+      <p class="muted" style="margin-top:8px">Te confirmamos por WhatsApp al ${d.phone}${d.email ? ' y al correo ' + d.email : ''}. Guarda tu número de pedido.</p>
       <div class="num-box">${d.num}</div>
       ${pay}
       <div class="panel"><h2>Qué sigue</h2><ol class="timeline">
@@ -75,7 +75,7 @@
       </ol></div>
     </section>
     <aside class="summary"><h2 style="font-size:17px;margin-bottom:8px">Resumen</h2>${d.lines.map(l => `<div class="it"><span>${l.qty} × ${l.name}${l.tapiz ? ' · ' + l.tapiz : ''}</span><span class="num">${fmt(l.unit * l.qty)}</span></div>`).join('')}
-      <div class="row" style="margin-top:8px"><span>Subtotal</span><span class="num">${fmt(t.sub)}</span></div><div class="row"><span>Envío</span><span class="num">${t.ship.cost ? fmt(t.ship.cost) : 'Gratis'}</span></div>${t.disc ? `<div class="row" style="color:var(--ok)"><span>Descuento SPEI</span><span class="num">−${fmt(t.disc)}</span></div>` : ''}<div class="row total"><span>Total</span><span class="num">${fmt(t.total)}</span></div>
+      <div class="row" style="margin-top:8px"><span>Subtotal</span><span class="num">${fmt(t.sub)}</span></div><div class="row"><span>Envío</span><span class="num">${t.ship.cost ? fmt(t.ship.cost) : 'Gratis'}</span></div>${t.disc ? `<div class="row" style="color:var(--ok)"><span>Descuento SPEI</span><span class="num">−${fmt(t.disc)}</span></div>` : ''}${t.iva ? `<div class="row"><span>IVA 16 % (factura)</span><span class="num">${fmt(t.iva)}</span></div>` : ''}<div class="row total"><span>Total</span><span class="num">${fmt(t.total)}</span></div>
       <div class="note" style="margin-top:12px">${d.delivery === 'store' ? 'Recoger en bodega' : 'Entrega en ' + d.city + ', ' + d.state}${d.invoice ? ' · Factura CFDI a ' + d.razon : ''}</div>
       <div style="display:grid;gap:8px;margin-top:16px"><a class="btn ghost sm block" href="/catalogo">Seguir comprando</a><a class="btn ghost sm block" href="/envios">Ver cómo es la entrega</a></div></aside>`;
   document.querySelectorAll('[data-copy]').forEach(b => b.onclick = () => { navigator.clipboard.writeText(b.dataset.copy).then(() => C.toast('Copiado')).catch(() => C.toast('Selecciona y copia el texto')); });
