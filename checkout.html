@@ -124,7 +124,7 @@
       ${c.iva ? `<div class="row"><span>IVA 16 %<small>Porque pediste factura</small></span><span class="num">${fmt(c.iva)}</span></div>` : ''}
       <div class="row total"><span>Total</span><span class="num">${fmt(c.total)}</span></div>
       <p class="note" style="margin-top:6px;font-size:12px;color:var(--muted)">${c.iva ? 'Total con IVA incluido.' : 'Precios sin IVA. Si necesitas factura, se agrega el 16 %.'}</p>
-      <div class="secure"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Pago seguro con Mercado Pago. No guardamos datos de tarjeta.</div></div>`;
+      <div class="secure"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Pago seguro con Mercado Pago. No guardamos datos de tarjeta.</div><img src="/img/mercado-pago.png" alt="Mercado Pago" style="height:30px;width:auto;display:block;margin:12px auto 0"><p style="text-align:center;font-size:11.5px;color:var(--muted);margin-top:4px">A meses según tu tarjeta · OXXO · saldo</p></div>`;
     $('#sumToggle').onclick = () => { $('#summary').classList.toggle('open'); summary(); };
   }
   function stepper() { $('#stepper').innerHTML = '<span class="on">1 Tus datos</span><span>2 Pagas en Mercado Pago</span>'; }
@@ -146,7 +146,7 @@
       </div></div>
       <label class="chk"><input type="checkbox" id="invoice" ${o.invoice ? 'checked' : ''}> Necesito factura <span style="color:var(--gold-deep)">(se agrega IVA 16 %)</span></label>
       <div id="inv" ${o.invoice ? '' : 'hidden'} style="margin-top:10px"><div class="grid2">${inp('razon', 'Razón social o nombre')}${inp('rfc', 'RFC')}</div></div>
-      <div class="callout" style="margin-top:18px;font-size:13px">Te llevamos a <b>Mercado Pago</b> para pagar con tarjeta (a meses con tarjetas participantes), OXXO o saldo. Al pagar aceptas los <a href="/terminos" style="color:var(--gold-deep)">términos de compra</a> y el <a href="/privacidad" style="color:var(--gold-deep)">aviso de privacidad</a>.</div>
+      <div class="callout" style="margin-top:18px;font-size:13px"><img class="mp-co" src="/img/mercado-pago.png" alt="Mercado Pago">Te llevamos a <b>Mercado Pago</b> para pagar con tarjeta (a meses con tarjetas participantes), OXXO o saldo. Al pagar aceptas los <a href="/terminos" style="color:var(--gold-deep)">términos de compra</a> y el <a href="/privacidad" style="color:var(--gold-deep)">aviso de privacidad</a>.</div>
       <div class="actions"><a class="btn ghost sm" href="/carrito">← Volver al carrito</a><button type="button" class="btn gold" id="confirm">Pagar con Mercado Pago</button></div></div>`;
     $$('.opt[data-d]').forEach(b => b.onclick = () => { o.delivery = b.dataset.d; $$('.opt[data-d]').forEach(x => x.setAttribute('aria-pressed', String(x === b))); $('#addr').hidden = o.delivery === 'store'; save(); summary(); });
     $('#state').onchange = e => { o.state = e.target.value; save(); summary(); };

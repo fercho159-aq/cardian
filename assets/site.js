@@ -116,7 +116,7 @@
         <div><h4>Ayuda</h4><ul><li><a href="/como-comprar">Cómo comprar</a></li><li><a href="/envios">Envíos y entregas</a></li><li><a href="/pagos">Pagos y garantía</a></li><li><a href="/preguntas">Preguntas frecuentes</a></li><li><a href="/contacto">Contacto</a></li></ul></div>
         <div><h4>Empresa</h4><ul><li><a href="/nosotros">Nosotros y fábrica</a></li><li><a href="/proyectos">Hoteles y oficinas</a></li><li><a href="${D.brand.ig}" target="_blank" rel="noopener">Instagram</a></li><li><a href="${D.brand.fb}" target="_blank" rel="noopener">Facebook</a></li><li><a href="/privacidad">Aviso de privacidad</a></li><li><a href="/terminos">Términos de compra</a></li></ul></div>
       </div>
-      <div class="bottom"><span>© 2026 Cardian Muebles · Hecho en México · ${D.brand.email} · WhatsApp ${D.brand.phone}</span><div class="pay-logos"><span>Mercado Pago</span><span>Tarjeta</span><span>OXXO</span><span>CFDI 4.0</span></div></div>
+      <div class="bottom"><span>© 2026 Cardian Muebles · Hecho en México · ${D.brand.email} · WhatsApp ${D.brand.phone}</span><div class="pay-logos"><span class="mp-pie"><img src="/img/mercado-pago.png" alt="Mercado Pago"></span><span>Tarjeta</span><span>OXXO</span><span>CFDI 4.0</span></div></div>
     </div></footer>
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
     <a class="wa-float" id="waFloat" href="${wa()}" target="_blank" rel="noopener" aria-label="Escríbenos por WhatsApp"><span class="tip">¿Dudas? Escríbenos</span>${WA_SVG}</a>`;
