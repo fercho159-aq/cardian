@@ -1,0 +1,528 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sala Xcaret en 3D · Cardian Muebles</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="description" content="Gira la Sala Xcaret en 3D, elige el color de tapiz y el color de tu pared.">
+<link rel="icon" href="/img/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap">
+<link rel="stylesheet" href="/assets/site.css">
+<style>
+  .v3d{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:22px;align-items:start;padding-block:22px 40px}
+  .stage{position:relative;border-radius:var(--rl);overflow:hidden;background:#d9d4cb;height:min(72vh,680px);min-height:420px;box-shadow:var(--shadow);touch-action:none}
+  .stage::after{content:"";position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 130px rgba(13,12,10,.16);border-radius:inherit}
+  .stage canvas{display:block;width:100%;height:100%;cursor:grab}
+  .stage canvas:active{cursor:grabbing}
+  .stage .hint{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);background:rgba(13,12,10,.72);color:#f3eadb;font-size:12.5px;padding:7px 14px;border-radius:999px;pointer-events:none;transition:opacity .6s;white-space:nowrap;z-index:2}
+  .stage .tools{position:absolute;right:12px;top:12px;display:flex;flex-direction:column;gap:8px;z-index:2}
+  .stage .tools button{width:40px;height:40px;border-radius:50%;border:none;background:rgba(255,255,255,.92);box-shadow:0 4px 14px rgba(0,0,0,.18);display:grid;place-items:center;color:var(--ink)}
+  .stage .tools button[aria-pressed="true"]{background:var(--ink);color:var(--gold-bright)}
+  .stage .tools svg{width:19px;height:19px}
+  .stage .load{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted);font-size:14px;background:#e6e1d8;z-index:3}
+  .stage:fullscreen{border-radius:0;height:100vh}
+  .panel3d{background:var(--surface);border:1px solid var(--line);border-radius:var(--rl);padding:22px;display:grid;gap:20px;position:sticky;top:90px}
+  .panel3d h1{font-size:26px}
+  .panel3d .price{font-size:22px;font-weight:600}
+  .panel3d .price small{font-size:12px;color:var(--muted);font-weight:400;margin-left:4px}
+  .grp h3{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-deep);font-weight:600;margin-bottom:10px;display:flex;justify-content:space-between}
+  .grp h3 span{color:var(--muted);letter-spacing:.04em;text-transform:none;font-weight:500;font-size:12.5px}
+  .sw{display:flex;flex-wrap:wrap;gap:10px}
+  .sw button{width:42px;height:42px;border-radius:50%;border:2px solid var(--surface);box-shadow:0 0 0 1px var(--line);cursor:pointer;transition:transform .15s,box-shadow .15s;padding:0}
+  .sw button:hover{transform:scale(1.07)}
+  .sw button[aria-pressed="true"]{box-shadow:0 0 0 2px var(--gold)}
+  .sw label{width:42px;height:42px;border-radius:50%;box-shadow:0 0 0 1px var(--line);display:grid;place-items:center;cursor:pointer;background:conic-gradient(#e57373,#ffd54f,#81c784,#64b5f6,#ba68c8,#e57373);position:relative;overflow:hidden}
+  .sw label input{position:absolute;inset:0;opacity:0;cursor:pointer}
+  .views{display:flex;gap:8px;flex-wrap:wrap}
+  .views button{flex:1 1 auto;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:8px 12px;font-size:12.5px}
+  .views button:hover{border-color:var(--gold)}
+  .views button[aria-pressed="true"]{border-color:var(--gold);background:var(--gold-soft);color:var(--gold-deep);font-weight:600}
+  .cuarto-in{display:flex;align-items:center;gap:10px;margin-top:10px;font-size:12.5px;color:var(--muted)}
+  .cuarto-in label{display:flex;align-items:center;gap:6px}
+  .cuarto-in input{width:64px;border:1px solid var(--line);border-radius:8px;padding:7px 8px;font:inherit;text-align:center;background:var(--surface)}
+  .modelos{display:flex;gap:8px;flex-wrap:wrap}
+  .modelos span{border:1px solid var(--line);border-radius:999px;padding:7px 14px;font-size:13px;color:var(--muted)}
+  .modelos span.on{border-color:var(--gold);background:var(--gold-soft);color:var(--gold-deep);font-weight:600}
+  .reco-btn{width:100%;justify-content:center}
+  .reco{background:var(--gold-soft);border:1px solid var(--gold);border-radius:10px;padding:13px 15px;font-size:13px;line-height:1.55;display:grid;gap:6px}
+  .reco b{font-size:14px}
+  .reco .combo{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--gold-deep);font-weight:500}
+  .reco .combo i{width:16px;height:16px;border-radius:50%;box-shadow:0 0 0 1px rgba(0,0,0,.12);display:inline-block}
+  .reco p{color:var(--fg);opacity:.85}
+  .acts3d{display:grid;gap:10px}
+  .acts3d .btn{justify-content:center}
+  .aviso3d{font-size:12px;color:var(--muted);line-height:1.5}
+  @media (max-width:920px){.v3d{grid-template-columns:1fr}.panel3d{position:static}.stage{height:min(58vh,112vw);min-height:340px}}
+  /* candado de vista previa */
+  #gate3d{position:fixed;inset:0;z-index:99;background:radial-gradient(120% 80% at 50% 0%,#24201a 0%,var(--ink) 60%);display:grid;place-items:center;padding:20px}
+  #gate3d form{background:var(--surface);border-radius:14px;padding:34px 30px;width:min(360px,100%);text-align:center;box-shadow:0 30px 80px rgba(0,0,0,.5)}
+  #gate3d img{height:64px;margin:0 auto 10px;display:block}
+  #gate3d h1{font-size:20px;margin-bottom:4px}
+  #gate3d p{font-size:13px;color:var(--muted);margin-bottom:18px}
+  #gate3d .field{text-align:left;margin-bottom:12px}
+  #gate3d label{display:block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:5px}
+  #gate3d input{width:100%;border:1px solid var(--line);border-radius:8px;padding:11px 12px;font:inherit;background:var(--surface)}
+  #gate3d .err{background:#f8e1df;color:#b4322b;font-size:13px;border-radius:8px;padding:9px 12px;margin-bottom:12px}
+  #gate3d button{width:100%;border:none;border-radius:999px;background:var(--ink);color:var(--ink-fg);padding:13px;font:inherit;font-weight:600;letter-spacing:.06em;cursor:pointer}
+  #gate3d button:hover{background:#000}
+</style>
+</head>
+<body>
+<!-- Vista previa protegida: se abre con usuario y contraseña mientras el cliente la revisa -->
+<div id="gate3d">
+  <form id="gForm" autocomplete="off">
+    <img src="/img/logo.png" alt="Cardian Muebles">
+    <h1>Vista previa 3D</h1>
+    <p>Esta sección aún está en revisión. Entra con el acceso que te compartieron.</p>
+    <div class="err" id="gErr" hidden>Usuario o contraseña incorrectos.</div>
+    <div class="field"><label for="gU">Usuario</label><input id="gU" autocapitalize="none" autofocus></div>
+    <div class="field"><label for="gP">Contraseña</label><input id="gP" type="password"></div>
+    <button type="submit">Entrar</button>
+  </form>
+</div>
+<script>
+(function () {
+  const HASH = 'f5e041e195b35123a0186593ebbd4259f18d614da31dbfa08d7a7173638b10eb';
+  const KEY = 'cardian_sala3d';
+  const sha = async t => { const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(t)); return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, '0')).join(''); };
+  const abrir = () => { const g = document.getElementById('gate3d'); if (g) g.remove(); document.documentElement.style.overflow = ''; };
+  document.documentElement.style.overflow = 'hidden';
+  addEventListener('DOMContentLoaded', () => {
+    try { if (localStorage.getItem(KEY) === HASH) { abrir(); return; } } catch (e) {}
+    document.getElementById('gForm').onsubmit = async e => {
+      e.preventDefault();
+      const h = await sha(document.getElementById('gU').value.trim().toLowerCase() + '|' + document.getElementById('gP').value.trim());
+      if (h === HASH) { try { localStorage.setItem(KEY, HASH); } catch (e) {} abrir(); }
+      else document.getElementById('gErr').hidden = false;
+    };
+  });
+})();
+</script>
+<div id="site-header"></div>
+
+<main class="wrap">
+  <nav class="crumbs" aria-label="Ruta"><a href="/">Inicio</a><span>/</span><a href="/catalogo?c=salas">Salas</a><span>/</span>Vista 3D</nav>
+  <div class="v3d">
+    <div class="stage" id="stage">
+      <div class="load" id="load">Cargando la sala en 3D…</div>
+      <div class="tools">
+        <button type="button" id="tGirar" aria-pressed="true" title="Girar sola" aria-label="Girar sola"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg></button>
+        <button type="button" id="tMed" aria-pressed="false" title="Ver medidas" aria-label="Ver medidas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17 17 3l4 4L7 21l-4-4z"/><path d="m6 14 2 2"/><path d="m9 11 2 2"/><path d="m12 8 2 2"/><path d="m15 5 2 2"/></svg></button>
+        <button type="button" id="tFull" title="Pantalla completa" aria-label="Pantalla completa"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"/></svg></button>
+      </div>
+      <div class="hint" id="hint">Arrastra para girar · pellizca para acercar</div>
+    </div>
+
+    <aside class="panel3d">
+      <div>
+        <div class="eyebrow">Vista 3D</div>
+        <h1>Sala Xcaret</h1>
+        <p class="muted small" style="margin-top:4px" id="medTxt">Escuadra con diván</p>
+        <div class="price num" style="margin-top:10px" id="precio">$14,500<small>MXN, sin IVA</small></div>
+      </div>
+      <div class="grp"><h3>¿No sabes cuál elegir?</h3>
+        <button type="button" class="btn gold reco-btn" id="btnReco">✨ Recomiéndame una combinación</button>
+        <div class="reco" id="recoBox" hidden style="margin-top:10px"></div>
+      </div>
+      <div class="grp"><h3>Color de tapiz <span id="nTapiz"></span></h3><div class="sw" id="swTapiz"></div></div>
+      <div class="grp"><h3>Color de tu pared <span id="nPared"></span></h3><div class="sw" id="swPared"></div></div>
+      <div class="grp"><h3>Tu espacio <span id="nCuarto"></span></h3>
+        <div class="views" id="presetsC">
+          <button type="button" data-c="3.5,4">Estándar<br>3.5 × 4.0 m</button>
+          <button type="button" data-c="4,4.5">Cómoda<br>4.0 × 4.5 m</button>
+          <button type="button" data-c="4.5,5.5">Estancia abierta<br>4.5 × 5.5 m</button>
+        </div>
+        <div class="cuarto-in"><label>Ancho <input type="number" id="inAncho" min="2.6" max="8" step="0.1" value="4.5"></label><span>×</span><label>Fondo <input type="number" id="inFondo" min="2.6" max="8" step="0.1" value="5.5"></label><span>metros</span></div>
+        <p class="aviso3d" style="margin-top:6px">Mide tu sala de pared a pared y ponlo aquí para ver cómo queda el espacio.</p>
+      </div>
+      <div class="grp"><h3>Ver desde</h3><div class="views"><button type="button" data-v="frente">Frente</button><button type="button" data-v="esquina">Esquina</button><button type="button" data-v="lado">Lado</button><button type="button" data-v="atras">Atrás</button><button type="button" data-v="arriba">Arriba</button></div></div>
+      <div class="grp"><h3>Modelo</h3><div class="modelos"><span class="on">Sala Xcaret</span><span>Más modelos pronto</span></div></div>
+      <div class="acts3d">
+        <a class="btn wa" id="waCot" href="#" target="_blank" rel="noopener">Cotizar este color por WhatsApp</a>
+        <a class="btn ghost" href="/producto?id=sala-xcaret">Ver ficha y comprar</a>
+      </div>
+      <p class="aviso3d">Representación 3D aproximada para ayudarte a imaginarla en tu espacio. Costuras y tono del tapiz pueden variar ligeramente en la pieza real. Las medidas son las del catálogo.</p>
+    </aside>
+  </div>
+</main>
+
+<div id="site-footer"></div>
+<script src="/assets/data.js"></script>
+<script src="/assets/site.js"></script>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+const D = window.CARDIAN, C = window.Cardian;
+const PROD = D.products.find(p => p.id === 'sala-xcaret');
+const TAPICES = (PROD && PROD.tapiz) || ['negro', 'grisOxford', 'grisPlata', 'cocoa', 'chocolate', 'beige'];
+const DIMS = (PROD && PROD.dims) || { largo: 230, fondo: 180, alto: 85 };
+const mtexto = n => (n / 100).toFixed(2) + ' m';
+document.getElementById('medTxt').textContent = `Escuadra con diván · ${mtexto(DIMS.largo)} × ${mtexto(DIMS.fondo)} · ${DIMS.alto} cm de alto`;
+const PAREDES = [
+  ['Blanco hueso', '#ece6dc'], ['Gris perla', '#c9c6c0'], ['Greige', '#b9ad9c'], ['Verde salvia', '#9eac97'],
+  ['Azul petróleo', '#3d5b66'], ['Terracota', '#c27a5c'], ['Rosa palo', '#d9b8ac'], ['Carbón', '#3a3836'],
+];
+let tapiz = PROD && PROD.defaultColor && TAPICES.includes(PROD.defaultColor) ? PROD.defaultColor : 'grisOxford';
+let pared = PAREDES[1][1];
+
+// ───────── escena ─────────
+const stage = document.getElementById('stage');
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 0.92;
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+stage.prepend(renderer.domElement);
+
+const scene = new THREE.Scene();
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+scene.background = new THREE.Color('#d9d4cb');
+
+const camera = new THREE.PerspectiveCamera(38, 1, 0.05, 60);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true; controls.dampingFactor = 0.07; controls.enablePan = false;
+controls.minDistance = 1.7; controls.maxDistance = 9; controls.maxPolarAngle = Math.PI * 0.49; controls.minPolarAngle = 0.15;
+controls.target.set(0.05, 0.45, 0.35);
+controls.autoRotate = true; controls.autoRotateSpeed = 0.9;
+
+scene.add(new THREE.HemisphereLight('#fff7ec', '#6e6050', 0.4));
+// sol entrando por la ventana (lado derecho)
+const sol = new THREE.DirectionalLight('#fff2df', 2.1);
+sol.position.set(2.8, 4.3, 2.6); sol.castShadow = true;
+sol.shadow.mapSize.set(2048, 2048); sol.shadow.radius = 7; sol.shadow.bias = -0.0004; sol.shadow.normalBias = 0.02;
+Object.assign(sol.shadow.camera, { left: -3.4, right: 3.4, top: 3.4, bottom: -3.4, near: 0.5, far: 14 });
+scene.add(sol);
+const relleno = new THREE.DirectionalLight('#e8eefc', 0.4); relleno.position.set(-3, 2.4, 2.2); scene.add(relleno);
+
+// ───────── texturas procedurales ─────────
+const lienzo = (w, h, dibujo) => { const c = document.createElement('canvas'); c.width = w; c.height = h; dibujo(c.getContext('2d'), w, h); return c; };
+function texturaTela() {
+  const c = lienzo(256, 256, (x, w, h) => {
+    x.fillStyle = '#808080'; x.fillRect(0, 0, w, h);
+    for (let i = 0; i < 9000; i++) { const v = 100 + Math.random() * 60; x.fillStyle = `rgb(${v},${v},${v})`; x.fillRect(Math.random() * w, Math.random() * h, 1 + Math.random() * 2, 1); }
+    x.globalAlpha = .18; for (let y = 0; y < h; y += 3) { x.fillStyle = y % 6 ? '#9a9a9a' : '#666'; x.fillRect(0, y, w, 1); }
+  });
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(3, 3); return t;
+}
+function texturaMadera() {
+  const c = lienzo(1024, 1024, (x, w, h) => {
+    const tablas = 8, alto = h / tablas;
+    for (let i = 0; i < tablas; i++) {
+      const base = [112, 82, 60].map(v => v + (Math.random() * 20 - 10));
+      x.fillStyle = `rgb(${base.join(',')})`; x.fillRect(0, i * alto, w, alto);
+      for (let k = 0; k < 70; k++) { const yy = i * alto + Math.random() * alto; x.strokeStyle = `rgba(${Math.random() < .5 ? '40,24,12' : '160,112,70'},${.08 + Math.random() * .12})`; x.lineWidth = .6 + Math.random() * 1.6; x.beginPath(); x.moveTo(0, yy); x.bezierCurveTo(w * .3, yy + Math.random() * 6 - 3, w * .7, yy + Math.random() * 6 - 3, w, yy + Math.random() * 4 - 2); x.stroke(); }
+      x.fillStyle = 'rgba(20,12,6,.55)'; x.fillRect(0, i * alto, w, 2);
+      const corte = Math.random() * w; x.fillRect(corte, i * alto, 2, alto);
+    }
+  });
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(5, 5); t.anisotropy = 8; return t;
+}
+function texturaCojin(hex) {
+  const c = lienzo(512, 512, (x, w, h) => {
+    x.fillStyle = '#ece6da'; x.fillRect(0, 0, w, h);
+    x.strokeStyle = hex; x.lineWidth = 16; const p = 128;
+    for (let yy = 0; yy <= h; yy += p) for (let xx = 0; xx <= w; xx += p) { x.beginPath(); x.arc(xx, yy, 44, 0, Math.PI * 2); x.stroke(); x.beginPath(); x.arc(xx + p / 2, yy + p / 2, 44, 0, Math.PI * 2); x.stroke(); }
+    x.fillStyle = hex; for (let yy = 0; yy <= h; yy += p) for (let xx = 0; xx <= w; xx += p) { x.beginPath(); x.arc(xx + p / 2, yy, 11, 0, Math.PI * 2); x.fill(); x.beginPath(); x.arc(xx, yy + p / 2, 11, 0, Math.PI * 2); x.fill(); }
+  });
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(1.2, 1.2); return t;
+}
+function texturaCuadro() { // arte abstracto en tonos del sitio
+  const c = lienzo(640, 460, (x, w, h) => {
+    x.fillStyle = '#efe9dc'; x.fillRect(0, 0, w, h);
+    const tonos = ['#b8c7cc', '#9fb4bd', '#d2ad58', '#b08a35', '#cfc4ad', '#8ba3ad'];
+    for (let i = 0; i < 40; i++) {
+      x.fillStyle = tonos[i % tonos.length]; x.globalAlpha = .12 + Math.random() * .25;
+      x.beginPath(); x.ellipse(w * (.2 + Math.random() * .6), h * (.15 + Math.random() * .7), 30 + Math.random() * 120, 14 + Math.random() * 60, Math.random() * Math.PI, 0, Math.PI * 2); x.fill();
+    }
+    x.globalAlpha = .8; x.strokeStyle = '#7f6020'; x.lineWidth = 3;
+    for (let i = 0; i < 7; i++) { x.beginPath(); x.moveTo(w * Math.random(), h); const xx = w * (.3 + Math.random() * .4); x.bezierCurveTo(xx, h * .7, xx + 40, h * .45, w * (.25 + Math.random() * .5), h * (.12 + Math.random() * .3)); x.stroke(); }
+    x.globalAlpha = 1;
+  });
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+}
+function texturaSombra() { // mancha suave que asienta los muebles al piso
+  const c = lienzo(256, 256, (x, w, h) => {
+    const g = x.createRadialGradient(w / 2, h / 2, 10, w / 2, h / 2, w / 2);
+    g.addColorStop(0, 'rgba(0,0,0,.42)'); g.addColorStop(.6, 'rgba(0,0,0,.18)'); g.addColorStop(1, 'rgba(0,0,0,0)');
+    x.fillStyle = g; x.fillRect(0, 0, w, h);
+  });
+  return new THREE.CanvasTexture(c);
+}
+
+// ───────── materiales ─────────
+const grano = texturaTela();
+const tela = new THREE.MeshPhysicalMaterial({ color: D.TAPIZ[tapiz].hex, roughness: .96, sheen: .45, sheenRoughness: .8, sheenColor: new THREE.Color('#ffffff'), bumpMap: grano, bumpScale: 1.4, envMapIntensity: .55 });
+const telaOscura = tela.clone();
+const estampado = new THREE.MeshPhysicalMaterial({ map: texturaCojin(D.TAPIZ[tapiz].hex), roughness: .93, sheen: .3, sheenRoughness: .8, bumpMap: grano, bumpScale: 1, envMapIntensity: .55 });
+const marino = new THREE.MeshPhysicalMaterial({ color: '#1b3378', roughness: .9, sheen: .6, sheenRoughness: .5, sheenColor: new THREE.Color('#4f6fc0'), bumpMap: grano, bumpScale: 1, envMapIntensity: .55 });
+const patas = new THREE.MeshStandardMaterial({ color: '#141414', roughness: .45, metalness: .1 });
+const paredMat = new THREE.MeshStandardMaterial({ color: pared, roughness: .95 });
+const paredMat2 = new THREE.MeshStandardMaterial({ color: pared, roughness: .95 });
+const zoclo = new THREE.MeshStandardMaterial({ color: '#f4f1ea', roughness: .6 });
+const tapete = new THREE.MeshStandardMaterial({ color: '#e2d9c8', roughness: 1, bumpMap: grano, bumpScale: 3 });
+const oroViejo = new THREE.MeshStandardMaterial({ color: '#8a6a2f', roughness: .35, metalness: .8 });
+const negroMate = new THREE.MeshStandardMaterial({ color: '#1b1b1b', roughness: .5, metalness: .3 });
+const maderaClara = new THREE.MeshStandardMaterial({ color: '#8a6648', roughness: .6 });
+const blancoMarco = new THREE.MeshStandardMaterial({ color: '#f6f3ec', roughness: .5 });
+
+// ───────── la sala (medidas en metros) ─────────
+const sala = new THREE.Group(); scene.add(sala);
+const pieza = (w, h, d, r, mat, x, y, z, seg = 5) => { const q = new THREE.Mesh(new RoundedBoxGeometry(w, h, d, seg, r), mat); q.position.set(x, y, z); q.castShadow = true; q.receiveShadow = true; sala.add(q); return q; };
+const PATA = 0.09, BASE_ALTO = 0.27, Y0 = PATA;
+pieza(1.12, BASE_ALTO, 0.92, 0.05, tela, -0.39, Y0 + BASE_ALTO / 2, 0);
+pieza(1.02, BASE_ALTO, 1.80, 0.05, tela, 0.66, Y0 + BASE_ALTO / 2, 0.44);
+// costura frontal en la base
+pieza(1.08, 0.012, 0.006, 0.003, telaOscura, -0.39, Y0 + BASE_ALTO - 0.03, 0.462, 2);
+pieza(0.98, 0.012, 0.006, 0.003, telaOscura, 0.66, Y0 + BASE_ALTO - 0.03, 1.342, 2);
+// asientos: dos cojines en la sección y uno corrido en el diván
+const ASI = 0.15, yAsi = Y0 + BASE_ALTO + ASI / 2 - 0.01;
+pieza(0.55, ASI, 0.74, 0.06, tela, -0.665, yAsi, 0.09);
+pieza(0.55, ASI, 0.74, 0.06, tela, -0.095, yAsi, 0.09);
+pieza(1.04, ASI, 1.62, 0.06, tela, 0.66, yAsi, 0.53);
+// respaldo bajo
+pieza(2.32, 0.40, 0.2, 0.07, tela, 0.0, Y0 + BASE_ALTO + 0.18, -0.36);
+// brazo izquierdo con rollo
+pieza(0.24, 0.50, 0.92, 0.1, tela, -1.07, Y0 + 0.25, 0);
+const rollo = new THREE.Mesh(new THREE.CapsuleGeometry(0.115, 0.7, 8, 24), tela);
+rollo.rotation.x = Math.PI / 2; rollo.position.set(-1.1, Y0 + 0.5, 0.02); rollo.castShadow = rollo.receiveShadow = true; sala.add(rollo);
+pieza(0.2, 0.46, 0.5, 0.08, tela, 1.07, Y0 + BASE_ALTO + 0.2, -0.22);
+// botones del capitonado
+const boton = new THREE.SphereGeometry(0.013, 10, 8);
+const ponerBotones = (cx, cz, w, d, nx, nz) => { for (let i = 0; i < nx; i++) for (let k = 0; k < nz; k++) { const b = new THREE.Mesh(boton, telaOscura); b.scale.y = .45; b.position.set(cx - w / 2 + (i + .5) * w / nx, yAsi + ASI / 2 + 0.002, cz - d / 2 + (k + .5) * d / nz); sala.add(b); } };
+ponerBotones(-0.665, 0.12, 0.42, 0.56, 2, 2);
+ponerBotones(-0.095, 0.12, 0.42, 0.56, 2, 2);
+ponerBotones(0.66, 0.6, 0.9, 1.4, 3, 4);
+// cojines
+const cojin = (w, h, d, mat, x, y, z, rx, ry = 0) => { const q = pieza(w, h, d, 0.08, mat, x, y, z, 6); q.rotation.set(rx, ry, 0); q.scale.z = 0.9; return q; };
+cojin(0.62, 0.56, 0.2, estampado, -0.62, yAsi + 0.34, -0.17, -0.2, 0.05);
+cojin(0.62, 0.56, 0.2, estampado, -0.02, yAsi + 0.34, -0.17, -0.2);
+cojin(0.62, 0.56, 0.2, estampado, 0.56, yAsi + 0.34, -0.17, -0.2, -0.05);
+cojin(0.44, 0.42, 0.15, marino, 0.86, yAsi + 0.27, -0.1, -0.15, -0.25);
+cojin(0.40, 0.38, 0.14, tela, 1.02, yAsi + 0.25, -0.06, -0.12, -0.4);
+// patas
+const pataGeo = new THREE.CylinderGeometry(0.03, 0.024, PATA, 20);
+[[-1.1, -0.38], [-1.1, 0.38], [0.12, 0.38], [0.2, 1.28], [1.11, 1.28], [1.11, -0.38]].forEach(([x, z]) => { const p = new THREE.Mesh(pataGeo, patas); p.position.set(x, PATA / 2, z); p.castShadow = true; sala.add(p); });
+
+// ───────── cuarto a escala real (ajustable) ─────────
+// Altura de techo típica en México: 2.5 m. El ancho y fondo los elige el cliente.
+const madera = texturaMadera();
+const ALTO_MURO = 2.5, Z_FONDO = -0.62, GROSOR = 0.09;
+let anchoC = 3.5, fondoC = 4.0;
+// explanada neutra fuera del cuarto
+const pisoBase = new THREE.Mesh(new THREE.PlaneGeometry(26, 26), new THREE.MeshStandardMaterial({ color: '#c8c2b7', roughness: 1 }));
+pisoBase.rotation.x = -Math.PI / 2; pisoBase.position.y = -0.004; pisoBase.receiveShadow = true; scene.add(pisoBase);
+// piso de madera del cuarto
+const piso = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshStandardMaterial({ map: madera, roughness: .62, metalness: 0, envMapIntensity: .5 }));
+piso.rotation.x = -Math.PI / 2; piso.receiveShadow = true; scene.add(piso);
+// pared del fondo con cuadro
+const muro = new THREE.Group(); scene.add(muro);
+const paredM = new THREE.Mesh(new THREE.BoxGeometry(1, ALTO_MURO, GROSOR), paredMat); paredM.receiveShadow = paredM.castShadow = true; muro.add(paredM);
+const zocloM = new THREE.Mesh(new THREE.BoxGeometry(1, 0.1, 0.02), zoclo); zocloM.receiveShadow = true; muro.add(zocloM);
+const cuadro = new THREE.Group(); muro.add(cuadro);
+const marcoC = new THREE.Mesh(new THREE.BoxGeometry(1.5, 1.05, 0.045), oroViejo); marcoC.castShadow = true; cuadro.add(marcoC);
+const arte = new THREE.Mesh(new THREE.PlaneGeometry(1.38, 0.93), new THREE.MeshStandardMaterial({ map: texturaCuadro(), roughness: .9 })); arte.position.z = 0.024; cuadro.add(arte);
+cuadro.position.set(-0.35, 1.78, Z_FONDO + 0.028);
+// pared derecha con ventana y cortinas · pared izquierda lisa
+const muroDer = new THREE.Group(); scene.add(muroDer);
+const paredD = new THREE.Mesh(new THREE.BoxGeometry(GROSOR, ALTO_MURO, 1), paredMat2); paredD.receiveShadow = paredD.castShadow = true; muroDer.add(paredD);
+const zocloD = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.1, 1), zoclo); muroDer.add(zocloD);
+const ventana = new THREE.Group(); muroDer.add(ventana);
+const vMarco = new THREE.Mesh(new THREE.BoxGeometry(0.07, 1.6, 1.3), blancoMarco); vMarco.castShadow = true; ventana.add(vMarco);
+const vLuz = new THREE.Mesh(new THREE.PlaneGeometry(1.16, 1.44), new THREE.MeshStandardMaterial({ color: '#eef3f6', emissive: '#fdf4df', emissiveIntensity: 1.25, roughness: 1 }));
+vLuz.rotation.y = -Math.PI / 2; vLuz.position.x = -0.04; ventana.add(vLuz);
+[0, -0.4, 0.4].forEach(off => { const b = new THREE.Mesh(new THREE.BoxGeometry(0.03, 1.6, off ? 0.025 : 0.035), blancoMarco); b.position.set(-0.045, 0, off); ventana.add(b); });
+const vCruz = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.035, 1.3), blancoMarco); vCruz.position.set(-0.045, 0, 0); ventana.add(vCruz);
+const cortinaMat = new THREE.MeshStandardMaterial({ color: '#efe7d6', roughness: 1, side: THREE.DoubleSide });
+const cortinas = [0, 0].map(() => { const cu = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.13, 2.3, 10, 1, true), cortinaMat); cu.castShadow = true; muroDer.add(cu); return cu; });
+const muroIzq = new THREE.Group(); scene.add(muroIzq);
+const paredI = new THREE.Mesh(new THREE.BoxGeometry(GROSOR, ALTO_MURO, 1), paredMat2); paredI.receiveShadow = paredI.castShadow = true; muroIzq.add(paredI);
+const zocloI = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.1, 1), zoclo); muroIzq.add(zocloI);
+// tapete y sombra de contacto
+const tap = new THREE.Mesh(new RoundedBoxGeometry(2.7, 0.018, 1.9, 3, 0.008), tapete); tap.position.set(0.1, 0.009, 0.95); tap.receiveShadow = true; scene.add(tap);
+const sombra = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 2.5), new THREE.MeshBasicMaterial({ map: texturaSombra(), transparent: true, depthWrite: false }));
+sombra.rotation.x = -Math.PI / 2; sombra.position.set(0, 0.022, 0.4); sombra.renderOrder = 1; scene.add(sombra);
+
+// ───────── decoración (se acomoda sola al tamaño del cuarto) ─────────
+const hojaMat2 = new THREE.MeshStandardMaterial({ color: '#527f49', roughness: .7 });
+// mesita lateral con plantita (solo en cuartos amplios)
+const mesa = new THREE.Group(); scene.add(mesa);
+const tapa = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.26, 0.03, 28), maderaClara); tapa.position.y = 0.52; tapa.castShadow = true; mesa.add(tapa);
+const pie = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.5, 12), negroMate); pie.position.y = 0.26; mesa.add(pie);
+const basePie = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.18, 0.025, 24), negroMate); basePie.position.y = 0.012; mesa.add(basePie);
+const potecito = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.04, 0.08, 16), new THREE.MeshStandardMaterial({ color: '#e8e2d4', roughness: .7 })); potecito.position.y = 0.575; potecito.castShadow = true; mesa.add(potecito);
+for (let i = 0; i < 4; i++) { const h = new THREE.Mesh(new THREE.IcosahedronGeometry(0.045, 1), hojaMat2); h.position.set((Math.random() - .5) * .06, 0.66 + Math.random() * 0.05, (Math.random() - .5) * .06); h.scale.y = 1.3; mesa.add(h); }
+// lámpara de pie encendida
+const lampara = new THREE.Group(); scene.add(lampara);
+const lBase = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.18, 0.03, 24), oroViejo); lBase.position.y = 0.015; lampara.add(lBase);
+const lPoste = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 1.3, 10), oroViejo); lPoste.position.y = 0.68; lPoste.castShadow = true; lampara.add(lPoste);
+const lPantalla = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.22, 0.3, 24, 1, true), new THREE.MeshStandardMaterial({ color: '#f2e8d2', roughness: .9, side: THREE.DoubleSide, emissive: '#ffd9a0', emissiveIntensity: .55 }));
+lPantalla.position.y = 1.47; lPantalla.castShadow = true; lampara.add(lPantalla);
+const foco = new THREE.PointLight('#ffd9a0', 10, 5, 2); foco.position.y = 1.42; lampara.add(foco);
+
+// ───────── medidas ─────────
+const dims = new THREE.Group(); dims.visible = false; scene.add(dims);
+const lineaMat = new THREE.LineBasicMaterial({ color: '#7f6020' });
+function etiqueta(txt, k = 1) {
+  const c = lienzo(360, 112, (x, w, h) => {
+    x.fillStyle = 'rgba(13,12,10,.88)'; x.beginPath(); x.roundRect(8, 14, w - 16, h - 28, 40); x.fill();
+    x.strokeStyle = '#d2ad58'; x.lineWidth = 4; x.stroke();
+    let tam = 42; x.font = `600 ${tam}px Poppins, "Segoe UI", sans-serif`;
+    while (x.measureText(txt).width > w - 56 && tam > 22) { tam -= 2; x.font = `600 ${tam}px Poppins, "Segoe UI", sans-serif`; }
+    x.fillStyle = '#f3eadb'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(txt, w / 2, h / 2 + 2);
+  });
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, depthTest: false })); s.scale.set(.64 * k, .2 * k, 1); s.renderOrder = 6; return s;
+}
+function medida(ax, ay, az, bx, by, bz, txt, px, py, pz) {
+  const a = new THREE.Vector3(ax, ay, az), b = new THREE.Vector3(bx, by, bz), perp = new THREE.Vector3(px, py, pz);
+  dims.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([a, b]), lineaMat));
+  [a, b].forEach(p => dims.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([p.clone().add(perp), p.clone().sub(perp)]), lineaMat)));
+  const e = etiqueta(txt); e.position.lerpVectors(a, b, 0.5).add(perp.clone().multiplyScalar(3.2)).add(new THREE.Vector3(0, .06, 0)); dims.add(e);
+}
+medida(-1.19, 0.03, 1.55, 1.17, 0.03, 1.55, mtexto(DIMS.largo), 0, 0, 0.06);
+medida(1.35, 0.03, -0.46, 1.35, 0.03, 1.34, mtexto(DIMS.fondo), 0.06, 0, 0);
+medida(-1.35, 0.01, 0.52, -1.35, DIMS.alto / 100, 0.52, mtexto(DIMS.alto), 0, 0, 0.06);
+
+// ───────── tamaño del cuarto ─────────
+// Arma paredes, piso y decoración según el ancho × fondo elegidos (de pared a pared).
+const dimsC = new THREE.Group(); dims.add(dimsC);
+function medidaC(ax, ay, az, bx, by, bz, txt, px, py, pz) {
+  const a = new THREE.Vector3(ax, ay, az), b = new THREE.Vector3(bx, by, bz), perp = new THREE.Vector3(px, py, pz);
+  dimsC.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([a, b]), lineaMat));
+  [a, b].forEach(p => dimsC.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([p.clone().add(perp), p.clone().sub(perp)]), lineaMat)));
+  const e = etiqueta(txt, 1.2); e.position.lerpVectors(a, b, 0.5).add(perp.clone().multiplyScalar(3.2)).add(new THREE.Vector3(0, .06, 0)); dimsC.add(e);
+}
+function setCuarto(A, F) {
+  anchoC = Math.min(8, Math.max(2.6, A)); fondoC = Math.min(8, Math.max(2.6, F));
+  A = anchoC; F = fondoC;
+  const zc = Z_FONDO + F / 2, zFrente = Z_FONDO + F;
+  piso.scale.set(A, F, 1); piso.position.set(0, 0.001, zc);
+  madera.repeat.set(A / 2.2, F / 2.2);
+  paredM.scale.x = A + GROSOR * 2; paredM.position.set(0, ALTO_MURO / 2, Z_FONDO - GROSOR / 2);
+  zocloM.scale.x = A; zocloM.position.set(0, 0.05, Z_FONDO + 0.012);
+  paredD.scale.z = F; paredD.position.set(A / 2 + GROSOR / 2, ALTO_MURO / 2, zc);
+  zocloD.scale.z = F; zocloD.position.set(A / 2 - 0.012, 0.05, zc);
+  paredI.scale.z = F; paredI.position.set(-A / 2 - GROSOR / 2, ALTO_MURO / 2, zc);
+  zocloI.scale.z = F; zocloI.position.set(-A / 2 + 0.012, 0.05, zc);
+  ventana.position.set(A / 2 - 0.02, 1.45, zc);
+  cortinas[0].position.set(A / 2 - 0.1, 1.18, zc + 0.85);
+  cortinas[1].position.set(A / 2 - 0.1, 1.18, zc - 0.85);
+  // decoración: solo si cabe
+  lampara.visible = A >= 3.2; lampara.position.set(-A / 2 + 0.3, 0, -0.15);
+  mesa.visible = F >= 4.4 && A >= 3.6; mesa.position.set(A / 2 - 0.55, 0, zFrente - 0.75);
+  // medidas del cuarto (se ven con el botón de la regla)
+  dimsC.clear();
+  medidaC(-A / 2, 0.03, Z_FONDO + 0.22, A / 2, 0.03, Z_FONDO + 0.22, 'Cuarto ' + A.toFixed(2) + ' m', 0, 0, 0.06);
+  medidaC(-A / 2 + 0.22, 0.03, Z_FONDO, -A / 2 + 0.22, 0.03, zFrente, 'Cuarto ' + F.toFixed(2) + ' m', 0.06, 0, 0);
+  document.getElementById('nCuarto').textContent = A.toFixed(1).replace('.0', '') + ' × ' + F.toFixed(1).replace('.0', '') + ' m';
+  document.getElementById('inAncho').value = A; document.getElementById('inFondo').value = F;
+  document.querySelectorAll('#presetsC button').forEach(b => { const [pa, pf] = b.dataset.c.split(',').map(Number); b.setAttribute('aria-pressed', String(pa === A && pf === F)); });
+}
+document.querySelectorAll('#presetsC button').forEach(b => b.onclick = () => { const [pa, pf] = b.dataset.c.split(',').map(Number); setCuarto(pa, pf); });
+['inAncho', 'inFondo'].forEach(id => { document.getElementById(id).onchange = () => setCuarto(+document.getElementById('inAncho').value || 3.5, +document.getElementById('inFondo').value || 4); });
+setCuarto(4.5, 5.5);
+
+// ───────── colores ─────────
+function aplicarTapiz(id) {
+  tapiz = id; const hex = D.TAPIZ[id].hex;
+  tela.color.set(hex);
+  telaOscura.color.set(hex).multiplyScalar(0.55);
+  tela.sheenColor.set(new THREE.Color(hex).lerp(new THREE.Color('#ffffff'), id === 'negro' ? .18 : .32));
+  estampado.map.dispose(); estampado.map = texturaCojin(hex); estampado.needsUpdate = true;
+  document.getElementById('nTapiz').textContent = D.TAPIZ[id].name;
+  document.querySelectorAll('#swTapiz button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.id === id)));
+  document.getElementById('waCot').href = C.wa(`Hola Cardian Muebles, me interesa la Sala Xcaret en color ${D.TAPIZ[id].name}. La vi en la vista 3D. ¿Me pasan precio y tiempo de entrega?`);
+}
+function aplicarPared(hex, nombre) {
+  pared = hex; paredMat.color.set(hex); paredMat2.color.set(hex).multiplyScalar(0.93);
+  document.getElementById('nPared').textContent = nombre || hex.toUpperCase();
+  document.querySelectorAll('#swPared button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.hex === hex)));
+}
+document.getElementById('swTapiz').innerHTML = TAPICES.map(id => `<button type="button" data-id="${id}" title="${D.TAPIZ[id].name}" aria-label="${D.TAPIZ[id].name}" style="background:${D.TAPIZ[id].hex}"></button>`).join('');
+document.getElementById('swPared').innerHTML = PAREDES.map(([n, h]) => `<button type="button" data-hex="${h}" data-n="${n}" title="${n}" aria-label="${n}" style="background:${h}"></button>`).join('') + `<label title="Otro color"><input type="color" id="paredLibre" value="#c9c6c0" aria-label="Elegir otro color de pared"></label>`;
+document.querySelectorAll('#swTapiz button').forEach(b => b.onclick = () => aplicarTapiz(b.dataset.id));
+document.querySelectorAll('#swPared button').forEach(b => b.onclick = () => aplicarPared(b.dataset.hex, b.dataset.n));
+document.getElementById('paredLibre').oninput = e => aplicarPared(e.target.value, 'Personalizado');
+aplicarTapiz(tapiz); aplicarPared(pared, PAREDES[1][0]);
+
+// ───────── recomendaciones del decorador ─────────
+// Combinaciones de tapiz + pared con su porqué. El botón aplica una y explica la elección.
+const RECOS = [
+  { t: 'grisOxford', p: 'Blanco hueso', titulo: 'Clásica y luminosa', porque: 'El gris oxford es el color que más se vende porque disimula el uso diario, y con una pared clara el espacio se ve más amplio y ordenado. Combina con cualquier decoración que ya tengas.' },
+  { t: 'beige', p: 'Verde salvia', titulo: 'Cálida y natural', porque: 'El beige con verde salvia es la combinación de moda en interiores: da una sensación relajada, tipo spa, y hace que la sala se sienta acogedora con plantas y madera.' },
+  { t: 'chocolate', p: 'Greige', titulo: 'Elegante y acogedora', porque: 'El chocolate aporta calidez y esconde muy bien las manchas; sobre una pared greige resalta sin oscurecer el cuarto. Ideal si tienes piso o muebles de madera.' },
+  { t: 'negro', p: 'Gris perla', titulo: 'Moderna de contraste', porque: 'El negro hace que la sala sea la protagonista y es el tapiz más fácil de mantener. La pared gris perla suaviza el contraste para que no se sienta pesado.' },
+  { t: 'cocoa', p: 'Rosa palo', titulo: 'Tonos tierra de tendencia', porque: 'Cocoa con rosa palo es una mezcla de tonos tierra muy actual: cálida, diferente y fotogénica. Funciona muy bien con dorados y textiles claros.' },
+  { t: 'grisPlata', p: 'Azul petróleo', titulo: 'Fresca con carácter', porque: 'Una pared azul petróleo le da personalidad al espacio y el gris plata la ilumina. Es la opción para quien quiere algo distinto sin arriesgar en el mueble.' },
+];
+let recoOrden = [], recoPos = 0;
+const btnReco = document.getElementById('btnReco'), recoBox = document.getElementById('recoBox');
+function darReco() {
+  if (!recoOrden.length || recoPos >= recoOrden.length) { recoOrden = [...RECOS].sort(() => Math.random() - 0.5); recoPos = 0; }
+  const r = recoOrden[recoPos++];
+  const parNom = r.p, parHex = (PAREDES.find(([n]) => n === parNom) || [])[1];
+  aplicarTapiz(r.t); aplicarPared(parHex, parNom);
+  recoBox.hidden = false;
+  recoBox.innerHTML = `<b>${r.titulo}</b>
+    <div class="combo"><i style="background:${D.TAPIZ[r.t].hex}"></i>Tapiz ${D.TAPIZ[r.t].name} · <i style="background:${parHex}"></i>Pared ${parNom}</div>
+    <p>${r.porque}</p>`;
+  btnReco.textContent = '✨ Dame otra recomendación';
+  irA('frente');
+}
+btnReco.onclick = darReco;
+// si cambian el color a mano, la recomendación ya no aplica y se oculta
+document.querySelectorAll('#swTapiz button, #swPared button').forEach(b => b.addEventListener('click', () => { recoBox.hidden = true; btnReco.textContent = '✨ Recomiéndame una combinación'; }));
+document.getElementById('paredLibre').addEventListener('input', () => { recoBox.hidden = true; btnReco.textContent = '✨ Recomiéndame una combinación'; });
+
+// ───────── vistas y controles ─────────
+const VISTAS = { frente: [-0.5, 1.2, 4.6], esquina: [3.0, 1.5, 3.6], lado: [4.4, 1.15, 0.5], atras: [0.4, 1.6, -3.8], arriba: [0.1, 4.8, 1.4] };
+let animVista = null;
+// En pantallas verticales (celular) la cámara se aleja para que quepa la sala completa.
+const lejania = () => { const a = stage.clientWidth / stage.clientHeight; return a < 0.9 ? 1.18 : a < 1.2 ? 1.1 : 1; };
+const alejar = v => v.sub(controls.target).multiplyScalar(lejania()).add(controls.target);
+function irA(nombre) {
+  const hasta = alejar(new THREE.Vector3(...VISTAS[nombre])); const desde = camera.position.clone(); const t0 = performance.now();
+  animVista = t => { const k = Math.min(1, (t - t0) / 900); const e = k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2; camera.position.lerpVectors(desde, hasta, e); if (k >= 1) animVista = null; };
+  pararGiro(); const h = document.getElementById('hint'); if (h) h.style.opacity = 0;
+}
+document.querySelectorAll('[data-v]').forEach(b => b.onclick = () => irA(b.dataset.v));
+const tGirar = document.getElementById('tGirar');
+const pararGiro = () => { controls.autoRotate = false; tGirar.setAttribute('aria-pressed', 'false'); };
+tGirar.onclick = () => { controls.autoRotate = !controls.autoRotate; tGirar.setAttribute('aria-pressed', String(controls.autoRotate)); };
+const tMed = document.getElementById('tMed');
+tMed.onclick = () => { dims.visible = !dims.visible; tMed.setAttribute('aria-pressed', String(dims.visible)); if (dims.visible) irA('esquina'); };
+// las medidas se ven desde que abre; con la regla se pueden ocultar
+dims.visible = true; tMed.setAttribute('aria-pressed', 'true');
+controls.addEventListener('start', () => { pararGiro(); animVista = null; document.getElementById('hint').style.opacity = 0; });
+document.getElementById('tFull').onclick = () => { if (document.fullscreenElement) document.exitFullscreen(); else if (stage.requestFullscreen) stage.requestFullscreen(); };
+
+camera.position.copy(alejar(new THREE.Vector3(-1.6, 1.35, 4.3)));
+function medir() { const w = stage.clientWidth, h = stage.clientHeight; renderer.setSize(w, h, false); camera.aspect = w / h; camera.fov = w / h < 0.9 ? 52 : 38; camera.updateProjectionMatrix(); }
+new ResizeObserver(medir).observe(stage); medir();
+
+renderer.setAnimationLoop(t => {
+  if (animVista) animVista(t);
+  controls.update();
+  // la pared que queda entre la cámara y la sala se oculta sola
+  muro.visible = camera.position.z > Z_FONDO + 0.25;
+  muroDer.visible = camera.position.x < anchoC / 2 - 0.15;
+  muroIzq.visible = camera.position.x > -anchoC / 2 + 0.15;
+  renderer.render(scene, camera);
+});
+document.getElementById('load').remove();
+setTimeout(() => { const h = document.getElementById('hint'); if (h) h.style.opacity = 0; }, 6000);
+</script>
+</body>
+</html>
