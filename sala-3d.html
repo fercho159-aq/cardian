@@ -347,7 +347,14 @@ const paredM = new THREE.Mesh(new THREE.BoxGeometry(1, ALTO_MURO, GROSOR), pared
 const zocloM = new THREE.Mesh(new THREE.BoxGeometry(1, 0.1, 0.02), zoclo); zocloM.receiveShadow = true; muro.add(zocloM);
 const cuadro = new THREE.Group(); muro.add(cuadro);
 const marcoC = new THREE.Mesh(new THREE.BoxGeometry(1.5, 1.05, 0.045), oroViejo); marcoC.castShadow = true; cuadro.add(marcoC);
-const arte = new THREE.Mesh(new THREE.PlaneGeometry(1.38, 0.93), new THREE.MeshStandardMaterial({ map: texturaCuadro(), roughness: .9 })); arte.position.z = 0.024; cuadro.add(arte);
+const arteTex = texturaCuadro();
+const arte = new THREE.Mesh(new THREE.PlaneGeometry(1.38, 0.93), new THREE.MeshStandardMaterial({ map: arteTex, roughness: .9 })); arte.position.z = 0.024; cuadro.add(arte);
+// firma: el logo de Cardian en chiquito, abajo a la derecha del cuadro
+const logoArte = new Image(); logoArte.src = '/img/logo.png';
+logoArte.onload = () => { const cv = arteTex.image, x = cv.getContext('2d'); const h = 120, w = h * logoArte.width / logoArte.height;
+  x.save(); x.globalAlpha = .85; x.fillStyle = '#17130d'; x.beginPath(); x.roundRect(cv.width - w - 54, cv.height - h - 40, w + 40, h + 26, 16); x.fill();
+  x.globalAlpha = 1; x.strokeStyle = '#d2ad58'; x.lineWidth = 2.5; x.stroke();
+  x.drawImage(logoArte, cv.width - w - 34, cv.height - h - 28, w, h); x.restore(); arteTex.needsUpdate = true; };
 cuadro.position.set(-0.35, 1.78, Z_FONDO + 0.028);
 // pared derecha con ventana y cortinas · pared izquierda lisa
 const muroDer = new THREE.Group(); scene.add(muroDer);
