@@ -252,6 +252,21 @@ function texturaCuadro() { // arte abstracto en tonos del sitio
   });
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
 }
+function texturaPantalla() { // atardecer para la tele encendida
+  const c = lienzo(640, 360, (x, w, h) => {
+    const g = x.createLinearGradient(0, 0, 0, h);
+    g.addColorStop(0, '#16203e'); g.addColorStop(.45, '#6e4370'); g.addColorStop(.72, '#d2884a'); g.addColorStop(1, '#f3c46a');
+    x.fillStyle = g; x.fillRect(0, 0, w, h);
+    x.fillStyle = '#ffd98c'; x.beginPath(); x.arc(w * .62, h * .66, 46, 0, Math.PI * 2); x.fill();
+    x.fillStyle = 'rgba(255,217,140,.35)'; x.beginPath(); x.arc(w * .62, h * .66, 70, 0, Math.PI * 2); x.fill();
+    const monta = (yy, col, picos) => { x.fillStyle = col; x.beginPath(); x.moveTo(0, h); x.lineTo(0, yy + 20);
+      for (let i = 1; i <= picos; i++) x.lineTo(w * i / picos, yy + (i % 2 ? -1 : 1) * (14 + (i * 37 % 26)));
+      x.lineTo(w, h); x.fill(); };
+    monta(h * .72, '#3a2c4e', 5); monta(h * .84, '#241b33', 7);
+    x.fillStyle = 'rgba(255,255,255,.05)'; x.fillRect(0, 0, w / 2.6, h); // brillo de pantalla
+  });
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+}
 function texturaSombra() { // mancha suave que asienta los muebles al piso
   const c = lienzo(256, 256, (x, w, h) => {
     const g = x.createRadialGradient(w / 2, h / 2, 10, w / 2, h / 2, w / 2);
@@ -319,7 +334,7 @@ const pataGeo = new THREE.CylinderGeometry(0.03, 0.024, PATA, 20);
 // Altura de techo típica en México: 2.5 m. El ancho y fondo los elige el cliente.
 const madera = texturaMadera();
 const ALTO_MURO = 2.5, Z_FONDO = -0.62, GROSOR = 0.09;
-let anchoC = 3.5, fondoC = 4.0;
+let anchoC = 3.5, fondoC = 4.0, zFrenteC = 3.38;
 // explanada neutra fuera del cuarto
 const pisoBase = new THREE.Mesh(new THREE.PlaneGeometry(26, 26), new THREE.MeshStandardMaterial({ color: '#c8c2b7', roughness: 1 }));
 pisoBase.rotation.x = -Math.PI / 2; pisoBase.position.y = -0.004; pisoBase.receiveShadow = true; scene.add(pisoBase);
@@ -370,6 +385,18 @@ const lPoste = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 1.3, 10),
 const lPantalla = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.22, 0.3, 24, 1, true), new THREE.MeshStandardMaterial({ color: '#f2e8d2', roughness: .9, side: THREE.DoubleSide, emissive: '#ffd9a0', emissiveIntensity: .55 }));
 lPantalla.position.y = 1.47; lPantalla.castShadow = true; lampara.add(lPantalla);
 const foco = new THREE.PointLight('#ffd9a0', 10, 5, 2); foco.position.y = 1.42; lampara.add(foco);
+// pantalla frente a la sala, sobre su mueble (se oculta cuando la cámara ve desde el frente)
+const tvG = new THREE.Group(); scene.add(tvG);
+const tvMueble = new THREE.Mesh(new RoundedBoxGeometry(1.6, 0.42, 0.4, 4, 0.02), new THREE.MeshStandardMaterial({ color: '#2b2118', roughness: .5 }));
+tvMueble.position.y = 0.27; tvMueble.castShadow = tvMueble.receiveShadow = true; tvG.add(tvMueble);
+[[-0.7, -0.14], [0.7, -0.14], [-0.7, 0.14], [0.7, 0.14]].forEach(([px, pz]) => { const p = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.016, 0.06, 10), negroMate); p.position.set(px, 0.03, pz); tvG.add(p); });
+const tvRaya = new THREE.Mesh(new THREE.BoxGeometry(1.56, 0.012, 0.012), oroViejo); tvRaya.position.set(0, 0.34, -0.2); tvG.add(tvRaya);
+const tvCuerpo = new THREE.Mesh(new RoundedBoxGeometry(1.46, 0.84, 0.045, 3, 0.012), new THREE.MeshStandardMaterial({ color: '#0e0e10', roughness: .35, metalness: .3 }));
+tvCuerpo.position.y = 1.0; tvCuerpo.castShadow = true; tvG.add(tvCuerpo);
+const tvPie = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.1, 0.22), negroMate); tvPie.position.y = 0.52; tvG.add(tvPie);
+const tvPantalla = new THREE.Mesh(new THREE.PlaneGeometry(1.38, 0.76), new THREE.MeshStandardMaterial({ map: texturaPantalla(), emissiveMap: texturaPantalla(), emissive: '#ffffff', emissiveIntensity: .75, color: '#111', roughness: .6 }));
+tvPantalla.rotation.y = Math.PI; tvPantalla.position.set(0, 1.0, -0.026); tvG.add(tvPantalla);
+const tvLuz = new THREE.PointLight('#c8a0ff', 2.2, 3.2, 2); tvLuz.position.set(0, 1.0, -0.5); tvG.add(tvLuz);
 
 // ───────── medidas ─────────
 const dims = new THREE.Group(); dims.visible = false; scene.add(dims);
@@ -421,6 +448,7 @@ function setCuarto(A, F) {
   cortinas[1].position.set(A / 2 - 0.1, 1.18, zc - 0.85);
   // decoración: solo si cabe
   lampara.visible = A >= 3.2; lampara.position.set(-A / 2 + 0.3, 0, -0.15);
+  zFrenteC = zFrente; tvG.position.set(0.1, 0, zFrente - 0.3);
   mesa.visible = F >= 4.4 && A >= 3.6; mesa.position.set(A / 2 - 0.55, 0, zFrente - 0.75);
   // medidas del cuarto (se ven con el botón de la regla)
   dimsC.clear();
@@ -519,6 +547,7 @@ renderer.setAnimationLoop(t => {
   muro.visible = camera.position.z > Z_FONDO + 0.25;
   muroDer.visible = camera.position.x < anchoC / 2 - 0.15;
   muroIzq.visible = camera.position.x > -anchoC / 2 + 0.15;
+  tvG.visible = camera.position.z < zFrenteC - 0.5; // de frente se quita para no tapar la sala
   renderer.render(scene, camera);
 });
 document.getElementById('load').remove();
