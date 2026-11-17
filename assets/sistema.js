@@ -27,7 +27,7 @@
   }
   async function cargar() {
     const d = await api('/api/datos?c=todo');
-    Object.assign(S, { ventas: d.ventas, leads: d.leads, usuarios: d.usuarios, sucursales: d.sucursales, ajustes: d.ajustes || {}, catalogo: d.catalogo, yo: d.yo, accesos: d.accesos || [] });
+    Object.assign(S, { ventas: d.ventas, leads: d.leads, usuarios: d.usuarios, sucursales: d.sucursales, ajustes: d.ajustes || {}, catalogo: d.catalogo, yo: d.yo, accesos: d.accesos || [], eliminados: d.eliminados || [] });
   }
   const admin = () => S.yo && S.yo.rol === 'admin';
   const nombreU = id => (S.usuarios.find(u => u.id === id) || {}).nombre || '—';
@@ -318,7 +318,7 @@
               ${saldo(vv) > 0 && vv.estado !== 'cancelado' ? `<div class="fields" style="margin-top:12px"><div class="field"><label>Registrar pago</label><input class="input" id="abMonto" type="number" min="1" placeholder="${saldo(vv)}"></div><div class="field"><label>Método</label><select class="input" id="abMet">${opts(METODOS, 'efectivo')}</select></div><div class="field full"><input class="input" id="abRef" placeholder="Referencia o nota (opcional)"></div></div><button class="btn primary sm" id="abonar" style="width:100%">Guardar pago</button>${S.ajustes.mpConfigurado ? `<button class="btn sm" id="mpLink" style="width:100%;margin-top:8px">Enlace de pago Mercado Pago</button>` : ''}` : ''}
             </div>
             <div class="box" style="padding:14px 16px;margin-top:12px"><h2 style="font-size:14px">Estado del pago</h2><select class="input" id="estV">${opts(Object.entries(ESTADO_V), vv.estado)}</select>
-              <div style="display:grid;gap:8px;margin-top:12px"><a class="btn ink sm" style="background:var(--ink);color:var(--ink-fg)" href="${ticketUrl(folio, k)}" target="_blank" rel="noopener">Ver / imprimir ticket</a>${vv.cliente.tel ? `<a class="btn wa sm" href="${waLink(vv.cliente.tel, waTicket)}" target="_blank" rel="noopener">Mandar ticket por WhatsApp</a>` : ''}<button class="btn sm" id="editV">Editar datos del cliente</button><button class="btn sm" id="notaV">Agregar nota</button></div>
+              <div style="display:grid;gap:8px;margin-top:12px"><a class="btn ink sm" style="background:var(--ink);color:var(--ink-fg)" href="${ticketUrl(folio, k)}" target="_blank" rel="noopener">Ver / imprimir ticket</a>${vv.cliente.tel ? `<a class="btn wa sm" href="${waLink(vv.cliente.tel, waTicket)}" target="_blank" rel="noopener">Mandar ticket por WhatsApp</a>` : ''}<button class="btn sm" id="editV">Editar datos del cliente</button><button class="btn sm" id="notaV">Agregar nota</button>${admin() ? '<button class="btn sm" id="elimV" style="color:#b4322b;border-color:#e7b9b4">Eliminar pedido (prueba)</button>' : ''}</div>
             </div>
           </div>
         </div>`;
@@ -332,6 +332,12 @@
       const mpb = $('#mpLink'); if (mpb) mpb.onclick = async () => { try { const r = await api('/api/mp', { accion: 'enlace', folio }); await navigator.clipboard.writeText(r.url).catch(() => {}); toast('Enlace de pago copiado'); window.open(r.url, '_blank'); } catch (e) { toast(e.message); } };
       $('#editV').onclick = () => { const vv2 = S.ventas.find(x => x.folio === folio); const m2 = modal('Editar venta ' + folio, `<div class="fields"><div class="field"><label>Nombre</label><input class="input" id="eN" value="${esc(vv2.cliente.nombre)}"></div><div class="field"><label>WhatsApp</label><input class="input" id="eT" value="${vv2.cliente.tel}"></div><div class="field"><label>Correo</label><input class="input" id="eE" value="${esc(vv2.cliente.email || '')}"></div><div class="field"><label>Sucursal</label><input class="input" id="eS" value="${esc(vv2.sucursal || '')}"></div>${admin() ? `<div class="field"><label>Vendedor</label><select class="input" id="eV">${opts(S.usuarios.map(u => [u.id, u.nombre]), vv2.vendedorId, 'Sin vendedor')}</select></div>` : ''}<div class="field full"><label>Dirección de entrega</label><input class="input" id="eD" value="${esc(vv2.envio.direccion || '')}"></div><div class="field full"><label>Notas</label><input class="input" id="eNo" value="${esc(vv2.notas || '')}"></div></div>`, `<button class="btn primary sm" id="okE">Guardar</button>`);
         $('#okE').onclick = async () => { try { await api('/api/datos?c=ventas', { accion: 'editar', folio, cliente: { nombre: $('#eN').value, tel: $('#eT').value, email: $('#eE').value }, sucursal: $('#eS').value, vendedorId: $('#eV') ? $('#eV').value : undefined, envio: { tipo: vv2.envio.tipo, estado: vv2.envio.estado, direccion: $('#eD').value }, notas: $('#eNo').value }); m2.cerrar(); await cargar(); detalleVenta(folio, k); } catch (e) { toast(e.message); } }; };
+      const elim = $('#elimV'); if (elim) elim.onclick = async () => {
+        const t = prompt('Esto borra el pedido ' + folio + ' para siempre (úsalo solo con pedidos de prueba).\n\nPara confirmar, escribe el folio: ' + folio);
+        if (t === null) return;
+        if (t.trim().toUpperCase() !== folio.toUpperCase()) return toast('El folio no coincide; no se borró nada');
+        try { await api('/api/datos?c=ventas', { accion: 'eliminar', folio, confirmar: t.trim() }); cerrarModal(); toast('Pedido ' + folio + ' eliminado'); await cargar(); render(); } catch (e) { toast(e.message); }
+      };
       $('#notaV').onclick = async () => { const t = prompt('Nota para esta venta:'); if (!t) return; try { await api('/api/datos?c=ventas', { accion: 'nota', folio, texto: t }); await cargar(); pintar(); } catch (e) { toast(e.message); } };
     };
     modal('Venta ' + folio, '<div id="dv"></div>', '', { wide: true });
@@ -450,7 +456,7 @@
             <div class="sel-estado">${Object.entries(ESTADO_L).map(([k, t]) => `<button type="button" data-est="${k}" class="${l.estado === k ? 'on' : ''}">${t}</button>`).join('')}</div>
             <div class="field" style="margin-top:12px"><label>Nota</label><div style="display:flex;gap:8px"><input class="input" id="nota" placeholder="Qué pasó en la llamada, qué cotizaste…"><button class="btn sm" id="okNota">Guardar</button></div></div>
             ${admin() ? `<div class="field"><label>Vendedor</label><select class="input" id="asig">${opts(S.usuarios.filter(u => u.activo).map(u => [u.id, u.nombre]), l.vendedorId, 'Sin vendedor')}</select></div>` : ''}
-            <button class="btn sm" id="editL">Editar datos</button>
+            <button class="btn sm" id="editL">Editar datos</button>${admin() ? '<button class="btn sm" id="elimL" style="color:#b4322b;border-color:#e7b9b4;margin-left:6px">Eliminar lead (prueba)</button>' : ''}
           </div>
           <div>
             <h2 style="font-size:14px;margin:0 0 6px">Notas</h2>${l.notas.length ? `<ul class="hist">${l.notas.slice().reverse().map(n => `<li><time>${fecha(n.cuando)}</time><span><b>${esc(n.quien)}</b> · ${esc(n.texto)}</span></li>`).join('')}</ul>` : '<div class="note">Sin notas.</div>'}
@@ -462,6 +468,7 @@
       const as = $('#asig'); if (as) as.onchange = async () => { try { await api('/api/datos?c=leads', { accion: 'asignar', id, vendedorId: as.value }); toast('Reasignado'); await cargar(); pintar(); } catch (e) { toast(e.message); } };
       const cv = $('#convertir'); if (cv) cv.onclick = () => formVenta(l);
       const vv = $('#verVenta'); if (vv) vv.onclick = () => detalleVenta(l.ventaFolio);
+      const elL = $('#elimL'); if (elL) elL.onclick = async () => { if (!confirm('¿Eliminar este lead para siempre? Úsalo solo con leads de prueba.')) return; try { await api('/api/datos?c=leads', { accion: 'eliminar', id }); cerrarModal(); toast('Lead eliminado'); await cargar(); render(); } catch (e) { toast(e.message); } };
       $('#editL').onclick = () => { const m2 = modal('Editar lead', `<div class="fields"><div class="field"><label>Nombre</label><input class="input" id="eN" value="${esc(l.nombre)}"></div><div class="field"><label>WhatsApp</label><input class="input" id="eT" value="${l.tel}"></div><div class="field full"><label>Interés</label><input class="input" id="eP" value="${esc(l.producto)}"></div><div class="field full"><label>Mensaje</label><input class="input" id="eM" value="${esc(l.mensaje)}"></div></div>`, `<button class="btn primary sm" id="okE">Guardar</button>`);
         $('#okE').onclick = async () => { try { await api('/api/datos?c=leads', { accion: 'editar', id, nombre: $('#eN').value, tel: $('#eT').value, producto: $('#eP').value, mensaje: $('#eM').value }); m2.cerrar(); await cargar(); detalleLead(id); } catch (e) { toast(e.message); } }; };
     };
@@ -556,7 +563,7 @@
             ${a.almacen !== 'upstash' ? `<div class="aviso" style="margin-top:10px">En producción hace falta la base de datos: en Vercel → Storage → <b>Upstash for Redis</b> (plan gratis) → conectar al proyecto. Crea solas las variables KV_REST_API_URL y KV_REST_API_TOKEN.</div>` : ''}
             ${a.secretoDefault ? `<div class="aviso" style="margin-top:10px">Falta <span class="copy">CARDIAN_SECRET</span> en Vercel (cualquier texto largo al azar). Firma las sesiones y los enlaces de ticket.</div>` : ''}
             <h2 style="margin-top:18px">Mi contraseña</h2><button class="btn sm" id="clave">Cambiar mi contraseña</button>
-            <h2 style="margin-top:18px">Últimos accesos</h2>${(S.accesos || []).length ? `<ul class="hist">${S.accesos.slice(0, 15).map(x => `<li><time>${fecha(x.cuando)}</time><span><b>${esc(x.usuario)}</b> · ${x.ok ? '<span style="color:var(--ok)">entró</span>' : '<span style="color:#b4322b">' + esc(x.motivo || 'falló') + '</span>'} · ${esc(x.ip)}</span></li>`).join('')}</ul>` : '<div class="note">Sin registros todavía.</div>'}
+            <h2 style="margin-top:18px;display:flex;justify-content:space-between;align-items:center;gap:10px">Últimos accesos <button class="btn sm" id="limpiarBit" type="button">Limpiar bitácora</button></h2>${(S.accesos || []).length ? `<ul class="hist">${S.accesos.slice(0, 15).map(x => `<li><time>${fecha(x.cuando)}</time><span><b>${esc(x.usuario)}</b> · ${x.ok ? '<span style="color:var(--ok)">entró</span>' : '<span style="color:#b4322b">' + esc(x.motivo || 'falló') + '</span>'} · ${esc(x.ip)}</span></li>`).join('')}</ul>` : '<div class="note">Sin registros todavía.</div>'}
             <h2 style="margin-top:18px">Cómo usar WhatsApp Business con el sistema</h2>
             <ol style="font-size:13.5px;padding-left:18px;line-height:1.6;margin:0">
               <li><b>Del sitio:</b> los botones de WhatsApp piden nombre y número; el lead entra solo al sistema, asignado al azar parejo, y el chat llega al WhatsApp Business del negocio.</li>
@@ -567,6 +574,7 @@
           </div>
         </div>
       </div>`, 'Ajustes', 'Conexiones, datos del negocio y cómo trabaja el equipo.');
+    const lb = $('#limpiarBit'); if (lb) lb.onclick = async () => { if (!confirm('¿Borrar la bitácora de accesos? Quedará solo el registro de esta limpieza.')) return; try { await api('/api/datos?c=ajustes', { accion: 'limpiarBitacora' }); toast('Bitácora limpia'); await cargar(); render(); } catch (e) { toast(e.message); } };
     $('#okA').onclick = async () => { try { await api('/api/datos?c=ajustes', { negocio: $('#aNeg').value, waNegocio: $('#aWa').value, numeroCompartido: $('#aComp').value, leyendaTicket: $('#aLey').value }); toast('Guardado'); await cargar(); } catch (e) { toast(e.message); } };
     $('#clave').onclick = () => pedirClave(false);
     const sy = $('#sync'); if (sy) sy.onclick = async () => { await sincronizarMP(); try { const r = await api('/api/mp', { accion: 'sincronizar', dias: 30 }); if (r.sueltos.length) $('#sueltos').innerHTML = `<h2 style="margin-top:14px">Pagos sin pedido (${r.sueltos.length})</h2><p class="note">Pagos aprobados en la cuenta que no traen folio (links manuales, cobros en tienda). Lígalos a su venta:</p>${r.sueltos.map(p => `<div class="pagos"><div><span>${fecha(p.cuando)} · ${esc(p.quien)}<br><small>${esc(p.metodo)} ${esc(p.descripcion)}</small></span><span><b>${fmt(p.monto)}</b> <input class="input" style="width:110px;padding:6px;display:inline-block" placeholder="CM-1001" data-lig="${p.id}"></span></div></div>`).join('')}`; $$('[data-lig]').forEach(i => i.onchange = async () => { try { await api('/api/mp', { accion: 'ligar', pagoId: i.dataset.lig, folio: i.value.trim().toUpperCase() }); toast('Pago ligado'); await cargar(); vistaAjustes(); } catch (e) { toast(e.message); } }); } catch (e) {} };

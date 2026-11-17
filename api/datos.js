@@ -30,7 +30,7 @@ async function manejar(req, res) {
     if (c === 'usuarios' || c === 'todo') out.usuarios = usuarios.map(x => esAdmin(u) ? A.publico(x) : { id: x.id, nombre: x.nombre, rol: x.rol, sucursal: x.sucursal, activo: x.activo });
     if (c === 'sucursales' || c === 'todo') out.sucursales = await store.get('sucursales', []);
     if (c === 'ajustes' || c === 'todo') out.ajustes = { almacen: store.modo(), secretoDefault: A.secretoDefault, mpConfigurado: !!process.env.MP_ACCESS_TOKEN, mpPrueba: !!(process.env.MP_ACCESS_TOKEN || '').startsWith('TEST-'), mpWebhook: !!process.env.MP_WEBHOOK_SECRET, waConfigurado: !!process.env.WA_VERIFY_TOKEN, waFirma: !!process.env.WA_APP_SECRET, ...(await store.get('ajustes', {})) };
-    if (esAdmin(u) && (c === 'ajustes' || c === 'todo')) out.accesos = (await store.get('accesos', [])).slice(0, 40);
+    if (esAdmin(u) && (c === 'ajustes' || c === 'todo')) { out.accesos = (await store.get('accesos', [])).slice(0, 40); out.eliminados = (await store.get('eliminados', [])).slice(0, 20); }
     out.yo = A.publico(u);
     out.catalogo = { productos: M.D().products.map(p => ({ id: p.id, nombre: p.name, precio: p.price || 0, cat: p.cat, tapiz: p.tapiz || [] })), tapiz: M.D().TAPIZ, estados: M.D().states, estadosVenta: M.ESTADOS_VENTA, estadosLead: M.ESTADOS_LEAD, origenes: M.ORIGENES };
     return ok(res, out);
@@ -52,6 +52,17 @@ async function manejar(req, res) {
       await store.actualizar('ventas', l => { l.unshift(v); });
       if (v.leadId) await store.actualizar('leads', l => { const x = l.find(y => y.id === v.leadId); if (x) { x.estado = 'compro'; x.ventaFolio = folio; hist(x, u.nombre, 'Compró · venta ' + folio); } });
       return ok(res, { venta: v, k: M.llaveTicket(folio) });
+    }
+    if (ac === 'eliminar') {
+      // Para limpiar pedidos de prueba: solo el administrador, escribiendo el folio para confirmar.
+      if (!esAdmin(u)) return error(res, 403, 'Solo el administrador elimina pedidos');
+      if (String(b.confirmar || '').trim().toUpperCase() !== String(b.folio || '').toUpperCase()) return error(res, 400, 'Escribe el folio exacto para confirmar');
+      let quitado = null;
+      await store.actualizar('ventas', l => { const i = l.findIndex(x => x.folio === b.folio); if (i >= 0) quitado = l.splice(i, 1)[0]; });
+      if (!quitado) return error(res, 404, 'No existe esa venta');
+      if (quitado.leadId) await store.actualizar('leads', l => { const x = l.find(y => y.id === quitado.leadId); if (x) { x.ventaFolio = null; hist(x, u.nombre, 'Se eliminó la venta ' + quitado.folio); } });
+      await store.actualizar('eliminados', l => [{ cuando: ahora(), quien: u.nombre, tipo: 'Pedido', ref: quitado.folio, detalle: (quitado.cliente.nombre || '') + ' · $' + Math.round(quitado.total || 0).toLocaleString('es-MX') }, ...l].slice(0, 100));
+      return ok(res, { ok: true });
     }
     const ventas = await store.get('ventas', []);
     const v = ventas.find(x => x.folio === b.folio);
@@ -113,6 +124,14 @@ async function manejar(req, res) {
       let n = 0;
       await store.actualizar('leads', l => { l.forEach(x => { if (!x.vendedorId && !['compro', 'no-compro'].includes(x.estado)) { const v = M.elegirVendedor(usuarios, x.sucursal, l); if (v) { x.vendedorId = v.id; hist(x, u.nombre, 'Asignado a ' + v.nombre); n++; } } }); });
       return ok(res, { asignados: n });
+    }
+    if (ac === 'eliminar') {
+      if (!esAdmin(u)) return error(res, 403, 'Solo el administrador elimina leads');
+      let quitado = null;
+      await store.actualizar('leads', l => { const i = l.findIndex(x => x.id === b.id); if (i >= 0) quitado = l.splice(i, 1)[0]; });
+      if (!quitado) return error(res, 404, 'No existe ese lead');
+      await store.actualizar('eliminados', l => [{ cuando: ahora(), quien: u.nombre, tipo: 'Lead', ref: quitado.tel || '', detalle: quitado.nombre || '' }, ...l].slice(0, 100));
+      return ok(res, { ok: true });
     }
     const leads = await store.get('leads', []);
     const L = leads.find(x => x.id === b.id);
@@ -183,6 +202,10 @@ async function manejar(req, res) {
   }
   if (c === 'ajustes') {
     if (!esAdmin(u)) return error(res, 403, 'Solo el administrador cambia ajustes');
+    if (b.accion === 'limpiarBitacora') {
+      await store.set('accesos', [{ cuando: ahora(), usuario: u.usuario, ip: '', ok: true, motivo: 'bitácora limpiada' }]);
+      return ok(res, { ok: true });
+    }
     const cur = await store.get('ajustes', {});
     const permitidos = ['negocio', 'leyendaTicket', 'waNegocio', 'msi', 'numeroCompartido'];
     permitidos.forEach(k => { if (b[k] !== undefined) cur[k] = String(b[k]).slice(0, 300); });
