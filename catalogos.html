@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Catálogos · Cardian Muebles</title>
-<meta name="description" content="Descarga los catálogos de Cardian Muebles en PDF: salas con precio directo, envío gratis en CDMX y Estado de México y armado incluido.">
+<meta name="description" content="Descarga los catálogos de Cardian Muebles en PDF: salas y comedores con precio directo, envío gratis en CDMX y Estado de México y armado incluido.">
 <link rel="icon" href="/img/logo.png">
 <meta property="og:title" content="Catálogos · Cardian Muebles">
 <meta property="og:description" content="Descarga nuestros catálogos en PDF y cotiza por WhatsApp.">
@@ -50,7 +50,20 @@
           </div>
         </div>
       </article>
-      <div class="soon reveal"><div><b>Más catálogos muy pronto</b>Comedores y más líneas. Mientras, mira todo en la <a href="/catalogo?c=comedores" style="color:var(--gold-deep)">tienda en línea</a>.</div></div>
+      <article class="pdf reveal">
+        <a class="ph" href="/pdf/catalogo-comedores-cardian-muebles.pdf" target="_blank" rel="noopener"><img src="/pdf/portada-comedores.jpg" alt="Portada del Catálogo Comedores de Cardian Muebles"></a>
+        <div class="c">
+          <div class="eyebrow">Catálogo</div>
+          <h2>Comedores</h2>
+          <p>Ocho modelos: Dubai, Madrid, Delta 8, Delta 4, Múnich, Viena, Chicago y Cartagena.</p>
+          <div class="meta">PDF · 11 páginas · 1.6 MB</div>
+          <div class="acts">
+            <a class="btn" href="/pdf/catalogo-comedores-cardian-muebles.pdf" target="_blank" rel="noopener">Ver catálogo</a>
+            <a class="btn ghost" href="/pdf/catalogo-comedores-cardian-muebles.pdf" download="Catalogo Comedores - Cardian Muebles.pdf">Descargar PDF</a>
+            <a class="btn wa" id="waComedores" href="#" target="_blank" rel="noopener">Cotizar por WhatsApp</a>
+          </div>
+        </div>
+      </article>
     </div>
   </div>
 </section>
@@ -62,6 +75,7 @@
 (function(){
   const { $, wa } = window.Cardian;
   $('#waSalas').href = wa('Hola Cardian Muebles, vi el Catálogo Salas y quiero cotizar el modelo: ');
+  $('#waComedores').href = wa('Hola Cardian Muebles, vi el Catálogo Comedores y quiero cotizar el modelo: ');
 })();
 </script>
 </body>
