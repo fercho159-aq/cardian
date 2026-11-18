@@ -62,8 +62,10 @@
       <div class="field"><label for="p">Contraseña</label><input class="input" id="p" type="password" autocomplete="current-password"></div>
       ${err ? `<div class="err">${esc(err)}</div>` : ''}
       <button class="btn primary" style="width:100%" type="submit">Entrar</button>
+      ${window.CardianApp && !CardianApp.instalada() ? `<button type="button" class="app-link" id="appLogin"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M12 8v6M9.5 11.5 12 14l2.5-2.5"/></svg>Descargar la app en este equipo</button>` : ''}
       <p style="margin:16px 0 0;font-size:12px"><a href="/" style="color:var(--muted)">← Volver al sitio</a></p>
     </form></div>`;
+    if ($('#appLogin')) $('#appLogin').onclick = () => CardianApp.abrir();
     $('#login').onsubmit = async e => {
       e.preventDefault();
       try { await api('/api/auth', { accion: 'entrar', usuario: $('#u').value, clave: $('#p').value }); await cargar(); render(); if (S.yo.cambiarClave) pedirClave(true); }
@@ -103,12 +105,13 @@
     $('#app').innerHTML = `<div class="shell">
       <nav class="side" id="side"><div class="brand"><img src="/img/logo.png" alt=""><span>Sistema</span></div>
         ${menu.map(([k, t, n]) => `<a href="#/${k}" class="${r === k ? 'on' : ''}">${ICO[k] || ICO.cuenta}${t}${n ? `<span class="n">${n}</span>` : ''}</a>`).join('')}
-        <div class="yo"><b>${esc(S.yo.nombre)}</b><small>${S.yo.rol === 'admin' ? 'Administrador' : 'Vendedor'}${S.yo.sucursal ? ' · ' + esc(S.yo.sucursal) : ''}</small><br><button type="button" id="salir">Cerrar sesión</button></div>
+        <div class="yo"><b>${esc(S.yo.nombre)}</b><small>${S.yo.rol === 'admin' ? 'Administrador' : 'Vendedor'}${S.yo.sucursal ? ' · ' + esc(S.yo.sucursal) : ''}</small><br><button type="button" id="salir">Cerrar sesión</button>${window.CardianApp && !CardianApp.instalada() ? `<br><button type="button" class="app-link" id="appSide"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M12 8v6M9.5 11.5 12 14l2.5-2.5"/></svg>Descargar app</button>` : ''}</div>
       </nav>
       <main class="main"><button class="menu-btn" id="menu">☰ Menú</button>
         <div class="top"><div><h1>${titulo}</h1>${sub ? `<p>${sub}</p>` : ''}</div><div class="acts">${acciones || ''}</div></div>
         ${contenido}</main></div>`;
     $('#salir').onclick = async () => { await api('/api/auth', { accion: 'salir' }); S.yo = null; render(); };
+    if ($('#appSide')) $('#appSide').onclick = () => CardianApp.abrir();
     $('#menu').onclick = () => $('#side').classList.toggle('open');
     $$('#side a').forEach(a => a.onclick = () => $('#side').classList.remove('open'));
   }
