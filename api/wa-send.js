@@ -19,7 +19,7 @@ module.exports = seguro(async (req, res) => {
   if (!texto) return error(res, 400, 'El mensaje está vacío');
   if (texto.length > 4000) return error(res, 400, 'Máximo 4000 caracteres por mensaje');
 
-  const esAdmin = u.rol === 'admin';
+  const esAdmin = u.rol === 'admin' || u.rol === 'supervisor'; // el admin de atención ve todos los chats
   const tel10 = wa.telDeJid(jid);
 
   // Permiso: si hay lead, solo su vendedor o admin. Sin lead, cualquier usuario (es un chat nuevo).

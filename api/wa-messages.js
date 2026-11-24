@@ -17,7 +17,7 @@ module.exports = seguro(async (req, res) => {
   if (!jid) return error(res, 400, 'Falta jid');
 
   const tel10 = wa.telDeJid(jid);
-  const esAdmin = u.rol === 'admin';
+  const esAdmin = u.rol === 'admin' || u.rol === 'supervisor'; // el admin de atención ve todos los chats
   if (!esAdmin) {
     const leads = await store.get('leads', []);
     const lead = tel10 ? leads.find(l => l.tel === tel10) : null;

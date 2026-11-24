@@ -32,7 +32,7 @@ module.exports = seguro(async (req, res) => {
   if (b.accion === 'clave') {
     const u = await A.exigir(req, res); if (!u) return;
     if (!u.cambiarClave && !A.verificar(b.actual, u.clave)) return error(res, 400, 'La contraseña actual no coincide');
-    if (String(b.nueva || '').length < 10) return error(res, 400, 'La contraseña nueva debe tener al menos 10 caracteres');
+    if (String(b.nueva || '').length < 8) return error(res, 400, 'La contraseña nueva debe tener al menos 8 caracteres');
     await store.actualizar('usuarios', l => { const x = l.find(y => y.id === u.id); if (x) { x.clave = A.hashear(b.nueva); x.cambiarClave = false; } });
     return ok(res, { ok: true });
   }

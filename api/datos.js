@@ -7,8 +7,12 @@ const M = require('./_lib/modelo');
 const { cuerpo, query, ok, error, id, ahora, tel10, seguro } = require('./_lib/http');
 
 const esAdmin = u => u.rol === 'admin';
+// Admin de atención («supervisor»): ve y reparte todos los leads y chats de WhatsApp, pero no ventas, usuarios ni ajustes.
+const veTodo = u => u.rol === 'admin' || u.rol === 'supervisor';
+const ROLES = ['admin', 'supervisor', 'vendedor'];
+const rolDe = r => ROLES.includes(r) ? r : 'vendedor';
 const visiblesVentas = (lista, u) => esAdmin(u) ? lista : lista.filter(v => v.vendedorId === u.id);
-const visiblesLeads = (lista, u) => esAdmin(u) ? lista : lista.filter(l => l.vendedorId === u.id);
+const visiblesLeads = (lista, u) => veTodo(u) ? lista : lista.filter(l => l.vendedorId === u.id);
 const hist = (obj, quien, que) => { (obj.historial = obj.historial || []).push({ cuando: ahora(), quien, que }); };
 
 const COLECCIONES = ['ventas', 'leads', 'usuarios', 'sucursales', 'ajustes', 'modelos'];
@@ -122,15 +126,15 @@ async function manejar(req, res) {
       if (repetido && !b.forzar) return error(res, 409, 'Ese número ya está como lead de ' + ((usuarios.find(x => x.id === repetido.vendedorId) || {}).nombre || 'nadie') + ' (' + repetido.estado + ')');
       let vend = null;
       // El admin puede escoger vendedor; un vendedor solo se lo queda si marca «lo atiendo yo». Si no, al azar parejo.
-      if (esAdmin(u) && b.vendedorId) vend = usuarios.find(x => x.id === b.vendedorId) || null;
-      else if (!esAdmin(u) && b.mio) vend = u;
+      if (veTodo(u) && b.vendedorId) vend = usuarios.find(x => x.id === b.vendedorId) || null;
+      else if (!veTodo(u) && b.mio) vend = u;
       else if (b.repartir !== false) vend = M.elegirVendedor(usuarios, b.sucursal, leads);
       const lead = M.nuevoLead({ ...b, tel, origen: b.origen || 'whatsapp' }, vend, u.nombre);
       await store.actualizar('leads', l => { l.unshift(lead); });
       return ok(res, { lead });
     }
     if (ac === 'repartir') {
-      if (!esAdmin(u)) return error(res, 403, 'Solo el administrador reparte leads');
+      if (!veTodo(u)) return error(res, 403, 'Solo el administrador reparte leads');
       let n = 0;
       await store.actualizar('leads', l => { l.forEach(x => { if (!x.vendedorId && !['compro', 'no-compro'].includes(x.estado)) { const v = M.elegirVendedor(usuarios, x.sucursal, l); if (v) { x.vendedorId = v.id; hist(x, u.nombre, 'Asignado a ' + v.nombre); n++; } } }); });
       return ok(res, { asignados: n });
@@ -146,7 +150,7 @@ async function manejar(req, res) {
     const leads = await store.get('leads', []);
     const L = leads.find(x => x.id === b.id);
     if (!L) return error(res, 404, 'No existe ese lead');
-    if (!esAdmin(u) && L.vendedorId !== u.id) return error(res, 403, 'Este lead es de otro vendedor');
+    if (!veTodo(u) && L.vendedorId !== u.id) return error(res, 403, 'Este lead es de otro vendedor');
     if (ac === 'estado') {
       if (!M.ESTADOS_LEAD.includes(b.estado)) return error(res, 400, 'Estado inválido');
       L.estado = b.estado; hist(L, u.nombre, 'Estado: ' + b.estado + (b.nota ? ' · ' + String(b.nota).slice(0, 200) : ''));
@@ -154,7 +158,7 @@ async function manejar(req, res) {
     } else if (ac === 'nota') {
       L.notas.push({ cuando: ahora(), quien: u.nombre, texto: String(b.texto || '').slice(0, 300) });
     } else if (ac === 'asignar') {
-      if (!esAdmin(u)) return error(res, 403, 'Solo el administrador reasigna');
+      if (!veTodo(u)) return error(res, 403, 'Solo el administrador reasigna');
       const v = usuarios.find(x => x.id === b.vendedorId); L.vendedorId = v ? v.id : null; hist(L, u.nombre, v ? 'Reasignado a ' + v.nombre : 'Sin vendedor');
     } else if (ac === 'editar') {
       if (b.nombre !== undefined) L.nombre = String(b.nombre).slice(0, 80);
@@ -176,26 +180,34 @@ async function manejar(req, res) {
       if (usuario.length < 3) return error(res, 400, 'El usuario debe tener al menos 3 letras (sin espacios ni acentos)');
       if (lista.some(x => x.usuario === usuario)) return error(res, 409, 'Ese usuario ya existe');
       if (!b.nombre) return error(res, 400, 'Escribe el nombre');
-      if (b.clave && String(b.clave).length < 10) return error(res, 400, 'La contraseña debe tener al menos 10 caracteres');
+      if (b.clave && String(b.clave).length < 8) return error(res, 400, 'La contraseña debe tener al menos 8 caracteres');
       const claveTemp = b.clave ? String(b.clave) : 'Cardian' + Math.floor(1000 + Math.random() * 9000);
-      const nuevo = { id: id(8), nombre: String(b.nombre).slice(0, 80), usuario, rol: b.rol === 'admin' ? 'admin' : 'vendedor', sucursal: String(b.sucursal || '').slice(0, 60), whatsapp: tel10(b.whatsapp), activo: true, recibeLeads: b.recibeLeads !== false, cambiarClave: b.obligar !== false, clave: A.hashear(claveTemp), creado: ahora() };
+      const nuevo = { id: id(8), nombre: String(b.nombre).slice(0, 80), usuario, rol: rolDe(b.rol), sucursal: String(b.sucursal || '').slice(0, 60), whatsapp: tel10(b.whatsapp), activo: true, recibeLeads: b.recibeLeads !== false, cambiarClave: b.obligar !== false, clave: A.hashear(claveTemp), creado: ahora() };
       lista.push(nuevo); await store.set('usuarios', lista);
       return ok(res, { usuario: A.publico(nuevo), claveTemp });
     }
     const x = lista.find(y => y.id === b.id); if (!x) return error(res, 404, 'No existe ese usuario');
     if (ac === 'editar') {
+      if (b.usuario !== undefined) {
+        const nuevoU = String(b.usuario || '').trim().toLowerCase().replace(/[^a-z0-9._-]/g, '');
+        if (nuevoU !== x.usuario) {
+          if (nuevoU.length < 3) return error(res, 400, 'El usuario debe tener al menos 3 letras (sin espacios ni acentos)');
+          if (lista.some(y => y.id !== x.id && y.usuario === nuevoU)) return error(res, 409, 'Ese usuario ya existe');
+          x.usuario = nuevoU;
+        }
+      }
       if (b.nombre) x.nombre = String(b.nombre).slice(0, 80);
       if (b.sucursal !== undefined) x.sucursal = String(b.sucursal).slice(0, 60);
       if (b.whatsapp !== undefined) x.whatsapp = tel10(b.whatsapp);
       if (b.recibeLeads !== undefined) x.recibeLeads = !!b.recibeLeads;
-      if (b.rol && x.id !== u.id) x.rol = b.rol === 'admin' ? 'admin' : 'vendedor';
+      if (b.rol && x.id !== u.id) x.rol = rolDe(b.rol);
       if (b.activo !== undefined && x.id !== u.id) x.activo = !!b.activo;
       await store.set('usuarios', lista);
       return ok(res, { usuario: A.publico(x) });
     }
     if (ac === 'clave') {
       // El admin escribe la contraseña que quiera (8+ caracteres) o se genera una al azar.
-      if (b.clave && String(b.clave).length < 10) return error(res, 400, 'La contraseña debe tener al menos 10 caracteres');
+      if (b.clave && String(b.clave).length < 8) return error(res, 400, 'La contraseña debe tener al menos 8 caracteres');
       const claveTemp = b.clave ? String(b.clave) : 'Cardian' + Math.floor(1000 + Math.random() * 9000);
       x.clave = A.hashear(claveTemp); x.cambiarClave = b.obligar !== false; await store.set('usuarios', lista);
       return ok(res, { claveTemp, obligar: x.cambiarClave });

@@ -24,7 +24,7 @@ async function permiso(u, jid) {
   const tel10 = wa.telDeJid(jid);
   const leads = await store.get('leads', []);
   const lead = tel10 ? leads.find(l => l.tel === tel10) : null;
-  if (lead && u.rol !== 'admin' && lead.vendedorId && lead.vendedorId !== u.id) return { error: 'Ese chat lo lleva otro vendedor' };
+  if (lead && u.rol !== 'admin' && u.rol !== 'supervisor' && lead.vendedorId && lead.vendedorId !== u.id) return { error: 'Ese chat lo lleva otro vendedor' };
   return { lead };
 }
 

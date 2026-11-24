@@ -35,6 +35,11 @@
     Object.assign(S, { ventas: d.ventas, leads: d.leads, usuarios: d.usuarios, sucursales: d.sucursales, ajustes: d.ajustes || {}, catalogo: d.catalogo, yo: d.yo, accesos: d.accesos || [], eliminados: d.eliminados || [] });
   }
   const admin = () => S.yo && S.yo.rol === 'admin';
+  // Admin de atención («supervisor»): solo Muebles, Leads y WhatsApp, pero ve y reparte todos los leads y chats.
+  const sup = () => S.yo && S.yo.rol === 'supervisor';
+  const veTodo = () => admin() || sup();
+  const ROL_N = { admin: 'Administrador', supervisor: 'Admin de atención', vendedor: 'Vendedor' };
+  const SOLO_SUP = ['muebles', 'leads', 'whatsapp', 'cuenta'];
   const nombreU = id => (S.usuarios.find(u => u.id === id) || {}).nombre || '—';
   // Quién dio de alta el pedido: el primer registro del historial (un usuario, «Sitio web» o Mercado Pago).
   const altaDe = v => ((v.historial || [])[0] || {}).quien || '—';
@@ -82,7 +87,7 @@
   }
   function pedirClave(forzado) {
     const m = modal(forzado ? 'Crea tu contraseña' : 'Cambiar mi contraseña', `
-      ${forzado ? '<p class="note" style="margin-bottom:12px">Esta cuenta tiene una contraseña temporal. Escribe una nueva de al menos 10 caracteres.</p>' : `<div class="field"><label>Contraseña actual</label><input class="input" id="c0" type="password"></div>`}
+      ${forzado ? '<p class="note" style="margin-bottom:12px">Esta cuenta tiene una contraseña temporal. Escribe una nueva de al menos 8 caracteres.</p>' : `<div class="field"><label>Contraseña actual</label><input class="input" id="c0" type="password"></div>`}
       <div class="field"><label>Nueva contraseña</label><input class="input" id="c1" type="password" autocomplete="new-password"></div>
       <div class="field"><label>Repítela</label><input class="input" id="c2" type="password" autocomplete="new-password"></div>`,
       `<button class="btn primary sm" id="okc">Guardar</button>`);
@@ -101,7 +106,8 @@
     ajustes: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
     sinpago: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
     cuenta: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>',
-    whatsapp: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.11 4.9A10 10 0 0 0 4.1 18.4L3 22l3.7-1A10 10 0 1 0 19.11 4.9zM12 20.3a8.3 8.3 0 0 1-4.24-1.17l-.3-.18-2.19.57.59-2.14-.2-.31A8.3 8.3 0 1 1 12 20.3zm4.56-6.22c-.25-.13-1.48-.73-1.71-.81-.23-.08-.4-.13-.56.13-.17.25-.65.81-.8.98-.14.17-.3.19-.55.06-.25-.13-1.06-.39-2.02-1.24-.75-.67-1.25-1.49-1.4-1.74-.14-.25-.02-.38.11-.5.11-.11.25-.3.38-.44.13-.14.17-.25.25-.42.08-.17.04-.31-.02-.44-.06-.13-.56-1.36-.77-1.86-.2-.49-.41-.42-.56-.43h-.48c-.17 0-.44.06-.67.31-.23.25-.88.86-.88 2.11 0 1.24.9 2.44 1.03 2.6.13.17 1.78 2.73 4.33 3.82.6.26 1.08.42 1.45.54.61.19 1.17.17 1.6.1.49-.07 1.48-.6 1.69-1.19.21-.59.21-1.09.15-1.19-.06-.1-.23-.17-.48-.3z"/></svg>',
+    whatsapp: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.11 4.9A10 10 0 0 0 4.1 18.4L3 22l3.7-1A10 10 0 1 0 19.11 4.9zM12 20.3a8.3 8.3 0 0 1-4.24-1.17l-.3-.18-2.19.57.59-2.14-.2-.31A8.3 8.3 0 1 1 12 20.3zm4.56-6.22c-.25-.13-1.48-.73-1.71-.81-.23-.08-.4-.13-.56.13-.17.25-.65.81-.8.98-.14.17-.3.19-.55.06-.25-.13-1.06-.39-2.02-1.24-.75-.67-1.25-1.49-1.4-1.74-.14-.25-.02-.38.11-.5.11-.11.25-.3.38-.44.13-.14.17-.25.25-.42.08-.17.04-.31-.02-.44-.06-.13-.56-1.36-.77-1.86-.2-.49-.41-.42-.56-.43h-.48c-.17 0-.44.06-.67.31-.23.25-.88.86-.88 2.11 0 1.24.9 2.44 1.03 2.6.13.17 1.78 2.73 4.33 3.82.6.26 1.08.42 1.45.54.61.19 1.17.17 1.6.1.49-.07 1.48-.6 1.69-1.19.21-.59.21-1.09.15-1.19-.06-.1-.23-.17-.48-.3z"/></svg>'
+,
     vendido: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
     muebles: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 11V8a3 3 0 0 1 3-3h8a3 3 0 0 1 3 3v3"/><path d="M3 13a2 2 0 0 1 4 0v2h10v-2a2 2 0 0 1 4 0v5H3z"/><path d="M5 18v2M19 18v2"/></svg>'
   };
@@ -109,15 +115,17 @@
   function shell(contenido, titulo, sub, acciones) {
     const leadsNuevos = S.leads.filter(l => l.estado === 'nuevo').length;
     const pendientes = S.ventas.filter(sinPago).length;
-    const waNoLeidos = (S.wa && S.wa.chats || []).reduce((s, c) => s + (admin() || (c.lead && c.lead.vendedorId === S.yo.id) ? (c.noLeidos || 0) : 0), 0);
-    const menu = admin()
+    const waNoLeidos = (S.wa && S.wa.chats || []).reduce((s, c) => s + (veTodo() || (c.lead && c.lead.vendedorId === S.yo.id) ? (c.noLeidos || 0) : 0), 0);
+    const menu = sup()
+      ? [['muebles', 'Muebles'], ['leads', 'Leads', leadsNuevos], ['whatsapp', 'WhatsApp', waNoLeidos], ['cuenta', 'Mi cuenta']]
+      : admin()
       ? [['hoy', 'Hoy'], ['ventas', 'Ventas'], ['sinpago', 'Sin pago', pendientes], ['leads', 'Leads', leadsNuevos], ['whatsapp', 'WhatsApp', waNoLeidos], ['muebles', 'Muebles'], ['vendido', 'Lo vendido'], ['vendedores', 'Usuarios'], ['ajustes', 'Ajustes']]
       : [['hoy', 'Hoy'], ['muebles', 'Muebles'], ['leads', 'Mis leads', leadsNuevos], ['whatsapp', 'WhatsApp', waNoLeidos], ['ventas', 'Mis ventas'], ['vendido', 'Lo que vendí'], ['sinpago', 'Sin pago', pendientes], ['cuenta', 'Mi cuenta']];
     const r = ruta();
     $('#app').innerHTML = `<div class="shell">
       <nav class="side" id="side"><div class="brand"><img src="/img/logo.png" alt=""><span>Sistema</span></div>
         ${menu.map(([k, t, n]) => `<a href="#/${k}" class="${r === k ? 'on' : ''}">${ICO[k] || ICO.cuenta}${t}${n ? `<span class="n">${n}</span>` : ''}</a>`).join('')}
-        <div class="yo"><b>${esc(S.yo.nombre)}</b><small>${S.yo.rol === 'admin' ? 'Administrador' : 'Vendedor'}${S.yo.sucursal ? ' · ' + esc(S.yo.sucursal) : ''}</small><br><button type="button" id="salir">Cerrar sesión</button>${window.CardianApp && !CardianApp.instalada() ? `<br><button type="button" class="app-link" id="appSide"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M12 8v6M9.5 11.5 12 14l2.5-2.5"/></svg>Descargar app</button>` : ''}</div>
+        <div class="yo"><b>${esc(S.yo.nombre)}</b><small>${ROL_N[S.yo.rol] || 'Vendedor'}${S.yo.sucursal ? ' · ' + esc(S.yo.sucursal) : ''}</small><br><button type="button" id="salir">Cerrar sesión</button>${window.CardianApp && !CardianApp.instalada() ? `<br><button type="button" class="app-link" id="appSide"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M12 8v6M9.5 11.5 12 14l2.5-2.5"/></svg>Descargar app</button>` : ''}</div>
       </nav>
       <main class="main"><button class="menu-btn" id="menu">☰ Menú</button>
         <div class="top"><div><h1>${titulo}</h1>${sub ? `<p>${sub}</p>` : ''}</div><div class="acts">${acciones || ''}</div></div>
@@ -173,7 +181,7 @@
         <input class="input" id="rN" placeholder="Nombre" autocomplete="off">
         <input class="input" id="rP" placeholder="¿Qué busca?" list="prodsR" autocomplete="off"><datalist id="prodsR">${S.catalogo.productos.map(p => `<option value="${esc(p.nombre)}">`).join('')}</datalist>
         <button class="btn gold sm" type="submit">Agregar y asignar</button>
-      </div>${!admin() ? `<label class="chk" style="margin-top:8px"><input type="checkbox" id="rM"> Es un cliente que yo traje (me lo quedo)</label>` : ''}<div id="rRes" class="note" style="margin-top:8px"></div></form>`;
+      </div>${!veTodo() ? `<label class="chk" style="margin-top:8px"><input type="checkbox" id="rM"> Es un cliente que yo traje (me lo quedo)</label>` : ''}<div id="rRes" class="note" style="margin-top:8px"></div></form>`;
   }
   function enlazarRapida() {
     const f = $('#rapida'); if (!f) return;
@@ -520,16 +528,16 @@
       <div class="filters">
         <input class="input buscar" id="fq" placeholder="Buscar nombre, teléfono, producto…" value="${esc(f.q)}">
         <div class="sel-estado">${[['', 'Todos'], ...Object.entries(ESTADO_L)].map(([k, t]) => `<button type="button" data-fe="${k}" class="${f.estado === k ? 'on' : ''}">${t}${k ? ` (${S.leads.filter(l => l.estado === k).length})` : ''}</button>`).join('')}</div>
-        ${admin() ? `<select class="input" id="fv">${opts([['__sin', 'Sin vendedor' + (sinV ? ' (' + sinV + ')' : '')]].concat(S.usuarios.filter(u => u.rol === 'vendedor').map(u => [u.id, u.nombre])), f.vendedor, 'Todos los vendedores')}</select>` : ''}
+        ${veTodo() ? `<select class="input" id="fv">${opts([['__sin', 'Sin vendedor' + (sinV ? ' (' + sinV + ')' : '')]].concat(S.usuarios.filter(u => u.rol === 'vendedor').map(u => [u.id, u.nombre])), f.vendedor, 'Todos los vendedores')}</select>` : ''}
         <select class="input" id="fo">${opts(Object.entries(ORIGEN), f.origen, 'Todos los orígenes')}</select>
       </div>
-      ${admin() && sinV ? `<div class="aviso">${sinV} lead${sinV > 1 ? 's' : ''} sin vendedor asignado. <a href="#" id="repartir">Repartir al azar entre los vendedores activos</a></div>` : ''}
+      ${veTodo() && sinV ? `<div class="aviso">${sinV} lead${sinV > 1 ? 's' : ''} sin vendedor asignado. <a href="#" id="repartir">Repartir al azar entre los vendedores activos</a></div>` : ''}
       <div class="lead-list">${lista.length ? lista.map(l => `<div class="lead" data-lead="${l.id}">
         <div><b>${esc(l.nombre || 'Sin nombre')}</b> · ${l.tel} ${badge(l.estado, ESTADO_L)} <span class="badge origen">${ORIGEN[l.origen] || l.origen}</span>
-          <div class="meta">${l.producto ? `<span>Interés: ${esc(l.producto)}</span>` : ''}<span>${hace(l.creado)}</span>${admin() ? `<span>${l.vendedorId ? esc(nombreU(l.vendedorId)) : '<b style="color:var(--warn)">sin vendedor</b>'}</span>` : ''}${l.sucursal ? `<span>${esc(l.sucursal)}</span>` : ''}${l.notas.length ? `<span>${l.notas.length} nota${l.notas.length > 1 ? 's' : ''}</span>` : ''}${l.ventaFolio ? `<span>Venta ${l.ventaFolio}</span>` : ''}</div>
+          <div class="meta">${l.producto ? `<span>Interés: ${esc(l.producto)}</span>` : ''}<span>${hace(l.creado)}</span>${veTodo() ? `<span>${l.vendedorId ? esc(nombreU(l.vendedorId)) : '<b style="color:var(--warn)">sin vendedor</b>'}</span>` : ''}${l.sucursal ? `<span>${esc(l.sucursal)}</span>` : ''}${l.notas.length ? `<span>${l.notas.length} nota${l.notas.length > 1 ? 's' : ''}</span>` : ''}${l.ventaFolio ? `<span>Venta ${l.ventaFolio}</span>` : ''}</div>
           ${l.mensaje ? `<div class="note" style="margin-top:4px">«${esc(l.mensaje)}»</div>` : ''}${l.ultimoMensaje && l.ultimoMensaje.texto !== l.mensaje ? `<div class="note" style="margin-top:2px">Último mensaje ${hace(l.ultimoMensaje.cuando)}: «${esc(l.ultimoMensaje.texto)}»</div>` : ''}</div>
         <div class="acts"><a class="btn wa sm" target="_blank" rel="noopener" href="${waLink(l.tel, saludoLead(l))}">WhatsApp</a></div></div>`).join('') : '<div class="empty">No hay leads con esos filtros.</div>'}</div>`,
-      admin() ? 'Leads' : 'Mis leads', 'Contactos que piden informes: del sitio, de WhatsApp Business o de sucursal. Cada uno se asigna al azar a un vendedor.',
+      veTodo() ? 'Leads' : 'Mis leads', 'Contactos que piden informes: del sitio, de WhatsApp Business o de sucursal. Cada uno se asigna al azar a un vendedor.',
       `<button class="btn gold sm" id="nuevoLead">+ Nuevo lead</button>`);
     enlazarComunes();
     $('#fq').oninput = () => { f.q = $('#fq').value; vistaLeads(); const i = $('#fq'); i.focus(); i.setSelectionRange(i.value.length, i.value.length); };
@@ -545,9 +553,9 @@
         <div class="field"><label>Nombre</label><input class="input" id="lN" placeholder="Como aparece en WhatsApp"></div>
         <div class="field"><label>WhatsApp (10 dígitos)</label><input class="input" id="lT" inputmode="tel"></div>
         <div class="field"><label>¿Qué le interesa?</label><input class="input" id="lP" list="prods" placeholder="Sala Tokio, comedor…"><datalist id="prods">${S.catalogo.productos.map(p => `<option value="${esc(p.nombre)}">`).join('')}</datalist></div>
-        <div class="field"><label>Origen</label><select class="input" id="lO">${opts(Object.entries(ORIGEN).filter(([k]) => k !== 'sitio' && k !== 'mercado-pago' && (admin() || k !== 'mercado-libre')), 'whatsapp')}</select></div>
+        <div class="field"><label>Origen</label><select class="input" id="lO">${opts(Object.entries(ORIGEN).filter(([k]) => k !== 'sitio' && k !== 'mercado-pago' && (veTodo() || k !== 'mercado-libre')), 'whatsapp')}</select></div>
         ${S.sucursales.length ? `<div class="field"><label>Sucursal</label><select class="input" id="lS">${opts(S.sucursales, S.yo.sucursal, 'Sin sucursal')}</select></div>` : ''}
-        ${admin() ? `<div class="field"><label>Asignar a</label><select class="input" id="lV">${opts([['', 'Al azar parejo entre vendedores activos']].concat(S.usuarios.filter(u => u.activo).map(u => [u.id, u.nombre])), '')}</select></div>` : `<div class="field" style="display:flex;align-items:end"><label class="chk"><input type="checkbox" id="lMio"> Es un cliente que yo traje (me lo quedo)</label></div>`}
+        ${veTodo() ? `<div class="field"><label>Asignar a</label><select class="input" id="lV">${opts([['', 'Al azar parejo entre vendedores activos']].concat(S.usuarios.filter(u => u.activo).map(u => [u.id, u.nombre])), '')}</select></div>` : `<div class="field" style="display:flex;align-items:end"><label class="chk"><input type="checkbox" id="lMio"> Es un cliente que yo traje (me lo quedo)</label></div>`}
         <div class="field full"><label>Mensaje o nota</label><input class="input" id="lM" placeholder="Lo que preguntó"></div>
       </div>`, `<button class="btn primary sm" id="okL">Guardar lead</button>`);
     $('#okL').onclick = async () => {
@@ -567,7 +575,7 @@
             <h2 style="font-size:14px;margin:14px 0 6px">Estado del lead</h2>
             <div class="sel-estado">${Object.entries(ESTADO_L).map(([k, t]) => `<button type="button" data-est="${k}" class="${l.estado === k ? 'on' : ''}">${t}</button>`).join('')}</div>
             <div class="field" style="margin-top:12px"><label>Nota</label><div style="display:flex;gap:8px"><input class="input" id="nota" placeholder="Qué pasó en la llamada, qué cotizaste…"><button class="btn sm" id="okNota">Guardar</button></div></div>
-            ${admin() ? `<div class="field"><label>Vendedor</label><select class="input" id="asig">${opts(S.usuarios.filter(u => u.activo).map(u => [u.id, u.nombre]), l.vendedorId, 'Sin vendedor')}</select></div>` : ''}
+            ${veTodo() ? `<div class="field"><label>Vendedor</label><select class="input" id="asig">${opts(S.usuarios.filter(u => u.activo).map(u => [u.id, u.nombre]), l.vendedorId, 'Sin vendedor')}</select></div>` : ''}
             <button class="btn sm" id="editL">Editar datos</button>${admin() ? '<button class="btn sm" id="elimL" style="color:#b4322b;border-color:#e7b9b4;margin-left:6px">Eliminar lead (prueba)</button>' : ''}
           </div>
           <div>
@@ -598,7 +606,7 @@
     shell(`
       <div class="two">
         <div class="table-wrap"><table class="table"><thead><tr><th>Nombre</th><th>Usuario</th><th>Sucursal</th><th>Leads abiertos</th><th>Leads 7 días</th><th class="num">Ventas</th><th></th></tr></thead><tbody>
-          ${lista.map(u => { const c = cuenta(u); return `<tr><td><b>${esc(u.nombre)}</b><small>${u.rol === 'admin' ? 'Administrador' : 'Vendedor'}${!u.activo ? ' · <b style="color:#b4322b">desactivado</b>' : u.rol === 'vendedor' && u.recibeLeads === false ? ' · no recibe leads' : ''}${u.cambiarClave ? ' · debe cambiar contraseña' : ''}${!compartido() && u.whatsapp ? ' · WA ' + u.whatsapp : ''}</small></td><td>${esc(u.usuario)}</td><td>${esc(u.sucursal || '—')}</td><td>${c.abiertos}</td><td>${c.semana}</td><td class="num">${fmt(c.ventas)}</td><td style="white-space:nowrap"><button class="btn sm" data-edit="${u.id}">Editar</button> <button class="btn sm" data-clave="${u.id}">Contraseña</button></td></tr>`; }).join('')}
+          ${lista.map(u => { const c = cuenta(u); return `<tr><td><b>${esc(u.nombre)}</b><small>${ROL_N[u.rol] || 'Vendedor'}${!u.activo ? ' · <b style="color:#b4322b">desactivado</b>' : u.rol === 'vendedor' && u.recibeLeads === false ? ' · no recibe leads' : ''}${u.cambiarClave ? ' · debe cambiar contraseña' : ''}${!compartido() && u.whatsapp ? ' · WA ' + u.whatsapp : ''}</small></td><td>${esc(u.usuario)}</td><td>${esc(u.sucursal || '—')}</td><td>${c.abiertos}</td><td>${c.semana}</td><td class="num">${fmt(c.ventas)}</td><td style="white-space:nowrap"><button class="btn sm" data-edit="${u.id}">Editar</button> <button class="btn sm" data-clave="${u.id}">Contraseña</button></td></tr>`; }).join('')}
         </tbody></table></div>
         <div class="box"><h2>Sucursales</h2><p class="note" style="margin:0 0 10px">Para filtrar ventas y leads por sucursal. Una por línea.</p><textarea class="input" id="sucs" style="min-height:110px">${esc(S.sucursales.join('\n'))}</textarea><button class="btn sm" id="okSucs" style="margin-top:8px">Guardar sucursales</button>
           <h2 style="margin-top:22px">Cómo se reparten los leads</h2><p class="note">Cada contacto nuevo (del sitio, del WhatsApp o capturado aquí) se asigna <b>al azar parejo solo entre los vendedores</b> activos que reciben leads (a los administradores no les llegan): le toca a uno de los que llevan menos en la semana. Si solo hay un vendedor, le llegan todos. Si el lead trae sucursal y hay vendedores de esa sucursal, se reparte entre ellos.${compartido() ? ' Todos contestan desde el mismo WhatsApp Business del negocio, firmando con su nombre.' : ''}</p></div>
@@ -613,19 +621,19 @@
     const m = modal(u ? 'Editar a ' + esc(u.nombre) : 'Agregar usuario', `
       <div class="fields">
         <div class="field"><label>Nombre</label><input class="input" id="uN" value="${esc(u ? u.nombre : '')}" placeholder="Nombre y apellido"></div>
-        <div class="field"><label>Usuario para entrar</label><input class="input" id="uU" value="${esc(u ? u.usuario : '')}" ${u ? 'readonly' : 'placeholder="ej. maria (sin espacios)"'}></div>
-        <div class="field"><label>Rol</label><select class="input" id="uR" ${u && u.id === S.yo.id ? 'disabled' : ''}>${opts([['vendedor', 'Vendedor (muebles, sus leads y sus ventas)'], ['admin', 'Administrador (ve todo)']], u ? u.rol : 'vendedor')}</select><span class="note">El vendedor ve el catálogo con precios, registra lo que vende (aunque el modelo no esté en la lista), imprime o manda el ticket, y solo ve sus leads y sus ventas.</span></div>
+        <div class="field"><label>Usuario para entrar</label><input class="input" id="uU" value="${esc(u ? u.usuario : '')}" placeholder="ej. maria (sin espacios)"></div>
+        <div class="field"><label>Rol</label><select class="input" id="uR" ${u && u.id === S.yo.id ? 'disabled' : ''}>${opts([['vendedor', 'Vendedor (muebles, sus leads y sus ventas)'], ['supervisor', 'Admin de atención (Muebles, Leads y WhatsApp)'], ['admin', 'Administrador (ve todo)']], u ? u.rol : 'vendedor')}</select><span class="note">El vendedor ve el catálogo con precios, registra lo que vende (aunque el modelo no esté en la lista), imprime o manda el ticket, y solo ve sus leads y sus ventas. El admin de atención solo ve Muebles, Leads y WhatsApp, pero de todos los vendedores.</span></div>
         <div class="field"><label>Sucursal</label>${S.sucursales.length ? `<select class="input" id="uS">${opts(S.sucursales, u ? u.sucursal : '', 'Sin sucursal')}</select>` : `<input class="input" id="uS" value="${esc(u ? u.sucursal : '')}" placeholder="Opcional">`}</div>
         ${compartido() ? `<input type="hidden" id="uW" value="${u ? u.whatsapp || '' : ''}">` : `<div class="field"><label>WhatsApp propio (10 dígitos)</label><input class="input" id="uW" inputmode="tel" value="${u ? u.whatsapp || '' : ''}"><span class="note">A este número llegan los clientes del sitio que le toquen.</span></div>`}
         <div class="field" style="display:flex;flex-direction:column;justify-content:end;gap:8px"><label class="chk"><input type="checkbox" id="uL" ${!u || u.recibeLeads !== false ? 'checked' : ''}> Recibe leads del reparto</label>${u && u.id !== S.yo.id ? `<label class="chk"><input type="checkbox" id="uA" ${u.activo ? 'checked' : ''}> Cuenta activa (si la quitas, ya no puede entrar)</label>` : ''}</div>
-        ${!u ? `<div class="field full"><label>Contraseña</label><input class="input" id="uC" placeholder="Escribe una (mínimo 10) o déjala vacía y se genera"><label class="chk" style="margin-top:8px"><input type="checkbox" id="uO" checked> Pedirle que la cambie la primera vez que entre</label></div>` : ''}
+        ${!u ? `<div class="field full"><label>Contraseña</label><input class="input" id="uC" placeholder="Escribe una (mínimo 8) o déjala vacía y se genera"><label class="chk" style="margin-top:8px"><input type="checkbox" id="uO" checked> Pedirle que la cambie la primera vez que entre</label></div>` : ''}
       </div>
       <div id="uTemp"></div>`,
       `${u ? `<button class="btn sm" id="uClave">Asignar contraseña</button>` : ''}<button class="btn primary sm" id="okU">${u ? 'Guardar cambios' : 'Crear usuario'}</button>`);
     $('#okU').onclick = async () => {
       try {
         const datos = { nombre: $('#uN').value, whatsapp: $('#uW').value, sucursal: $('#uS').value, rol: $('#uR').value, recibeLeads: $('#uL').checked, activo: $('#uA') ? $('#uA').checked : undefined };
-        if (u) { await api('/api/datos?c=usuarios', { accion: 'editar', id: u.id, ...datos }); m.cerrar(); toast('Guardado'); }
+        if (u) { await api('/api/datos?c=usuarios', { accion: 'editar', id: u.id, usuario: $('#uU').value, ...datos }); m.cerrar(); toast('Guardado'); }
         else { const r = await api('/api/datos?c=usuarios', { accion: 'crear', usuario: $('#uU').value, clave: $('#uC').value, obligar: $('#uO').checked, ...datos }); $('#uTemp').innerHTML = datosAcceso(r.usuario.nombre, r.usuario.usuario, r.claveTemp, $('#uO').checked); $('#okU').remove(); }
         await cargar(); if (u) render(); else vistaVendedores();
       } catch (e) { toast(e.message); }
@@ -636,14 +644,14 @@
   function formClave(u) {
     const m = modal('Contraseña de ' + esc(u.nombre), `
       <p class="note" style="margin:0 0 12px">Usuario <b>${esc(u.usuario)}</b>. La contraseña anterior deja de servir en cuanto guardes.</p>
-      <div class="field"><label>Nueva contraseña</label><div style="display:flex;gap:8px"><input class="input" id="kC" placeholder="Mínimo 10 caracteres"><button type="button" class="btn sm" id="kGen">Generar</button></div></div>
+      <div class="field"><label>Nueva contraseña</label><div style="display:flex;gap:8px"><input class="input" id="kC" placeholder="Mínimo 8 caracteres"><button type="button" class="btn sm" id="kGen">Generar</button></div></div>
       <label class="chk"><input type="checkbox" id="kO" ${u.id === S.yo.id ? '' : 'checked'}> Pedirle que la cambie al entrar</label>
       <div id="kRes" style="margin-top:12px"></div>`,
       `<button class="btn primary sm" id="kOk">Guardar contraseña</button>`);
     $('#kGen').onclick = () => { $('#kC').value = 'Cardian' + Math.floor(1000 + Math.random() * 9000); };
     $('#kOk').onclick = async () => {
       const clave = $('#kC').value.trim();
-      if (clave && clave.length < 10) return toast('Mínimo 10 caracteres');
+      if (clave && clave.length < 8) return toast('Mínimo 8 caracteres');
       try { const r = await api('/api/datos?c=usuarios', { accion: 'clave', id: u.id, clave: clave || undefined, obligar: $('#kO').checked }); $('#kRes').innerHTML = datosAcceso(u.nombre, u.usuario, r.claveTemp, r.obligar); $('#kOk').remove(); await cargar(); }
       catch (e) { toast(e.message); }
     };
@@ -818,7 +826,7 @@
       });
       if (!hilo) hilo = `<div class="wa-msgs-vacio">Sin mensajes en este chat</div>`;
 
-      const asignarSel = admin() ? `<select class="input" id="waAsig" title="Asignar a vendedor"><option value="">— Sin vendedor —</option>${S.usuarios.filter(u => u.activo).map(u => `<option value="${u.id}" ${lead && lead.vendedorId === u.id ? 'selected' : ''}>${esc(u.nombre)}</option>`).join('')}</select>` : '';
+      const asignarSel = veTodo() ? `<select class="input" id="waAsig" title="Asignar a vendedor"><option value="">— Sin vendedor —</option>${S.usuarios.filter(u => u.activo).map(u => `<option value="${u.id}" ${lead && lead.vendedorId === u.id ? 'selected' : ''}>${esc(u.nombre)}</option>`).join('')}</select>` : '';
       const estadoSel = lead ? `<select class="input" id="waEst" title="Estado del lead">${Object.entries(ESTADO_L).map(([k, t]) => `<option value="${k}" ${lead.estado === k ? 'selected' : ''}>${t}</option>`).join('')}</select>` : '';
       const crearLeadBtn = !lead ? `<button class="btn sm" id="waCrearLead" title="Crear lead para este contacto">+ Crear lead</button>` : '';
 
@@ -847,7 +855,7 @@
         <div class="wa-filtros">
           <button data-fe="" class="${!S.wa.fEstado ? 'on' : ''}">Todos</button>
           ${Object.entries(ESTADO_L).map(([k, t]) => `<button data-fe="${k}" class="${S.wa.fEstado === k ? 'on' : ''}">${t}</button>`).join('')}
-          ${admin() ? `<select class="input" id="waFv" style="height:28px;padding:0 8px;font-size:11.5px;border-radius:999px"><option value="">Todos los vendedores</option><option value="__sin" ${S.wa.fVend === '__sin' ? 'selected' : ''}>Sin vendedor</option>${S.usuarios.filter(u => u.rol === 'vendedor').map(u => `<option value="${u.id}" ${S.wa.fVend === u.id ? 'selected' : ''}>${esc(u.nombre)}</option>`).join('')}</select>` : ''}
+          ${veTodo() ? `<select class="input" id="waFv" style="height:28px;padding:0 8px;font-size:11.5px;border-radius:999px"><option value="">Todos los vendedores</option><option value="__sin" ${S.wa.fVend === '__sin' ? 'selected' : ''}>Sin vendedor</option>${S.usuarios.filter(u => u.rol === 'vendedor').map(u => `<option value="${u.id}" ${S.wa.fVend === u.id ? 'selected' : ''}>${esc(u.nombre)}</option>`).join('')}</select>` : ''}
           <button data-sinleads class="${S.wa.sinLeads ? 'on' : ''}">Sin lead</button>
         </div>
         <div class="wa-list" id="waList">
@@ -855,7 +863,7 @@
         </div>
       </aside>
       ${chatHtml}
-    </div>`, 'WhatsApp', `${S.wa.chats.length} chat${S.wa.chats.length === 1 ? '' : 's'} · ${admin() ? 'Vista de administrador: todos los chats' : 'Solo tus leads asignados'}`);
+    </div>`, 'WhatsApp', `${S.wa.chats.length} chat${S.wa.chats.length === 1 ? '' : 's'} · ${veTodo() ? 'Vista de administrador: todos los chats' : 'Solo tus leads asignados'}`);
 
     // Enlaces
     $('#waBusca').oninput = e => { S.wa.busca = e.target.value; vistaWhatsApp(); const i = $('#waBusca'); i.focus(); i.setSelectionRange(i.value.length, i.value.length); };
@@ -923,7 +931,7 @@
     };
     const cl = $('#waCrearLead'); if (cl) cl.onclick = async () => {
       try {
-        const r = await api('/api/datos?c=leads', { accion: 'crear', tel: active.tel10 || active.jid, nombre: active.nombre, origen: 'whatsapp', mensaje: active.ultimo || '', mio: !admin() });
+        const r = await api('/api/datos?c=leads', { accion: 'crear', tel: active.tel10 || active.jid, nombre: active.nombre, origen: 'whatsapp', mensaje: active.ultimo || '', mio: !veTodo() });
         toast('Lead creado' + (r.lead.vendedorId ? ' · ' + nombreU(r.lead.vendedorId) : ''));
         await cargar(); await waCargarChats(); vistaWhatsApp();
       } catch (x) {
@@ -949,6 +957,8 @@
     const r = ruta();
     // Si se sale de WhatsApp, para los timers
     if (r !== 'whatsapp') waStop();
+    // El admin de atención solo entra a Muebles, Leads, WhatsApp y Mi cuenta.
+    if (sup() && !SOLO_SUP.includes(r)) { location.replace('#/muebles'); return; }
     const vistas = { hoy: vistaHoy, muebles: vistaMuebles, vendido: vistaVendido, ventas: vistaVentas, sinpago: vistaSinPago, leads: vistaLeads, whatsapp: vistaWhatsApp, vendedores: admin() ? vistaVendedores : vistaHoy, ajustes: admin() ? vistaAjustes : vistaCuenta, cuenta: vistaCuenta };
     // La primera vez que se entra a WhatsApp, cargar en segundo plano y re-pintar
     if (r === 'whatsapp' && !S.wa._cargado) { S.wa._cargado = true; waCargarChats().then(() => { if (ruta() === 'whatsapp') vistaWhatsApp(); }); waSync(); }

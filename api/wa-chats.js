@@ -23,7 +23,7 @@ module.exports = seguro(async (req, res) => {
   const porTel = new Map();
   for (const l of leads) if (l.tel) porTel.set(l.tel, l);
 
-  const esAdmin = u.rol === 'admin';
+  const esAdmin = u.rol === 'admin' || u.rol === 'supervisor'; // el admin de atención ve todos los chats
   const out = [];
   for (const c of lista) {
     const jid = c.jid || c.id || '';
