@@ -14,7 +14,10 @@
   const ESTADO_L = { nuevo: 'Nuevo', contactado: 'Contactado', 'sin-respuesta': 'Sin respuesta', cotizado: 'Cotizado', compro: 'Compró', 'no-compro': 'No compró' };
   const ORIGEN = { sitio: 'Página web', 'mercado-pago': 'Mercado Pago', whatsapp: 'WhatsApp', sucursal: 'Tienda / local', telefono: 'Teléfono', otro: 'Otro' };
   const METODOS = ['efectivo', 'transferencia', 'tarjeta', 'mercado-pago', 'deposito', 'otro'];
-  let S = { yo: null, ventas: [], leads: [], usuarios: [], sucursales: [], ajustes: {}, catalogo: null, filtros: {} };
+  let S = { yo: null, ventas: [], leads: [], usuarios: [], sucursales: [], ajustes: {}, catalogo: null, filtros: {}, wa: { chats: [], account: null, waEnabled: false, activo: null, mensajes: [], busca: '', fEstado: '', fVend: '', sinLeads: false } };
+  // timers del panel WhatsApp (bandeja + chat activo) para parar polling al salir
+  let waTimers = { lista: null, msgs: null };
+  function waStop() { clearInterval(waTimers.lista); clearInterval(waTimers.msgs); waTimers.lista = waTimers.msgs = null; }
   let toastTimer;
   const toast = m => { const t = $('#toast'); t.textContent = m; t.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 2600); };
 
@@ -92,15 +95,17 @@
     vendedores: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17" cy="9" r="2.5"/><path d="M15.5 14.5a5 5 0 0 1 6 5"/></svg>',
     ajustes: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
     sinpago: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
-    cuenta: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>'
+    cuenta: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>',
+    whatsapp: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.11 4.9A10 10 0 0 0 4.1 18.4L3 22l3.7-1A10 10 0 1 0 19.11 4.9zM12 20.3a8.3 8.3 0 0 1-4.24-1.17l-.3-.18-2.19.57.59-2.14-.2-.31A8.3 8.3 0 1 1 12 20.3zm4.56-6.22c-.25-.13-1.48-.73-1.71-.81-.23-.08-.4-.13-.56.13-.17.25-.65.81-.8.98-.14.17-.3.19-.55.06-.25-.13-1.06-.39-2.02-1.24-.75-.67-1.25-1.49-1.4-1.74-.14-.25-.02-.38.11-.5.11-.11.25-.3.38-.44.13-.14.17-.25.25-.42.08-.17.04-.31-.02-.44-.06-.13-.56-1.36-.77-1.86-.2-.49-.41-.42-.56-.43h-.48c-.17 0-.44.06-.67.31-.23.25-.88.86-.88 2.11 0 1.24.9 2.44 1.03 2.6.13.17 1.78 2.73 4.33 3.82.6.26 1.08.42 1.45.54.61.19 1.17.17 1.6.1.49-.07 1.48-.6 1.69-1.19.21-.59.21-1.09.15-1.19-.06-.1-.23-.17-.48-.3z"/></svg>'
   };
   function ruta() { return (location.hash.replace('#/', '') || 'hoy').split('?')[0]; }
   function shell(contenido, titulo, sub, acciones) {
     const leadsNuevos = S.leads.filter(l => l.estado === 'nuevo').length;
     const pendientes = S.ventas.filter(sinPago).length;
+    const waNoLeidos = (S.wa && S.wa.chats || []).reduce((s, c) => s + (admin() || (c.lead && c.lead.vendedorId === S.yo.id) ? (c.noLeidos || 0) : 0), 0);
     const menu = admin()
-      ? [['hoy', 'Hoy'], ['ventas', 'Ventas'], ['sinpago', 'Sin pago', pendientes], ['leads', 'Leads', leadsNuevos], ['vendedores', 'Usuarios'], ['ajustes', 'Ajustes']]
-      : [['hoy', 'Hoy'], ['leads', 'Mis leads', leadsNuevos], ['ventas', 'Mis ventas'], ['sinpago', 'Sin pago', pendientes], ['cuenta', 'Mi cuenta']];
+      ? [['hoy', 'Hoy'], ['ventas', 'Ventas'], ['sinpago', 'Sin pago', pendientes], ['leads', 'Leads', leadsNuevos], ['whatsapp', 'WhatsApp', waNoLeidos], ['vendedores', 'Usuarios'], ['ajustes', 'Ajustes']]
+      : [['hoy', 'Hoy'], ['leads', 'Mis leads', leadsNuevos], ['whatsapp', 'WhatsApp', waNoLeidos], ['ventas', 'Mis ventas'], ['sinpago', 'Sin pago', pendientes], ['cuenta', 'Mi cuenta']];
     const r = ruta();
     $('#app').innerHTML = `<div class="shell">
       <nav class="side" id="side"><div class="brand"><img src="/img/logo.png" alt=""><span>Sistema</span></div>
@@ -454,7 +459,7 @@
         <div class="two">
           <div>
             <div class="box" style="padding:14px 16px"><b style="font-size:16px">${esc(l.nombre || 'Sin nombre')}</b><div class="note">WhatsApp ${l.tel}${l.producto ? ' · Interés: ' + esc(l.producto) : ''}</div>${l.mensaje ? `<div style="margin-top:6px;font-size:13.5px">«${esc(l.mensaje)}»</div>` : ''}
-              <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap"><a class="btn wa sm" target="_blank" rel="noopener" href="${waLink(l.tel, saludoLead(l))}">Escribirle por WhatsApp</a><a class="btn sm" href="tel:${l.tel}">Llamar</a>${l.estado !== 'compro' ? `<button class="btn gold sm" id="convertir">Registrar venta</button>` : `<button class="btn sm" id="verVenta">Ver venta ${l.ventaFolio}</button>`}</div></div>
+              <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">${S.ajustes.waBandeja ? `<button class="btn wa sm" id="abrirChat">Abrir chat en el sistema</button>` : ''}<a class="btn wa sm" target="_blank" rel="noopener" href="${waLink(l.tel, saludoLead(l))}">WhatsApp externo</a><a class="btn sm" href="tel:${l.tel}">Llamar</a>${l.estado !== 'compro' ? `<button class="btn gold sm" id="convertir">Registrar venta</button>` : `<button class="btn sm" id="verVenta">Ver venta ${l.ventaFolio}</button>`}</div></div>
             <h2 style="font-size:14px;margin:14px 0 6px">Estado del lead</h2>
             <div class="sel-estado">${Object.entries(ESTADO_L).map(([k, t]) => `<button type="button" data-est="${k}" class="${l.estado === k ? 'on' : ''}">${t}</button>`).join('')}</div>
             <div class="field" style="margin-top:12px"><label>Nota</label><div style="display:flex;gap:8px"><input class="input" id="nota" placeholder="Qué pasó en la llamada, qué cotizaste…"><button class="btn sm" id="okNota">Guardar</button></div></div>
@@ -471,6 +476,7 @@
       const as = $('#asig'); if (as) as.onchange = async () => { try { await api('/api/datos?c=leads', { accion: 'asignar', id, vendedorId: as.value }); toast('Reasignado'); await cargar(); pintar(); } catch (e) { toast(e.message); } };
       const cv = $('#convertir'); if (cv) cv.onclick = () => formVenta(l);
       const vv = $('#verVenta'); if (vv) vv.onclick = () => detalleVenta(l.ventaFolio);
+      const ac = $('#abrirChat'); if (ac) ac.onclick = () => { cerrarModal(); const jid = l.waJid || ('52' + l.tel + '@s.whatsapp.net'); location.hash = '#/whatsapp?chat=' + encodeURIComponent(jid); };
       const elL = $('#elimL'); if (elL) elL.onclick = async () => { if (!confirm('¿Eliminar este lead para siempre? Úsalo solo con leads de prueba.')) return; try { await api('/api/datos?c=leads', { accion: 'eliminar', id }); cerrarModal(); toast('Lead eliminado'); await cargar(); render(); } catch (e) { toast(e.message); } };
       $('#editL').onclick = () => { const m2 = modal('Editar lead', `<div class="fields"><div class="field"><label>Nombre</label><input class="input" id="eN" value="${esc(l.nombre)}"></div><div class="field"><label>WhatsApp</label><input class="input" id="eT" value="${l.tel}"></div><div class="field full"><label>Interés</label><input class="input" id="eP" value="${esc(l.producto)}"></div><div class="field full"><label>Mensaje</label><input class="input" id="eM" value="${esc(l.mensaje)}"></div></div>`, `<button class="btn primary sm" id="okE">Guardar</button>`);
         $('#okE').onclick = async () => { try { await api('/api/datos?c=leads', { accion: 'editar', id, nombre: $('#eN').value, tel: $('#eT').value, producto: $('#eP').value, mensaje: $('#eM').value }); m2.cerrar(); await cargar(); detalleLead(id); } catch (e) { toast(e.message); } }; };
@@ -550,8 +556,13 @@
             <div id="sueltos"></div>
           </div>
           <div class="box" style="margin-top:14px"><h2>WhatsApp automático</h2>
-            ${a.waConfigurado ? `<div class="aviso ok">Receptor listo${a.waFirma ? ' con firma de Meta' : ' (falta <b>WA_APP_SECRET</b> para validar la firma)'}. Cada mensaje nuevo al WhatsApp Business crea el lead y lo asigna solo.</div>` : `<div class="aviso">Aún no conectado. Mientras tanto, usa la captura rápida.</div>`}
+            ${a.waConfigurado ? `<div class="aviso ok">Receptor listo${a.waFirma ? ' con firma de Meta' : ' (falta <b>WA_APP_SECRET</b> para validar la firma)'}. Cada mensaje nuevo al WhatsApp Business crea el lead y lo asigna solo.</div>` : `<div class="aviso">Aún no conectado. Mientras tanto, usa la captura rápida o la bandeja de abajo.</div>`}
             <p class="note">URL para Meta o el proveedor: <span class="copy">${location.origin}/api/wa-webhook</span><br>Variables en Vercel: <span class="copy">WA_VERIFY_TOKEN</span> (una palabra que inventas y pegas también en Meta) y <span class="copy">WA_APP_SECRET</span> (clave secreta de la app de Meta).</p>
+          </div>
+          <div class="box" style="margin-top:14px"><h2>Bandeja de WhatsApp en el sistema</h2>
+            ${a.waBandeja ? `<div class="aviso ok">Bandeja activa. Los vendedores ven sus chats y responden desde <a href="#/whatsapp">WhatsApp</a>.</div>` : `<div class="aviso">Bandeja apagada. Para encenderla, configura en Vercel estas tres variables:</div>`}
+            <p class="note"><span class="copy">WA_API_URL</span> URL del servidor WA (ej. https://whats.appsoluciones.duckdns.org)<br><span class="copy">WA_SERVICE_TOKEN</span> token del servicio (mínimo 32 caracteres)<br><span class="copy">WA_ACCOUNT_ID</span> id numérico de la cuenta Cardian en ese servidor<br><span class="copy">WA_ACT_AS</span> <small>(opcional, por defecto <b>admin</b>)</small></p>
+            <p class="note">Esta bandeja no reemplaza al WhatsApp Business del celular: lo <b>refleja</b>. Los vendedores pueden seguir contestando desde el celular; lo que escriban aquí sale por el mismo número.</p>
           </div>
           <div class="box" style="margin-top:14px"><h2>Datos del negocio</h2>
             <div class="field"><label>Nombre en tickets</label><input class="input" id="aNeg" value="${esc(a.negocio || 'Cardian Muebles')}"></div>
@@ -588,13 +599,221 @@
     $('#clave').onclick = () => pedirClave(false);
   }
 
+  // ───────── WhatsApp (bandeja tipo WhatsApp Web) ─────────
+  async function waCargarChats() {
+    try {
+      const d = await api('/api/wa-chats');
+      S.wa.chats = d.chats || [];
+      S.wa.account = d.account || null;
+      S.wa.waEnabled = !!d.waEnabled;
+    } catch (e) { /* silencio: quizá VPS caído, igual se pinta la última foto */ }
+  }
+  async function waCargarMensajes(jid) {
+    try {
+      const d = await api('/api/wa-messages?jid=' + encodeURIComponent(jid));
+      S.wa.mensajes = d.mensajes || [];
+    } catch (e) { /* silencio */ }
+  }
+  async function waEnviar(jid, texto) {
+    try {
+      const r = await api('/api/wa-send', { jid, texto });
+      await Promise.all([waCargarMensajes(jid), waCargarChats()]);
+      return r;
+    } catch (e) { toast(e.message); throw e; }
+  }
+  async function waSync() {
+    try { await api('/api/wa-sync', {}); await cargar(); } catch (e) { /* throttled o VPS caído */ }
+  }
+  const waAvatar = jid => `/api/wa-avatar?jid=${encodeURIComponent(jid)}`; // (opcional, no implementado: usamos iniciales)
+  const waIniciales = s => { const p = (s || '?').trim().split(/\s+/).map(x => x[0]).filter(Boolean).slice(0, 2).join(''); return (p || '?').toUpperCase(); };
+  const waHora = ts => { if (!ts) return ''; const d = new Date(ts * 1000); const hoy = new Date(); return d.toDateString() === hoy.toDateString() ? d.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }) : d.toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit' }); };
+  const waSepDia = ts => { if (!ts) return ''; const d = new Date(ts * 1000); const hoy = new Date(); const ayer = new Date(); ayer.setDate(hoy.getDate() - 1); if (d.toDateString() === hoy.toDateString()) return 'HOY'; if (d.toDateString() === ayer.toDateString()) return 'AYER'; return d.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' }).toUpperCase(); };
+
+  function vistaWhatsApp() {
+    const estado = S.wa.account && S.wa.account.estado;
+    if (!S.wa.waEnabled) {
+      shell(`<div class="box wa-nolink">
+        <h3>Bandeja de WhatsApp no activada</h3>
+        <p>Para ver aquí los chats de tu WhatsApp Business y responder sin cambiar de pantalla, el administrador debe configurar tres variables en Vercel:</p>
+        <p><span class="copy">WA_API_URL</span> <span class="copy">WA_SERVICE_TOKEN</span> <span class="copy">WA_ACCOUNT_ID</span></p>
+        <p>La cuenta de WhatsApp vive en el servidor de MAW (${esc(location.host)}). Una vez vinculado, aquí aparecen los chats como en WhatsApp Web.</p>
+      </div>`, 'WhatsApp', 'Bandeja de WhatsApp Business del negocio.');
+      return;
+    }
+    const q = (S.wa.busca || '').toLowerCase();
+    const chats = S.wa.chats.filter(c => {
+      if (S.wa.fEstado && (!c.lead || c.lead.estado !== S.wa.fEstado)) return false;
+      if (S.wa.fVend === '__sin' && c.lead && c.lead.vendedorId) return false;
+      if (S.wa.fVend && S.wa.fVend !== '__sin' && (!c.lead || c.lead.vendedorId !== S.wa.fVend)) return false;
+      if (S.wa.sinLeads && c.lead) return false;
+      if (q && !((c.nombre || '').toLowerCase().includes(q) || (c.tel10 || '').includes(q) || (c.ultimo || '').toLowerCase().includes(q))) return false;
+      return true;
+    });
+
+    const activeJid = S.wa.activo;
+    const active = activeJid ? S.wa.chats.find(c => c.jid === activeJid) : null;
+
+    const itemHtml = c => {
+      const lead = c.lead;
+      const tags = [];
+      if (lead) tags.push(`<span class="tag lead">lead</span>`); else tags.push(`<span class="tag sin">sin lead</span>`);
+      if (lead && lead.estado) tags.push(`<span class="tag">${esc(ESTADO_L[lead.estado] || lead.estado)}</span>`);
+      if (lead && lead.vendedorId) tags.push(`<span class="tag vend">${esc(nombreU(lead.vendedorId).split(' ')[0])}</span>`);
+      return `<div class="wa-item ${activeJid === c.jid ? 'on' : ''}" data-jid="${esc(c.jid)}">
+        <div class="av">${waIniciales(c.nombre)}</div>
+        <div class="mid">
+          <div class="n"><b>${esc(c.nombre || c.tel10 || c.jid)}</b><time>${waHora(c.hora)}</time></div>
+          <div class="u">${esc(c.ultimo || '')}</div>
+          <div class="tags">${tags.join('')}</div>
+        </div>
+        <div class="right">${c.noLeidos ? `<span class="badge-n">${c.noLeidos}</span>` : ''}</div>
+      </div>`;
+    };
+
+    let chatHtml;
+    if (!active) {
+      chatHtml = `<div class="wa-placeholder">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.11 4.9A10 10 0 0 0 4.1 18.4L3 22l3.7-1A10 10 0 1 0 19.11 4.9zM12 20.3a8.3 8.3 0 0 1-4.24-1.17l-.3-.18-2.19.57.59-2.14-.2-.31A8.3 8.3 0 1 1 12 20.3zm4.56-6.22c-.25-.13-1.48-.73-1.71-.81-.23-.08-.4-.13-.56.13-.17.25-.65.81-.8.98-.14.17-.3.19-.55.06-.25-.13-1.06-.39-2.02-1.24-.75-.67-1.25-1.49-1.4-1.74-.14-.25-.02-.38.11-.5.11-.11.25-.3.38-.44.13-.14.17-.25.25-.42.08-.17.04-.31-.02-.44-.06-.13-.56-1.36-.77-1.86-.2-.49-.41-.42-.56-.43h-.48c-.17 0-.44.06-.67.31-.23.25-.88.86-.88 2.11 0 1.24.9 2.44 1.03 2.6.13.17 1.78 2.73 4.33 3.82.6.26 1.08.42 1.45.54.61.19 1.17.17 1.6.1.49-.07 1.48-.6 1.69-1.19.21-.59.21-1.09.15-1.19-.06-.1-.23-.17-.48-.3z"/></svg>
+        <h3>Bandeja de WhatsApp</h3>
+        <p>Elige una conversación de la izquierda para leer el chat y responder desde aquí. Los mensajes llegan de tu WhatsApp Business del negocio.</p>
+      </div>`;
+    } else {
+      const lead = active.lead;
+      let hilo = '';
+      let ultimoDia = '';
+      (S.wa.mensajes || []).forEach(m => {
+        const dia = waSepDia(m.hora);
+        if (dia && dia !== ultimoDia) { hilo += `<div class="wa-day">${dia}</div>`; ultimoDia = dia; }
+        const quien = m.fromMe ? 'me' : '';
+        const st = m.status ? ` data-st="${esc(m.status)}"` : '';
+        const sender = (!m.fromMe && m.remitente) ? `<span class="sender">${esc(m.remitente)}</span>` : '';
+        const txt = esc(m.texto || (m.tipo ? '[' + m.tipo + ']' : ''));
+        hilo += `<div class="wa-msg ${quien}"${st}>${sender}${txt}<span class="meta">${m.hora ? new Date(m.hora * 1000).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }) : ''}</span></div>`;
+      });
+      if (!hilo) hilo = `<div class="wa-msgs-vacio">Sin mensajes en este chat</div>`;
+
+      const asignarSel = admin() ? `<select class="input" id="waAsig" title="Asignar a vendedor"><option value="">— Sin vendedor —</option>${S.usuarios.filter(u => u.activo).map(u => `<option value="${u.id}" ${lead && lead.vendedorId === u.id ? 'selected' : ''}>${esc(u.nombre)}</option>`).join('')}</select>` : '';
+      const estadoSel = lead ? `<select class="input" id="waEst" title="Estado del lead">${Object.entries(ESTADO_L).map(([k, t]) => `<option value="${k}" ${lead.estado === k ? 'selected' : ''}>${t}</option>`).join('')}</select>` : '';
+      const crearLeadBtn = !lead ? `<button class="btn sm" id="waCrearLead" title="Crear lead para este contacto">+ Crear lead</button>` : '';
+
+      chatHtml = `<div class="wa-chat">
+        <div class="wa-chat-head">
+          <button class="btn-back" id="waBack" title="Volver">←</button>
+          <div class="av">${waIniciales(active.nombre)}</div>
+          <div class="info"><b>${esc(active.nombre || active.tel10 || active.jid)}</b><small>${esc(active.tel10 || '')}${lead ? ' · ' + esc((S.usuarios.find(u => u.id === lead.vendedorId) || {}).nombre || 'sin vendedor') : ' · sin lead'}</small></div>
+          <div class="acciones">${estadoSel}${asignarSel}${crearLeadBtn}${lead ? `<a class="btn sm" href="#/leads" data-ver-lead="${lead.id}" title="Abrir ficha del lead">Ficha</a>` : ''}</div>
+        </div>
+        <div class="wa-msgs" id="waMsgs">${hilo}</div>
+        <form class="wa-input" id="waForm"><textarea id="waTxt" rows="1" placeholder="Escribe un mensaje…" ${estado !== 'connected' ? 'disabled title="La cuenta de WhatsApp no está conectada"' : ''}></textarea><button class="btn wa" type="submit" ${estado !== 'connected' ? 'disabled' : ''}>Enviar</button></form>
+      </div>`;
+    }
+
+    const subEstado = estado === 'connected' ? '<span class="estado on">conectado</span>' : `<span class="estado off">${esc(estado || 'desconectado')}</span>`;
+    const labelCuenta = (S.wa.account && S.wa.account.label) || 'Cardian';
+
+    shell(`<div class="wa-wrap ${active ? 'enchat' : ''}" id="waWrap">
+      <aside class="wa-side">
+        <div class="wa-head">
+          <div><h2>${esc(labelCuenta)}</h2><span class="sub">${esc((S.wa.account && S.wa.account.telefono) || '')} · ${subEstado}</span></div>
+          <button class="btn sm" id="waRefresh" title="Actualizar">↻</button>
+        </div>
+        <div class="wa-search"><input id="waBusca" placeholder="Buscar en chats…" value="${esc(S.wa.busca)}"></div>
+        <div class="wa-filtros">
+          <button data-fe="" class="${!S.wa.fEstado ? 'on' : ''}">Todos</button>
+          ${Object.entries(ESTADO_L).map(([k, t]) => `<button data-fe="${k}" class="${S.wa.fEstado === k ? 'on' : ''}">${t}</button>`).join('')}
+          ${admin() ? `<select class="input" id="waFv" style="height:28px;padding:0 8px;font-size:11.5px;border-radius:999px"><option value="">Todos los vendedores</option><option value="__sin" ${S.wa.fVend === '__sin' ? 'selected' : ''}>Sin vendedor</option>${S.usuarios.filter(u => u.rol === 'vendedor').map(u => `<option value="${u.id}" ${S.wa.fVend === u.id ? 'selected' : ''}>${esc(u.nombre)}</option>`).join('')}</select>` : ''}
+          <button data-sinleads class="${S.wa.sinLeads ? 'on' : ''}">Sin lead</button>
+        </div>
+        <div class="wa-list" id="waList">
+          ${chats.length ? chats.map(itemHtml).join('') : `<div class="wa-empty-list">${S.wa.chats.length ? 'Ningún chat coincide con el filtro.' : (estado === 'connected' ? 'Aún no llegan chats. Pide al cliente que te escriba.' : 'Esperando a que la cuenta de WhatsApp quede conectada…')}</div>`}
+        </div>
+      </aside>
+      ${chatHtml}
+    </div>`, 'WhatsApp', `${S.wa.chats.length} chat${S.wa.chats.length === 1 ? '' : 's'} · ${admin() ? 'Vista de administrador: todos los chats' : 'Solo tus leads asignados'}`);
+
+    // Enlaces
+    $('#waBusca').oninput = e => { S.wa.busca = e.target.value; vistaWhatsApp(); const i = $('#waBusca'); i.focus(); i.setSelectionRange(i.value.length, i.value.length); };
+    $$('[data-fe]').forEach(b => b.onclick = () => { S.wa.fEstado = b.dataset.fe; vistaWhatsApp(); });
+    const fv = $('#waFv'); if (fv) fv.onchange = () => { S.wa.fVend = fv.value; vistaWhatsApp(); };
+    const sl = $('[data-sinleads]'); if (sl) sl.onclick = () => { S.wa.sinLeads = !S.wa.sinLeads; vistaWhatsApp(); };
+    $$('[data-jid]').forEach(el => el.onclick = async () => {
+      S.wa.activo = el.dataset.jid; S.wa.mensajes = [];
+      vistaWhatsApp();
+      await waCargarMensajes(S.wa.activo);
+      vistaWhatsApp();
+      // Polling del chat activo cada 6s
+      clearInterval(waTimers.msgs);
+      waTimers.msgs = setInterval(async () => {
+        if (ruta() !== 'whatsapp' || !S.wa.activo) { clearInterval(waTimers.msgs); return; }
+        const before = S.wa.mensajes.length;
+        await waCargarMensajes(S.wa.activo);
+        const esc2 = document.activeElement && /TEXTAREA|INPUT/.test(document.activeElement.tagName);
+        if (S.wa.mensajes.length !== before && !esc2) vistaWhatsApp();
+      }, 6000);
+    });
+    const rf = $('#waRefresh'); if (rf) rf.onclick = async () => { await Promise.all([waCargarChats(), waSync()]); vistaWhatsApp(); };
+    const bk = $('#waBack'); if (bk) bk.onclick = () => { S.wa.activo = null; clearInterval(waTimers.msgs); vistaWhatsApp(); };
+
+    // Scroll al final de los mensajes
+    const ml = $('#waMsgs'); if (ml) ml.scrollTop = ml.scrollHeight;
+
+    // Enviar
+    const form = $('#waForm');
+    if (form) {
+      const ta = $('#waTxt');
+      ta.oninput = () => { ta.style.height = 'auto'; ta.style.height = Math.min(120, ta.scrollHeight) + 'px'; };
+      ta.onkeydown = e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); form.requestSubmit(); } };
+      form.onsubmit = async e => {
+        e.preventDefault();
+        const t = ta.value.trim(); if (!t || !S.wa.activo) return;
+        ta.disabled = true;
+        try { await waEnviar(S.wa.activo, t); ta.value = ''; ta.style.height = 'auto'; } catch (x) { /* toast ya salió */ }
+        ta.disabled = false; ta.focus();
+        vistaWhatsApp();
+      };
+    }
+
+    // Estado del lead y reasignar
+    const we = $('#waEst'); if (we) we.onchange = async () => {
+      try { await api('/api/datos?c=leads', { accion: 'estado', id: active.lead.id, estado: we.value }); toast('Estado: ' + ESTADO_L[we.value]); await cargar(); vistaWhatsApp(); } catch (x) { toast(x.message); }
+    };
+    const wa2 = $('#waAsig'); if (wa2) wa2.onchange = async () => {
+      try { await api('/api/datos?c=leads', { accion: 'asignar', id: active.lead.id, vendedorId: wa2.value }); toast('Reasignado'); await cargar(); await waCargarChats(); vistaWhatsApp(); } catch (x) { toast(x.message); }
+    };
+    const cl = $('#waCrearLead'); if (cl) cl.onclick = async () => {
+      try {
+        const r = await api('/api/datos?c=leads', { accion: 'crear', tel: active.tel10 || active.jid, nombre: active.nombre, origen: 'whatsapp', mensaje: active.ultimo || '', mio: !admin() });
+        toast('Lead creado' + (r.lead.vendedorId ? ' · ' + nombreU(r.lead.vendedorId) : ''));
+        await cargar(); await waCargarChats(); vistaWhatsApp();
+      } catch (x) {
+        if (/ya está como lead/.test(x.message)) { toast('Ya existe un lead con ese número'); await cargar(); await waCargarChats(); vistaWhatsApp(); }
+        else toast(x.message);
+      }
+    };
+    $$('[data-ver-lead]').forEach(a => a.onclick = e => { e.preventDefault(); detalleLead(a.dataset.verLead); });
+
+    // Polling de la bandeja cada 15s + sync cada 60s (el sync se auto-throttle en el servidor)
+    clearInterval(waTimers.lista);
+    waTimers.lista = setInterval(async () => {
+      if (ruta() !== 'whatsapp') { waStop(); return; }
+      await Promise.all([waCargarChats(), waSync()]);
+      const escribiendo = document.activeElement && /TEXTAREA|INPUT/.test(document.activeElement.tagName);
+      if (!escribiendo) vistaWhatsApp();
+    }, 15000);
+  }
+
   // ───────── router ─────────
   function render() {
     if (!S.yo) return vistaLogin();
     const r = ruta();
-    const vistas = { hoy: vistaHoy, ventas: vistaVentas, sinpago: vistaSinPago, leads: vistaLeads, vendedores: admin() ? vistaVendedores : vistaHoy, ajustes: admin() ? vistaAjustes : vistaCuenta, cuenta: vistaCuenta };
+    // Si se sale de WhatsApp, para los timers
+    if (r !== 'whatsapp') waStop();
+    const vistas = { hoy: vistaHoy, ventas: vistaVentas, sinpago: vistaSinPago, leads: vistaLeads, whatsapp: vistaWhatsApp, vendedores: admin() ? vistaVendedores : vistaHoy, ajustes: admin() ? vistaAjustes : vistaCuenta, cuenta: vistaCuenta };
+    // La primera vez que se entra a WhatsApp, cargar en segundo plano y re-pintar
+    if (r === 'whatsapp' && !S.wa._cargado) { S.wa._cargado = true; waCargarChats().then(() => { if (ruta() === 'whatsapp') vistaWhatsApp(); }); waSync(); }
     (vistas[r] || vistaHoy)();
     const m = location.hash.match(/venta=([\w-]+)/); if (m) { detalleVenta(m[1]); history.replaceState(null, '', '#/' + r); }
+    const mw = location.hash.match(/chat=([^&]+)/); if (mw) { S.wa.activo = decodeURIComponent(mw[1]); history.replaceState(null, '', '#/whatsapp'); if (ruta() === 'whatsapp') { waCargarMensajes(S.wa.activo).then(() => vistaWhatsApp()); } }
   }
   window.addEventListener('hashchange', render);
   (async () => {

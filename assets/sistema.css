@@ -148,6 +148,85 @@ body.sys{background:var(--bg);color:var(--fg);font-family:var(--font);margin:0;m
 @media print{.side,.top .acts,.menu-btn{display:none}.shell{grid-template-columns:1fr}}
 @media (max-width:860px){.rapida-g{grid-template-columns:1fr !important}}
 
+/* ───────── Bandeja de WhatsApp (estilo WhatsApp Web) ───────── */
+.wa-wrap{display:grid;grid-template-columns:360px 1fr;gap:0;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--surface);height:calc(100vh - 170px);min-height:520px}
+.wa-side{display:flex;flex-direction:column;border-right:1px solid var(--line);background:var(--surface);min-width:0}
+.wa-head{background:#128c7e;color:#fff;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;flex:none}
+.wa-head h2{margin:0;font-size:16px;font-weight:600}
+.wa-head .sub{font-size:11.5px;opacity:.85;margin-top:2px;display:block;font-weight:400}
+.wa-head .estado{display:inline-flex;align-items:center;gap:6px;font-size:11px;background:rgba(255,255,255,.15);padding:4px 10px;border-radius:999px;font-weight:500}
+.wa-head .estado.on::before{content:"";width:8px;height:8px;border-radius:50%;background:#4ade80;box-shadow:0 0 0 2px rgba(74,222,128,.35)}
+.wa-head .estado.off::before{content:"";width:8px;height:8px;border-radius:50%;background:#f87171}
+.wa-search{padding:8px 12px;background:#f0f2f5;border-bottom:1px solid #e9edef;flex:none}
+.wa-search input{width:100%;height:36px;border-radius:8px;border:1px solid transparent;padding:0 12px;font-size:13.5px;outline:none;background:#fff;font-family:inherit}
+.wa-search input:focus{border-color:var(--gold)}
+.wa-filtros{display:flex;gap:6px;flex-wrap:wrap;padding:6px 12px 10px;background:#f0f2f5;border-bottom:1px solid #e9edef;flex:none}
+.wa-filtros button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:4px 10px;font-size:11.5px;cursor:pointer;color:#555;font-family:inherit}
+.wa-filtros button.on{background:#128c7e;color:#fff;border-color:#128c7e}
+.wa-list{flex:1;overflow-y:auto;background:#fff}
+.wa-item{display:grid;grid-template-columns:44px 1fr auto;gap:10px;padding:10px 14px;border-bottom:1px solid #f0f2f5;cursor:pointer;align-items:center}
+.wa-item:hover{background:#f5f6f6}
+.wa-item.on{background:#f0f2f5}
+.wa-item .av{width:44px;height:44px;border-radius:50%;background:#dfe5e7;color:#54656f;display:grid;place-items:center;font-size:17px;font-weight:600;overflow:hidden}
+.wa-item .av img{width:100%;height:100%;object-fit:cover}
+.wa-item .mid{min-width:0}
+.wa-item .mid .n{display:flex;align-items:baseline;gap:8px;justify-content:space-between}
+.wa-item .mid .n b{font-size:14px;font-weight:600;color:#111b21;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wa-item .mid .n time{font-size:11px;color:#667781;flex:none}
+.wa-item .mid .u{font-size:13px;color:#667781;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:2px}
+.wa-item .tags{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px}
+.wa-item .tag{display:inline-block;font-size:10px;padding:1px 7px;border-radius:999px;background:var(--surface-2);color:var(--muted);font-weight:500;letter-spacing:.02em}
+.wa-item .tag.lead{background:#cfe3ff;color:#1e3a8a}
+.wa-item .tag.sin{background:#fde2e2;color:#991b1b}
+.wa-item .tag.vend{background:var(--gold-soft);color:var(--gold-deep)}
+.wa-item .right{align-self:start;display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.wa-item .badge-n{background:#25d366;color:#fff;border-radius:999px;font-size:11px;min-width:20px;padding:2px 6px;text-align:center;font-weight:600}
+.wa-empty-list{padding:40px 20px;text-align:center;color:#667781;font-size:13.5px}
+.wa-chat{display:flex;flex-direction:column;min-width:0;background:#efeae2;background-image:radial-gradient(#d9d4cc 1px,transparent 1px);background-size:14px 14px}
+.wa-chat .wa-chat-head{background:#f0f2f5;padding:10px 16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid #e9edef;flex:none}
+.wa-chat .wa-chat-head .av{width:40px;height:40px;border-radius:50%;background:#dfe5e7;color:#54656f;display:grid;place-items:center;font-weight:600;overflow:hidden}
+.wa-chat .wa-chat-head .av img{width:100%;height:100%;object-fit:cover}
+.wa-chat .wa-chat-head .info{flex:1;min-width:0}
+.wa-chat .wa-chat-head .info b{display:block;font-size:14.5px;color:#111b21;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wa-chat .wa-chat-head .info small{color:#667781;font-size:12px}
+.wa-chat .wa-chat-head .acciones{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.wa-chat .wa-chat-head select{height:30px;border-radius:6px;border:1px solid #e9edef;padding:0 8px;font-size:12px;background:#fff;font-family:inherit}
+.wa-chat .wa-chat-head .btn{padding:6px 12px;font-size:12px}
+.wa-msgs{flex:1;overflow-y:auto;padding:14px 10% 14px;display:flex;flex-direction:column;gap:3px}
+.wa-day{align-self:center;background:rgba(255,255,255,.9);color:#54656f;font-size:11.5px;padding:4px 10px;border-radius:8px;margin:8px 0;box-shadow:0 1px 1px rgba(0,0,0,.05)}
+.wa-msg{max-width:min(520px,80%);padding:7px 10px 5px;border-radius:8px;background:#fff;color:#111b21;font-size:14px;line-height:1.3;position:relative;box-shadow:0 1px .5px rgba(11,20,26,.13);word-wrap:break-word;white-space:pre-wrap}
+.wa-msg.me{align-self:flex-end;background:#d9fdd3}
+.wa-msg .meta{display:block;font-size:10.5px;color:#667781;text-align:right;margin-top:2px;font-weight:400}
+.wa-msg.me .meta::after{content:" ✓✓";color:#53bdeb}
+.wa-msg.me[data-st="enviado"] .meta::after{content:" ✓";color:#667781}
+.wa-msg.me[data-st="entregado"] .meta::after{content:" ✓✓";color:#667781}
+.wa-msg.me[data-st="leido"] .meta::after{content:" ✓✓";color:#53bdeb}
+.wa-msg .sender{display:block;font-size:11.5px;color:#128c7e;font-weight:600;margin-bottom:2px}
+.wa-msgs-vacio{align-self:center;color:#54656f;background:rgba(255,255,255,.75);padding:10px 18px;border-radius:8px;font-size:13px;margin-top:40px}
+.wa-input{display:flex;gap:8px;padding:10px 14px;background:#f0f2f5;border-top:1px solid #e9edef;flex:none;align-items:flex-end}
+.wa-input textarea{flex:1;border:1px solid #e9edef;border-radius:8px;padding:10px 12px;resize:none;font-size:14px;font-family:inherit;outline:none;min-height:40px;max-height:120px;background:#fff}
+.wa-input textarea:focus{border-color:var(--gold)}
+.wa-input .btn{min-width:88px;height:40px;padding:0 16px;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.wa-placeholder{flex:1;display:grid;place-items:center;color:#54656f;background:#f0f2f5;padding:30px;text-align:center}
+.wa-placeholder svg{width:180px;height:180px;opacity:.3;margin-bottom:16px}
+.wa-placeholder h3{font-size:22px;font-weight:300;color:#41525d;margin:0 0 6px}
+.wa-placeholder p{font-size:13px;color:#667781;margin:0;max-width:420px}
+.wa-nolink{padding:40px 24px;text-align:center}
+.wa-nolink h3{color:var(--fg);font-size:17px;margin:0 0 8px}
+.wa-nolink p{color:var(--muted);font-size:13.5px;margin:0 auto 14px;max-width:480px;line-height:1.5}
+.wa-nolink .copy{display:inline-block;margin:4px 2px}
+@media (max-width:860px){
+  .wa-wrap{grid-template-columns:1fr;height:calc(100vh - 140px)}
+  .wa-side{display:flex}
+  .wa-wrap.enchat .wa-side{display:none}
+  .wa-wrap.enchat .wa-chat,.wa-wrap.enchat .wa-placeholder{display:flex}
+  .wa-wrap:not(.enchat) .wa-chat,.wa-wrap:not(.enchat) .wa-placeholder{display:none}
+  .wa-msgs{padding:14px 3% 14px}
+  .wa-chat .wa-chat-head .btn-back{display:inline-flex;align-items:center;background:none;border:0;color:#54656f;font-size:20px;cursor:pointer;padding:4px 8px}
+}
+.wa-chat .wa-chat-head .btn-back{display:none}
+.main.wa-main{padding:16px 16px 0}
+
 /* Panel «Descarga la app» */
 #app-instalar{position:fixed;inset:0;z-index:200;display:grid;place-items:center;padding:16px}
 #app-instalar .ai-fondo{position:absolute;inset:0;background:rgba(8,7,5,.62);backdrop-filter:blur(3px)}

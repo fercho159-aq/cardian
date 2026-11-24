@@ -107,6 +107,9 @@ function nuevoLead(datos, vendedor, quien) {
     nombre: String(datos.nombre || '').slice(0, 80), tel: tel10(datos.tel), mensaje: String(datos.mensaje || '').slice(0, 500),
     producto: String(datos.producto || '').slice(0, 80), sucursal: String(datos.sucursal || '').slice(0, 60),
     vendedorId: vendedor ? vendedor.id : null, estado: 'nuevo', notas: [], ventaFolio: null,
+    // jid de WhatsApp (ej. 5215..@s.whatsapp.net) cuando el lead vino / está vinculado al chat del VPS.
+    // ultimoMensaje: último texto enviado/recibido para pintar vista previa en la lista de chats.
+    waJid: datos.waJid || null, ultimoMensaje: null,
     historial: [{ cuando: ahora(), quien: quien || 'Sitio web', que: vendedor ? 'Lead creado y asignado a ' + vendedor.nombre : 'Lead creado, sin vendedor' }]
   };
 }
