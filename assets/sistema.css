@@ -267,3 +267,6 @@ body.sys{background:var(--bg);color:var(--fg);font-family:var(--font);margin:0;m
 /* Adjuntar en la bandeja de WhatsApp */
 .wa-input .wa-clip{min-width:44px;width:44px;padding:0;font-size:18px;background:#fff;border:1px solid #e9edef}
 .wa-msg .tipo{font-weight:600;color:#54656f;font-size:13px}
+
+/* Modelo nuevo en el formulario de venta */
+.linea .guardar-modelo{grid-column:1/-1;text-transform:none;letter-spacing:0;font-weight:400;font-size:12.5px;margin:-2px 0 6px;color:var(--muted)}

@@ -35,7 +35,7 @@ function calcular(lineasIn, envio, opts) {
       const color = l.color && p.tapiz && p.tapiz.includes(l.color) ? l.color : null;
       return { id: p.id, nombre: p.name, color, colorNombre: color ? d.TAPIZ[color].name : '', qty, unit: precioUnitario(p, color), factor: p.factor || 1 };
     }
-    return { id: null, nombre: String(l.nombre || 'Artículo').slice(0, 80), color: null, colorNombre: String(l.colorNombre || '').slice(0, 30), qty, unit: Math.max(0, Math.round(+l.unit || 0)), factor: 1 };
+    return { id: null, extraId: l.extraId || null, nombre: String(l.nombre || 'Artículo').slice(0, 80), color: null, colorNombre: String(l.colorNombre || '').slice(0, 30), qty, unit: Math.max(0, Math.round(+l.unit || 0)), factor: 1 };
   }).filter(l => l.nombre);
   const sub = lineas.reduce((s, l) => s + l.unit * l.qty, 0);
   let costoEnvio = 0;

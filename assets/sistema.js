@@ -102,6 +102,7 @@
     sinpago: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
     cuenta: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>',
     whatsapp: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.11 4.9A10 10 0 0 0 4.1 18.4L3 22l3.7-1A10 10 0 1 0 19.11 4.9zM12 20.3a8.3 8.3 0 0 1-4.24-1.17l-.3-.18-2.19.57.59-2.14-.2-.31A8.3 8.3 0 1 1 12 20.3zm4.56-6.22c-.25-.13-1.48-.73-1.71-.81-.23-.08-.4-.13-.56.13-.17.25-.65.81-.8.98-.14.17-.3.19-.55.06-.25-.13-1.06-.39-2.02-1.24-.75-.67-1.25-1.49-1.4-1.74-.14-.25-.02-.38.11-.5.11-.11.25-.3.38-.44.13-.14.17-.25.25-.42.08-.17.04-.31-.02-.44-.06-.13-.56-1.36-.77-1.86-.2-.49-.41-.42-.56-.43h-.48c-.17 0-.44.06-.67.31-.23.25-.88.86-.88 2.11 0 1.24.9 2.44 1.03 2.6.13.17 1.78 2.73 4.33 3.82.6.26 1.08.42 1.45.54.61.19 1.17.17 1.6.1.49-.07 1.48-.6 1.69-1.19.21-.59.21-1.09.15-1.19-.06-.1-.23-.17-.48-.3z"/></svg>',
+    vendido: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
     muebles: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 11V8a3 3 0 0 1 3-3h8a3 3 0 0 1 3 3v3"/><path d="M3 13a2 2 0 0 1 4 0v2h10v-2a2 2 0 0 1 4 0v5H3z"/><path d="M5 18v2M19 18v2"/></svg>'
   };
   function ruta() { return (location.hash.replace('#/', '') || 'hoy').split('?')[0]; }
@@ -110,8 +111,8 @@
     const pendientes = S.ventas.filter(sinPago).length;
     const waNoLeidos = (S.wa && S.wa.chats || []).reduce((s, c) => s + (admin() || (c.lead && c.lead.vendedorId === S.yo.id) ? (c.noLeidos || 0) : 0), 0);
     const menu = admin()
-      ? [['hoy', 'Hoy'], ['ventas', 'Ventas'], ['sinpago', 'Sin pago', pendientes], ['leads', 'Leads', leadsNuevos], ['whatsapp', 'WhatsApp', waNoLeidos], ['muebles', 'Muebles'], ['vendedores', 'Usuarios'], ['ajustes', 'Ajustes']]
-      : [['hoy', 'Hoy'], ['muebles', 'Muebles'], ['leads', 'Mis leads', leadsNuevos], ['whatsapp', 'WhatsApp', waNoLeidos], ['ventas', 'Mis ventas'], ['sinpago', 'Sin pago', pendientes], ['cuenta', 'Mi cuenta']];
+      ? [['hoy', 'Hoy'], ['ventas', 'Ventas'], ['sinpago', 'Sin pago', pendientes], ['leads', 'Leads', leadsNuevos], ['whatsapp', 'WhatsApp', waNoLeidos], ['muebles', 'Muebles'], ['vendido', 'Lo vendido'], ['vendedores', 'Usuarios'], ['ajustes', 'Ajustes']]
+      : [['hoy', 'Hoy'], ['muebles', 'Muebles'], ['leads', 'Mis leads', leadsNuevos], ['whatsapp', 'WhatsApp', waNoLeidos], ['ventas', 'Mis ventas'], ['vendido', 'Lo que vendí'], ['sinpago', 'Sin pago', pendientes], ['cuenta', 'Mi cuenta']];
     const r = ruta();
     $('#app').innerHTML = `<div class="shell">
       <nav class="side" id="side"><div class="brand"><img src="/img/logo.png" alt=""><span>Sistema</span></div>
@@ -202,6 +203,7 @@
     const D = window.CARDIAN || { products: [], categories: [], TAPIZ: {} };
     const f = S.filtros.m || (S.filtros.m = { q: '', cat: '' });
     const lista = D.products.filter(p => (!f.cat || p.cat === f.cat) && (!f.q || (p.name + ' ' + (p.type || '') + ' ' + (p.short || '')).toLowerCase().includes(f.q.toLowerCase())));
+    const extras = ((S.catalogo && S.catalogo.extras) || []).filter(e => !f.q || e.nombre.toLowerCase().includes(f.q.toLowerCase()));
     const medidas = p => p.dims ? `${(p.dims.largo / 100).toFixed(2)} × ${(p.dims.fondo / 100).toFixed(2)} m · alto ${p.dims.alto} cm` : '';
     const infoWa = p => `${p.name}${p.type ? ' (' + p.type + ')' : ''}\nPrecio directo: ${fmt(p.price)} *sin IVA\n${medidas(p) ? 'Medidas: ' + medidas(p) + '\n' : ''}${(p.tapiz || []).length ? 'Colores: ' + p.tapiz.map(t => (D.TAPIZ[t] || {}).name || t).join(', ') + '\n' : ''}Entrega: ${p.stock === 'pedido' ? 'sobre pedido, aprox. ' + (p.dias || 15) + ' días' : 'inmediata'}\n${location.origin}/producto?id=${p.id}`;
     shell(`
@@ -219,14 +221,62 @@
           ${(p.tapiz || []).length ? `<div class="tapiz">${p.tapiz.map(t => `<i title="${esc((D.TAPIZ[t] || {}).name || t)}" style="background:${(D.TAPIZ[t] || {}).hex || '#ccc'}"></i>`).join('')}</div>` : ''}
           <div class="note">${p.stock === 'pedido' ? 'Sobre pedido · aprox. ' + (p.dias || 15) + ' días' : 'Entrega inmediata'}</div>
           <div class="acts"><button class="btn gold sm" data-vender="${p.id}">Registrar venta</button><button class="btn sm" data-copiar="${p.id}">Copiar info</button></div>
-        </div></article>`).join('') : '<div class="empty">No hay modelos con esa búsqueda.</div>'}</div>`,
+        </div></article>`).join('') : '<div class="empty">No hay modelos con esa búsqueda.</div>'}</div>
+      ${extras.length ? `<h2 style="font-size:15px;margin:26px 0 10px">Modelos agregados por el equipo</h2><p class="note" style="margin:-4px 0 12px">Modelos que no estaban en el catálogo y alguien vendió. Quedan aquí para la próxima venta${admin() ? '; tú puedes cambiar su precio o quitarlos' : ''}.</p>
+      <div class="table-wrap"><table class="table"><thead><tr><th>Modelo</th><th>Agregado por</th><th class="num">Precio</th><th></th></tr></thead><tbody>${extras.map(e => `<tr><td><b>${esc(e.nombre)}</b></td><td>${esc(e.creadoNombre || '—')}<small>${dia(e.creado)}</small></td><td class="num">${fmt(e.precio)}</td><td style="white-space:nowrap;text-align:right"><button class="btn gold sm" data-vender="${e.id}">Registrar venta</button>${admin() ? ` <button class="btn sm" data-mxp="${e.id}">Precio</button> <button class="btn sm" data-mxq="${e.id}">Quitar</button>` : ''}</td></tr>`).join('')}</tbody></table></div>` : ''}`,
       'Muebles', 'Modelos y precios de lista para atender y vender. Si vendiste algo que no está aquí, regístralo con «Modelo que no está en la lista».',
       `<button class="btn gold sm" id="nuevaVenta">+ Registrar venta</button>`);
     enlazarComunes();
     $('#mq').oninput = () => { f.q = $('#mq').value; vistaMuebles(); const i = $('#mq'); i.focus(); i.setSelectionRange(i.value.length, i.value.length); };
     $$('[data-mc]').forEach(b => b.onclick = () => { f.cat = b.dataset.mc; vistaMuebles(); });
     $$('[data-vender]').forEach(b => b.onclick = () => formVenta(null, { id: b.dataset.vender }));
+    $$('[data-mxp]').forEach(b => b.onclick = async () => { const e = S.catalogo.extras.find(x => x.id === b.dataset.mxp); const v = prompt('Nuevo precio de ' + e.nombre + ' (sin IVA):', e.precio); if (v === null) return; try { await api('/api/datos?c=modelos', { accion: 'editar', id: e.id, precio: +v }); toast('Precio actualizado'); await cargar(); vistaMuebles(); } catch (x) { toast(x.message); } });
+    $$('[data-mxq]').forEach(b => b.onclick = async () => { const e = S.catalogo.extras.find(x => x.id === b.dataset.mxq); if (!confirm('¿Quitar «' + e.nombre + '» de la lista? Las ventas que ya lo tienen no cambian.')) return; try { await api('/api/datos?c=modelos', { accion: 'quitar', id: e.id }); toast('Modelo quitado de la lista'); await cargar(); vistaMuebles(); } catch (x) { toast(x.message); } });
     $$('[data-copiar]').forEach(b => b.onclick = () => { const p = D.products.find(x => x.id === b.dataset.copiar); navigator.clipboard.writeText(infoWa(p)).then(() => toast('Info copiada: pégala en WhatsApp'), () => toast('No se pudo copiar')); });
+  }
+
+  // ───────── Lo vendido (control por modelo y por vendedor) ─────────
+  // Cuenta las ventas con pago y no canceladas. El servidor ya filtra: el vendedor solo recibe sus ventas, el admin todas.
+  function vistaVendido() {
+    const f = S.filtros.r || (S.filtros.r = { periodo: 'mes', vendedor: '' });
+    const hoy = new Date(); const ini = new Date(hoy.getFullYear(), hoy.getMonth(), 1); const iniAnt = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1);
+    const enPeriodo = v => { const d = new Date(v.creado); return f.periodo === 'mes' ? d >= ini : f.periodo === 'anterior' ? d >= iniAnt && d < ini : true; };
+    const ventas = S.ventas.filter(v => conPago(v) && v.estado !== 'cancelado' && enPeriodo(v) && (!f.vendedor || v.vendedorId === f.vendedor));
+    const X = (S.catalogo && S.catalogo.extras) || [];
+    const modelos = new Map();
+    ventas.forEach(v => v.lineas.forEach(l => {
+      const tipo = l.id ? 'Catálogo' : l.extraId ? 'Agregado por el equipo' : 'Escrito a mano';
+      const key = l.id || l.extraId || 'm:' + l.nombre.trim().toLowerCase();
+      const m = modelos.get(key) || { nombre: l.nombre, tipo, piezas: 0, importe: 0, ventas: new Set(), vend: new Set() };
+      m.piezas += l.qty; m.importe += l.unit * l.qty; m.ventas.add(v.folio); m.vend.add(v.vendedorId); modelos.set(key, m);
+    }));
+    const filas = [...modelos.values()].sort((a, b) => b.importe - a.importe);
+    const porVend = new Map();
+    ventas.forEach(v => { const r = porVend.get(v.vendedorId) || { ventas: 0, piezas: 0, total: 0, cobrado: 0 }; r.ventas++; r.piezas += v.lineas.reduce((s, l) => s + l.qty, 0); r.total += v.total; r.cobrado += pagado(v); porVend.set(v.vendedorId, r); });
+    const tot = { piezas: filas.reduce((s, m) => s + m.piezas, 0), importe: ventas.reduce((s, v) => s + v.total, 0), cobrado: ventas.reduce((s, v) => s + pagado(v), 0) };
+    shell(`
+      <div class="filters">
+        <select class="input" id="rp">${opts([['mes', 'Este mes'], ['anterior', 'Mes pasado'], ['todo', 'Todo']], f.periodo)}</select>
+        ${admin() ? `<select class="input" id="rv">${opts(S.usuarios.filter(u => u.rol === 'vendedor' || S.ventas.some(v => v.vendedorId === u.id)).map(u => [u.id, u.nombre]), f.vendedor, 'Todos los vendedores')}</select>` : ''}
+        <span class="note">Cuenta pedidos con pago o anticipo · *Precios sin IVA</span>
+      </div>
+      <div class="grid kpis">
+        <div class="kpi"><small>Ventas</small><b>${ventas.length}</b><span>pedidos con pago</span></div>
+        <div class="kpi"><small>Piezas vendidas</small><b>${tot.piezas}</b><span>${filas.length} modelo${filas.length === 1 ? '' : 's'} distintos</span></div>
+        <div class="kpi"><small>Importe vendido</small><b>${fmt(tot.importe)}</b><span>total de los pedidos</span></div>
+        <div class="kpi ok"><small>Cobrado</small><b>${fmt(tot.cobrado)}</b><span>pagos registrados</span></div>
+      </div>
+      <h2 style="font-size:15px;margin:22px 0 10px">Por modelo</h2>
+      <div class="table-wrap">${filas.length ? `<table class="table"><thead><tr><th>Modelo</th><th>Tipo</th><th class="num">Piezas</th><th class="num">Pedidos</th>${admin() ? '<th>Vendedores</th>' : ''}<th class="num">Importe</th></tr></thead><tbody>
+        ${filas.map(m => `<tr><td><b>${esc(m.nombre)}</b></td><td><span class="badge origen">${m.tipo}</span></td><td class="num">${m.piezas}</td><td class="num">${m.ventas.size}</td>${admin() ? `<td>${[...m.vend].map(id => esc(nombreU(id))).join(', ')}</td>` : ''}<td class="num">${fmt(m.importe)}</td></tr>`).join('')}
+      </tbody></table>` : '<div class="empty">No hay ventas con pago en este periodo.</div>'}</div>
+      ${admin() && porVend.size ? `<h2 style="font-size:15px;margin:22px 0 10px">Por vendedor</h2>
+      <div class="table-wrap"><table class="table"><thead><tr><th>Vendedor</th><th class="num">Pedidos</th><th class="num">Piezas</th><th class="num">Vendido</th><th class="num">Cobrado</th></tr></thead><tbody>
+        ${[...porVend.entries()].sort((a, b) => b[1].total - a[1].total).map(([id, r]) => `<tr><td><b>${esc(nombreU(id))}</b></td><td class="num">${r.ventas}</td><td class="num">${r.piezas}</td><td class="num">${fmt(r.total)}</td><td class="num">${fmt(r.cobrado)}</td></tr>`).join('')}
+      </tbody></table></div>` : ''}`,
+      admin() ? 'Lo vendido' : 'Lo que vendí', admin() ? 'Control de todo lo que se vende: por modelo (del catálogo, agregados por el equipo o escritos a mano) y por vendedor.' : 'Tus ventas por modelo. Solo ves lo que tú vendiste.');
+    $('#rp').onchange = () => { f.periodo = $('#rp').value; vistaVendido(); };
+    const rv = $('#rv'); if (rv) rv.onchange = () => { f.vendedor = rv.value; vistaVendido(); };
   }
 
   // ───────── Ventas ─────────
@@ -262,15 +312,19 @@
 
   // Formulario de venta (nueva, o a partir de un lead)
   function formVenta(lead, pre) {
-    const C = S.catalogo; const ini = pre && C.productos.some(p => p.id === pre.id) ? pre.id : C.productos[0].id;
-    let lineas = [{ id: ini, color: '', qty: 1, unit: 0, nombre: '' }];
-    const prodOpts = v => opts(C.productos.map(p => [p.id, p.nombre + ' · ' + fmt(p.precio)]).concat([['__manual', '✎ Modelo que no está en la lista (escribir modelo y precio)']]), v);
-    const lineaHtml = (l, i) => { const p = C.productos.find(x => x.id === l.id); return `<div class="linea" data-i="${i}">
+    const C = S.catalogo; const X = C.extras || [];
+    const exDe = id => X.find(e => e.id === id);
+    const lineaDe = (id, qty) => { const e = exDe(id); return e ? { id, nombre: e.nombre, unit: e.precio, qty: qty || 1, color: '' } : { id, color: '', qty: qty || 1, unit: 0, nombre: '' }; };
+    const ini = pre && (C.productos.some(p => p.id === pre.id) || exDe(pre.id)) ? pre.id : C.productos[0].id;
+    let lineas = [lineaDe(ini)];
+    // Catálogo del sitio, luego los modelos que ha agregado el equipo, y al final «escribir uno nuevo».
+    const prodOpts = v => opts(C.productos.map(p => [p.id, p.nombre + ' · ' + fmt(p.precio)]), v) + (X.length ? `<optgroup label="Agregados por el equipo">${opts(X.map(e => [e.id, e.nombre + ' · ' + fmt(e.precio)]), v)}</optgroup>` : '') + opts([['__manual', '✎ Modelo que no está en la lista (escribir modelo y precio)']], v);
+    const lineaHtml = (l, i) => { const p = C.productos.find(x => x.id === l.id); const e = exDe(l.id); return `<div class="linea" data-i="${i}">
       <select class="input" data-k="id">${prodOpts(l.id || '__manual')}</select>
-      ${p ? `<select class="input" data-k="color">${opts([['', 'Color…']].concat(p.tapiz.map(t => [t, C.tapiz[t].name])), l.color)}</select>` : `<input class="input" data-k="nombre" placeholder="Modelo que vendiste" value="${esc(l.nombre)}">`}
+      ${p ? `<select class="input" data-k="color">${opts([['', 'Color…']].concat(p.tapiz.map(t => [t, C.tapiz[t].name])), l.color)}</select>` : e ? `<input class="input" value="Agregado por ${esc((e.creadoNombre || '').split(' ')[0] || 'el equipo')}" readonly tabindex="-1">` : `<input class="input" data-k="nombre" placeholder="Modelo que vendiste" value="${esc(l.nombre)}">`}
       <input class="input" data-k="qty" type="number" min="1" value="${l.qty}" title="Cantidad">
       <input class="input" data-k="unit" type="number" min="0" value="${p ? precioDe(p, l.color) : (l.unit || '')}" ${p ? 'readonly' : 'placeholder="Precio"'} title="${p ? 'Precio de lista' : 'Precio unitario que cobraste'}">
-      <button type="button" class="x" data-del>×</button></div>`; };
+      <button type="button" class="x" data-del>×</button>${!p && !e ? `<label class="chk guardar-modelo"><input type="checkbox" data-k="guardar" ${l.guardar !== false ? 'checked' : ''}> Agregar este modelo a la lista (queda para la próxima venta y el administrador lo ve en su control)</label>` : ''}</div>`; };
     const origenes = Object.entries(ORIGEN).filter(([k]) => admin() || !ORIGEN_ADMIN.includes(k));
     const vendedoresOpts = () => S.usuarios.filter(u => u.activo).sort((a, b) => (a.rol === 'admin') - (b.rol === 'admin') || a.nombre.localeCompare(b.nombre)).map(u => [u.id, u.nombre + (u.rol === 'admin' ? ' (admin)' : '')]);
     const precioDe = (p, color) => p.precio;
@@ -309,7 +363,7 @@
       `<button class="btn primary sm" id="guardarV">Guardar y generar folio</button>`, { wide: true });
     const pintar = () => { $('#lineas').innerHTML = lineas.map(lineaHtml).join(''); $$('#lineas .linea').forEach(row => {
       const i = +row.dataset.i;
-      $$('[data-k]', row).forEach(inp => inp.onchange = inp.oninput = () => { const k = inp.dataset.k; if (k === 'id') { if (inp.value === '__manual') { lineas[i] = { id: null, nombre: '', unit: 0, qty: lineas[i].qty, color: '' }; } else { lineas[i] = { id: inp.value, color: '', qty: lineas[i].qty }; } pintar(); } else { lineas[i][k] = inp.value; totales(); } });
+      $$('[data-k]', row).forEach(inp => inp.onchange = inp.oninput = () => { const k = inp.dataset.k; if (k === 'id') { if (inp.value === '__manual') { lineas[i] = { id: null, nombre: '', unit: 0, qty: lineas[i].qty, color: '', guardar: true }; } else { lineas[i] = lineaDe(inp.value, lineas[i].qty); } pintar(); } else { lineas[i][k] = inp.type === 'checkbox' ? inp.checked : inp.value; totales(); } });
       $('[data-del]', row).onclick = () => { if (lineas.length > 1) { lineas.splice(i, 1); pintar(); } };
     }); totales(); };
     const totales = () => { const c = calc(); $('#tot').innerHTML = `<div><span>Subtotal</span><span>${fmt(c.sub)}</span></div><div><span>Envío</span><span>${fmt(c.env)}</span></div>${c.desc ? `<div><span>Descuento</span><span>−${fmt(c.desc)}</span></div>` : ''}${c.iva ? `<div><span>IVA 16 % (factura)</span><span>${fmt(c.iva)}</span></div>` : ''}<div class="t"><span>Total</span><span>${fmt(c.total)}</span></div>`; };
@@ -324,6 +378,11 @@
       if ($('#cNombre').value.trim().length < 2) return toast('Escribe el nombre del cliente');
       if (tel.length !== 10) return toast('El WhatsApp debe tener 10 dígitos');
       if (lineas.some(l => !l.id && (String(l.nombre || '').trim().length < 2 || !(+l.unit > 0)))) return toast('Escribe el modelo y el precio del artículo que no está en la lista');
+      if (lineas.some(l => exDe(l.id) && !(+l.unit > 0))) return toast('Escribe el precio del modelo');
+      // Los modelos nuevos marcados «Agregar a la lista» se guardan primero; así la venta ya queda ligada a la lista.
+      for (const l of lineas.filter(x => !x.id && x.guardar !== false)) {
+        try { const r = await api('/api/datos?c=modelos', { accion: 'crear', nombre: l.nombre, precio: +l.unit }); l.id = r.modelo.id; } catch (e) { return toast(e.message); }
+      }
       if ($('#envTipo').value === 'domicilio' && $('#envDir').value.trim().length < 5) return toast('Escribe la dirección de entrega');
       if ($('#facV').checked && ($('#facR').value.trim().length < 2 || $('#facRfc').value.trim().length < 12)) return toast('Escribe razón social y RFC para la factura');
       try {
@@ -890,7 +949,7 @@
     const r = ruta();
     // Si se sale de WhatsApp, para los timers
     if (r !== 'whatsapp') waStop();
-    const vistas = { hoy: vistaHoy, muebles: vistaMuebles, ventas: vistaVentas, sinpago: vistaSinPago, leads: vistaLeads, whatsapp: vistaWhatsApp, vendedores: admin() ? vistaVendedores : vistaHoy, ajustes: admin() ? vistaAjustes : vistaCuenta, cuenta: vistaCuenta };
+    const vistas = { hoy: vistaHoy, muebles: vistaMuebles, vendido: vistaVendido, ventas: vistaVentas, sinpago: vistaSinPago, leads: vistaLeads, whatsapp: vistaWhatsApp, vendedores: admin() ? vistaVendedores : vistaHoy, ajustes: admin() ? vistaAjustes : vistaCuenta, cuenta: vistaCuenta };
     // La primera vez que se entra a WhatsApp, cargar en segundo plano y re-pintar
     if (r === 'whatsapp' && !S.wa._cargado) { S.wa._cargado = true; waCargarChats().then(() => { if (ruta() === 'whatsapp') vistaWhatsApp(); }); waSync(); }
     (vistas[r] || vistaHoy)();

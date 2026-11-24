@@ -11,7 +11,9 @@ const visiblesVentas = (lista, u) => esAdmin(u) ? lista : lista.filter(v => v.ve
 const visiblesLeads = (lista, u) => esAdmin(u) ? lista : lista.filter(l => l.vendedorId === u.id);
 const hist = (obj, quien, que) => { (obj.historial = obj.historial || []).push({ cuando: ahora(), quien, que }); };
 
-const COLECCIONES = ['ventas', 'leads', 'usuarios', 'sucursales', 'ajustes'];
+const COLECCIONES = ['ventas', 'leads', 'usuarios', 'sucursales', 'ajustes', 'modelos'];
+// Modelos que agrega el equipo cuando venden algo que no está en el catálogo del sitio (id «x-…»).
+const normal = s => String(s || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ');
 module.exports = seguro(async (req, res) => {
   const col = query(req).c;
   if (req.method === 'POST' && COLECCIONES.includes(col)) return store.conCandado(col, () => manejar(req, res));
@@ -32,7 +34,8 @@ async function manejar(req, res) {
     if (c === 'ajustes' || c === 'todo') out.ajustes = { almacen: store.modo(), secretoDefault: A.secretoDefault, mpConfigurado: !!process.env.MP_ACCESS_TOKEN, mpPrueba: !!(process.env.MP_ACCESS_TOKEN || '').startsWith('TEST-'), mpWebhook: !!process.env.MP_WEBHOOK_SECRET, waConfigurado: !!process.env.WA_VERIFY_TOKEN, waFirma: !!process.env.WA_APP_SECRET, waBandeja: !!(process.env.WA_API_URL && (process.env.WA_SERVICE_TOKEN || '').length >= 32 && process.env.WA_ACCOUNT_ID), ...(await store.get('ajustes', {})) };
     if (esAdmin(u) && (c === 'ajustes' || c === 'todo')) { out.accesos = (await store.get('accesos', [])).slice(0, 40); out.eliminados = (await store.get('eliminados', [])).slice(0, 20); }
     out.yo = A.publico(u);
-    out.catalogo = { productos: M.D().products.map(p => ({ id: p.id, nombre: p.name, precio: p.price || 0, cat: p.cat, tapiz: p.tapiz || [] })), tapiz: M.D().TAPIZ, estados: M.D().states, estadosVenta: M.ESTADOS_VENTA, estadosLead: M.ESTADOS_LEAD, origenes: M.ORIGENES };
+    const extras = (await store.get('modelos', [])).filter(m => m.activo !== false);
+    out.catalogo = { productos: M.D().products.map(p => ({ id: p.id, nombre: p.name, precio: p.price || 0, cat: p.cat, tapiz: p.tapiz || [] })), tapiz: M.D().TAPIZ, estados: M.D().states, estadosVenta: M.ESTADOS_VENTA, estadosLead: M.ESTADOS_LEAD, origenes: M.ORIGENES, extras };
     return ok(res, out);
   }
   if (req.method !== 'POST') return error(res, 405, 'Método no permitido');
@@ -42,6 +45,9 @@ async function manejar(req, res) {
   if (c === 'ventas') {
     if (ac === 'crear') {
       if (!b.lineas || !b.lineas.length) return error(res, 400, 'Agrega al menos un artículo');
+      // Modelos agregados por el equipo: nombre y precio de la lista (el precio se puede ajustar en la venta).
+      const extras = await store.get('modelos', []);
+      b.lineas = b.lineas.map(l => { if (!l.id || !String(l.id).startsWith('x-')) return l; const e = extras.find(x => x.id === l.id); return e ? { id: null, extraId: e.id, nombre: e.nombre, unit: +l.unit > 0 ? +l.unit : e.precio, qty: l.qty } : { ...l, id: null }; });
       const folio = await M.folioNuevo();
       // El vendedor registra lo que vende en tienda, WhatsApp o teléfono; los orígenes del admin (sitio, Mercado Pago, Mercado Libre) se los asigna el administrador.
       const origen = !esAdmin(u) && M.ORIGENES_ADMIN.includes(b.origen) ? 'sucursal' : (b.origen || 'sucursal');
@@ -203,6 +209,27 @@ async function manejar(req, res) {
     const lista = (b.lista || []).map(s => String(s).trim().slice(0, 60)).filter(Boolean);
     await store.set('sucursales', [...new Set(lista)]);
     return ok(res, { sucursales: [...new Set(lista)] });
+  }
+  // ───── Modelos agregados por el equipo ─────
+  if (c === 'modelos') {
+    const lista = await store.get('modelos', []);
+    if (ac === 'crear') {
+      const nombre = String(b.nombre || '').trim().slice(0, 80); const precio = Math.max(0, Math.round(+b.precio || 0));
+      if (nombre.length < 2) return error(res, 400, 'Escribe el nombre del modelo');
+      const ya = lista.find(m => normal(m.nombre) === normal(nombre));
+      if (ya) { if (ya.activo === false) { ya.activo = true; await store.set('modelos', lista); } return ok(res, { modelo: ya, existia: true }); }
+      if (!precio) return error(res, 400, 'Escribe el precio del modelo');
+      const m = { id: 'x-' + id(8), nombre, precio, creadoPor: u.id, creadoNombre: u.nombre, creado: ahora(), activo: true };
+      lista.push(m); await store.set('modelos', lista);
+      return ok(res, { modelo: m });
+    }
+    if (!esAdmin(u)) return error(res, 403, 'Solo el administrador cambia o quita modelos');
+    const m = lista.find(x => x.id === b.id); if (!m) return error(res, 404, 'No existe ese modelo');
+    if (ac === 'editar') { if (b.nombre) m.nombre = String(b.nombre).trim().slice(0, 80); if (b.precio !== undefined) m.precio = Math.max(0, Math.round(+b.precio || 0)); }
+    else if (ac === 'quitar') m.activo = false;
+    else return error(res, 400, 'Acción desconocida');
+    await store.set('modelos', lista);
+    return ok(res, { modelo: m });
   }
   if (c === 'ajustes') {
     if (!esAdmin(u)) return error(res, 403, 'Solo el administrador cambia ajustes');
