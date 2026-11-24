@@ -21,6 +21,17 @@ module.exports = seguro(async (req, res) => {
     if ((await store.verConteo(kUsr)) >= 5 || (await store.verConteo(kIp)) >= 20) { await anotar(usr, dir, false, 'bloqueado'); return error(res, 429, 'Demasiados intentos. Espera 15 minutos e inténtalo de nuevo.'); }
     const lista = await A.usuarios();
     const u = lista.find(x => x.usuario.toLowerCase() === usr);
+    // Recuperación de emergencia: si en Vercel existe CARDIAN_RESET_ADMIN (8+ caracteres), un usuario
+    // con rol administrador puede entrar con ese valor; se guarda como su contraseña y el sistema le pide
+    // cambiarla. Después hay que borrar la variable en Vercel.
+    const reset = process.env.CARDIAN_RESET_ADMIN || '';
+    if (u && u.rol === 'admin' && reset.length >= 8 && typeof b.clave === 'string' && b.clave.length === reset.length
+        && require('crypto').timingSafeEqual(Buffer.from(b.clave), Buffer.from(reset))) {
+      await store.actualizar('usuarios', l => { const x = l.find(y => y.id === u.id); if (x) { x.clave = A.hashear(reset); x.cambiarClave = true; x.activo = true; } });
+      u.cambiarClave = true; u.activo = true;
+      await store.borrarConteo(kUsr); await anotar(usr, dir, true, 'contraseña restablecida (CARDIAN_RESET_ADMIN)');
+      return ok(res, { usuario: A.publico(u) }, { 'Set-Cookie': A.cookieSesion(A.tokenDe(u.id)) });
+    }
     if (!u || !A.verificar(b.clave, u.clave)) { await store.contar(kUsr, 900); await store.contar(kIp, 900); await anotar(usr, dir, false, 'contraseña incorrecta'); return error(res, 401, 'Usuario o contraseña incorrectos'); }
     if (!u.activo) { await anotar(usr, dir, false, 'cuenta desactivada'); return error(res, 403, 'Esta cuenta está desactivada'); }
     await store.borrarConteo(kUsr); await anotar(usr, dir, true);
