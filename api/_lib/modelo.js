@@ -16,7 +16,9 @@ const ESTADOS_VENTA = ['pendiente', 'apartado', 'pagado', 'en-produccion', 'entr
 // Etapas de entrega del pedido (aparte del estado de pago): lo que ve el cliente en su seguimiento.
 const ETAPAS = ['recibido', 'fabricando', 'listo', 'en-camino', 'entregado'];
 const ESTADOS_LEAD = ['nuevo', 'contactado', 'sin-respuesta', 'cotizado', 'compro', 'no-compro'];
-const ORIGENES = ['sitio', 'mercado-pago', 'whatsapp', 'sucursal', 'telefono', 'otro'];
+const ORIGENES = ['sitio', 'mercado-pago', 'mercado-libre', 'whatsapp', 'sucursal', 'telefono', 'otro'];
+// Orígenes que solo registra el administrador: llegan solos (sitio, Mercado Pago) o él los asigna (Mercado Libre).
+const ORIGENES_ADMIN = ['sitio', 'mercado-pago', 'mercado-libre'];
 
 const precioUnitario = (p, color) => (p.price || 0) + (p.extras && color && p.extras[color] ? p.extras[color] : 0);
 
@@ -114,4 +116,4 @@ function nuevoLead(datos, vendedor, quien) {
   };
 }
 
-module.exports = { D, calcular, folioNuevo, pagado, saldo, estadoPorPago, llaveTicket, nuevaVenta, elegirVendedor, nuevoLead, ESTADOS_VENTA, ESTADOS_LEAD, ETAPAS, ORIGENES };
+module.exports = { D, calcular, folioNuevo, pagado, saldo, estadoPorPago, llaveTicket, nuevaVenta, elegirVendedor, nuevoLead, ESTADOS_VENTA, ESTADOS_LEAD, ETAPAS, ORIGENES, ORIGENES_ADMIN };

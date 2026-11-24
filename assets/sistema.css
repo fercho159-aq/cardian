@@ -248,3 +248,15 @@ body.sys{background:var(--bg);color:var(--fg);font-family:var(--font);margin:0;m
 .login .app-link{margin-top:14px;font-size:13px;color:var(--gold-deep,#8a6a2c);font-weight:500}
 .side .app-link{margin-top:8px;font-size:12px;color:var(--gold-bright,#e6c98d);padding:0}
 .side .yo button.app-link{border:0;padding:0;border-radius:0;color:var(--gold-bright,#d2ad58)}
+/* Muebles: catálogo para el vendedor */
+.muebles{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px}
+.mueble{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden;display:flex;flex-direction:column}
+.mueble img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;background:#eee}
+.mueble .mb{padding:12px 14px 14px;display:flex;flex-direction:column;gap:5px;flex:1}
+.mueble b{font-size:15px;font-weight:600}
+.mueble small{color:var(--muted);font-size:12px}
+.mueble .precio{font-size:20px;font-weight:600;font-variant-numeric:tabular-nums;margin-top:2px}
+.mueble .precio span{font-size:11px;font-weight:500;color:var(--muted)}
+.mueble .tapiz{display:flex;gap:5px;flex-wrap:wrap}
+.mueble .tapiz i{width:16px;height:16px;border-radius:50%;border:1px solid rgba(0,0,0,.15);display:block}
+.mueble .acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:auto;padding-top:8px}

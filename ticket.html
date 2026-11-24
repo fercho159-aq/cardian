@@ -70,7 +70,8 @@
   if (!r.ok) { el.innerHTML = '<div class="err">' + (j.error || 'No se pudo abrir el ticket') + '</div>'; return; }
   const v = j.venta, aj = j.ajustes;
   const estadoTxt = { pendiente: 'Pendiente de pago', apartado: 'Apartado · con abono', pagado: 'Pagado', 'en-produccion': 'En producción', entregado: 'Entregado', cancelado: 'Cancelado' }[v.estado] || v.estado;
-  const pagos = (v.pagos || []).map(p => `<div class="row"><span>${fecha(p.cuando)}<small>${p.metodo}${p.ref ? ' · ' + p.ref : ''}</small></span><span class="num">${fmt(p.monto)}</span></div>`).join('') || '<div class="row"><span style="color:var(--muted)">Sin pagos registrados</span></div>';
+  const METODO_N = { efectivo: 'Efectivo', transferencia: 'Transferencia', tarjeta: 'Tarjeta', 'mercado-pago': 'Mercado Pago', 'mercado-libre': 'Mercado Libre', deposito: 'Depósito', otro: 'Otro' };
+  const pagos = (v.pagos || []).map(p => `<div class="row"><span>${fecha(p.cuando)}<small>${METODO_N[p.metodo] || p.metodo}${p.ref ? ' · ' + p.ref : ''}</small></span><span class="num">${fmt(p.monto)}</span></div>`).join('') || '<div class="row"><span style="color:var(--muted)">Sin pagos registrados</span></div>';
   const enlace = location.origin + '/ticket?f=' + v.folio + '&k=' + j.k;
   // Seguimiento: etapa actual, fecha estimada y línea de tiempo
   const EP = window.EstadoPedido, ets = EP.etapasDe(v), iA = EP.indice(v);

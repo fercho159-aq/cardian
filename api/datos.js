@@ -43,7 +43,9 @@ async function manejar(req, res) {
     if (ac === 'crear') {
       if (!b.lineas || !b.lineas.length) return error(res, 400, 'Agrega al menos un artículo');
       const folio = await M.folioNuevo();
-      const v = M.nuevaVenta({ ...b, folio, origen: b.origen || 'sucursal', vendedorId: esAdmin(u) && b.vendedorId ? b.vendedorId : u.id, sucursal: b.sucursal || u.sucursal }, u);
+      // El vendedor registra lo que vende en tienda, WhatsApp o teléfono; los orígenes del admin (sitio, Mercado Pago, Mercado Libre) se los asigna el administrador.
+      const origen = !esAdmin(u) && M.ORIGENES_ADMIN.includes(b.origen) ? 'sucursal' : (b.origen || 'sucursal');
+      const v = M.nuevaVenta({ ...b, folio, origen, vendedorId: esAdmin(u) && b.vendedorId ? b.vendedorId : u.id, sucursal: b.sucursal || u.sucursal }, u);
       // etapa inicial y fecha estimada que eligió el vendedor (pedido capturado a mano)
       if (b.etapa && M.ETAPAS.includes(b.etapa) && b.etapa !== 'recibido') { v.etapa = b.etapa; v.etapas.push({ etapa: b.etapa, cuando: ahora(), quien: u.nombre }); }
       if (/^\d{4}-\d{2}-\d{2}$/.test(String(b.fechaEntrega || ''))) v.fechaEntrega = String(b.fechaEntrega);
@@ -86,15 +88,17 @@ async function manejar(req, res) {
       if (b.notaCliente !== undefined) v.notaCliente = String(b.notaCliente).slice(0, 240);
     } else if (ac === 'estado') {
       if (!M.ESTADOS_VENTA.includes(b.estado)) return error(res, 400, 'Estado inválido');
+      // El estado del pago sale de los pagos registrados. El vendedor solo puede descartar o recuperar sus pedidos sin pago.
+      if (!esAdmin(u) && !(M.pagado(v) === 0 && ['cancelado', 'pendiente'].includes(b.estado))) return error(res, 403, 'Solo el administrador cambia el estado del pago');
       v.estado = b.estado; hist(v, u.nombre, 'Estado: ' + b.estado);
     } else if (ac === 'editar') {
       if (b.cliente) v.cliente = { nombre: String(b.cliente.nombre || v.cliente.nombre).slice(0, 80), tel: tel10(b.cliente.tel) || v.cliente.tel, email: String(b.cliente.email ?? v.cliente.email).slice(0, 100) };
       if (b.sucursal !== undefined) v.sucursal = String(b.sucursal).slice(0, 60);
       if (b.notas !== undefined) v.notas = String(b.notas).slice(0, 500);
       if (b.envio) v.envio = { ...v.envio, ...{ tipo: b.envio.tipo === 'domicilio' ? 'domicilio' : 'bodega', estado: String(b.envio.estado || ''), direccion: String(b.envio.direccion || '').slice(0, 240) } };
-      if (esAdmin(u) && b.vendedorId !== undefined) v.vendedorId = b.vendedorId || null;
+      if (esAdmin(u) && b.vendedorId !== undefined && (b.vendedorId || null) !== (v.vendedorId || null)) { const nv = (await A.usuarios()).find(x => x.id === b.vendedorId); v.vendedorId = nv ? nv.id : null; hist(v, u.nombre, nv ? 'Asignada a ' + nv.nombre : 'Sin vendedor'); }
       if (b.lineas && esAdmin(u)) { const cal = M.calcular(b.lineas, { tipo: v.envio.tipo, estado: v.envio.estado, costo: b.costoEnvio ?? v.costoEnvio, descuento: b.descuento ?? v.descuento }, { iva: !!v.factura }); Object.assign(v, { lineas: cal.lineas, sub: cal.sub, costoEnvio: cal.envio, descuento: cal.descuento, iva: cal.iva, total: cal.total }); v.estado = M.estadoPorPago(v); }
-      hist(v, u.nombre, 'Editó la venta');
+      if (b.cliente || b.sucursal !== undefined || b.notas !== undefined || b.envio || b.lineas) hist(v, u.nombre, 'Editó la venta');
     } else if (ac === 'nota') {
       hist(v, u.nombre, 'Nota: ' + String(b.texto || '').slice(0, 300));
     } else return error(res, 400, 'Acción desconocida');

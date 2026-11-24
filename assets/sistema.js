@@ -1,6 +1,6 @@
 /* Sistema de ventas y leads de Cardian Muebles.
    Una sola página: inicia sesión, carga los datos de /api/datos y pinta la vista según el #hash.
-   Admin: Hoy, Ventas, Leads, Vendedores, Ajustes. Vendedor: Hoy, Mis leads, Mis ventas, Mi cuenta. */
+   Admin: Hoy, Ventas, Sin pago, Leads, Muebles, Usuarios, Ajustes. Vendedor: Hoy, Muebles, Mis leads, Mis ventas, Sin pago, Mi cuenta. */
 (function () {
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -12,8 +12,10 @@
   const ESTADO_V = { pendiente: 'Pendiente de pago', apartado: 'Apartado', pagado: 'Pagado', 'en-produccion': 'En producción', entregado: 'Entregado', cancelado: 'Cancelado' };
   const ETAPA_V = { recibido: 'Recibido', fabricando: 'En fabricación', listo: 'Listo para entrega', 'en-camino': 'En camino', entregado: 'Entregado' };
   const ESTADO_L = { nuevo: 'Nuevo', contactado: 'Contactado', 'sin-respuesta': 'Sin respuesta', cotizado: 'Cotizado', compro: 'Compró', 'no-compro': 'No compró' };
-  const ORIGEN = { sitio: 'Página web', 'mercado-pago': 'Mercado Pago', whatsapp: 'WhatsApp', sucursal: 'Tienda / local', telefono: 'Teléfono', otro: 'Otro' };
-  const METODOS = ['efectivo', 'transferencia', 'tarjeta', 'mercado-pago', 'deposito', 'otro'];
+  const ORIGEN = { sitio: 'Página web', 'mercado-pago': 'Mercado Pago', 'mercado-libre': 'Mercado Libre', whatsapp: 'WhatsApp', sucursal: 'Tienda / local', telefono: 'Teléfono', otro: 'Otro' };
+  // Orígenes que solo registra el administrador (llegan solos o los asigna él, como las ventas de Mercado Libre).
+  const ORIGEN_ADMIN = ['sitio', 'mercado-pago', 'mercado-libre'];
+  const METODOS = ['efectivo', 'transferencia', 'tarjeta', 'mercado-pago', 'mercado-libre', 'deposito', 'otro'];
   let S = { yo: null, ventas: [], leads: [], usuarios: [], sucursales: [], ajustes: {}, catalogo: null, filtros: {}, wa: { chats: [], account: null, waEnabled: false, activo: null, mensajes: [], busca: '', fEstado: '', fVend: '', sinLeads: false } };
   // timers del panel WhatsApp (bandeja + chat activo) para parar polling al salir
   let waTimers = { lista: null, msgs: null };
@@ -34,12 +36,15 @@
   }
   const admin = () => S.yo && S.yo.rol === 'admin';
   const nombreU = id => (S.usuarios.find(u => u.id === id) || {}).nombre || '—';
+  // Quién dio de alta el pedido: el primer registro del historial (un usuario, «Sitio web» o Mercado Pago).
+  const altaDe = v => ((v.historial || [])[0] || {}).quien || '—';
+  const celdaVend = v => `<td>${esc(nombreU(v.vendedorId))}<small>Alta: ${esc(altaDe(v))}</small></td>`;
   const pagado = v => (v.pagos || []).reduce((s, p) => s + p.monto, 0);
   const saldo = v => Math.max(0, v.total - pagado(v));
   // Una venta cuenta como venta cuando ya tiene al menos un pago; las demás viven en «Sin pago».
   const conPago = v => pagado(v) > 0;
   const sinPago = v => !conPago(v) && v.estado !== 'cancelado';
-  const METODO_N = { efectivo: 'Efectivo', transferencia: 'Transferencia', tarjeta: 'Tarjeta', 'mercado-pago': 'Mercado Pago', deposito: 'Depósito', otro: 'Otro' };
+  const METODO_N = { efectivo: 'Efectivo', transferencia: 'Transferencia', tarjeta: 'Tarjeta', 'mercado-pago': 'Mercado Pago', 'mercado-libre': 'Mercado Libre', deposito: 'Depósito', otro: 'Otro' };
   const pagoCon = v => [...new Set((v.pagos || []).map(p => (METODO_N[p.metodo] || p.metodo) + (p.metodo === 'mercado-pago' && p.ref ? ' · ' + p.ref : '')))].join(', ');
   const waLink = (tel, txt) => `https://wa.me/52${tel}?text=${encodeURIComponent(txt)}`;
   const ticketUrl = (folio, k) => `/ticket?f=${folio}&k=${k}`;
@@ -96,7 +101,8 @@
     ajustes: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
     sinpago: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
     cuenta: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>',
-    whatsapp: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.11 4.9A10 10 0 0 0 4.1 18.4L3 22l3.7-1A10 10 0 1 0 19.11 4.9zM12 20.3a8.3 8.3 0 0 1-4.24-1.17l-.3-.18-2.19.57.59-2.14-.2-.31A8.3 8.3 0 1 1 12 20.3zm4.56-6.22c-.25-.13-1.48-.73-1.71-.81-.23-.08-.4-.13-.56.13-.17.25-.65.81-.8.98-.14.17-.3.19-.55.06-.25-.13-1.06-.39-2.02-1.24-.75-.67-1.25-1.49-1.4-1.74-.14-.25-.02-.38.11-.5.11-.11.25-.3.38-.44.13-.14.17-.25.25-.42.08-.17.04-.31-.02-.44-.06-.13-.56-1.36-.77-1.86-.2-.49-.41-.42-.56-.43h-.48c-.17 0-.44.06-.67.31-.23.25-.88.86-.88 2.11 0 1.24.9 2.44 1.03 2.6.13.17 1.78 2.73 4.33 3.82.6.26 1.08.42 1.45.54.61.19 1.17.17 1.6.1.49-.07 1.48-.6 1.69-1.19.21-.59.21-1.09.15-1.19-.06-.1-.23-.17-.48-.3z"/></svg>'
+    whatsapp: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.11 4.9A10 10 0 0 0 4.1 18.4L3 22l3.7-1A10 10 0 1 0 19.11 4.9zM12 20.3a8.3 8.3 0 0 1-4.24-1.17l-.3-.18-2.19.57.59-2.14-.2-.31A8.3 8.3 0 1 1 12 20.3zm4.56-6.22c-.25-.13-1.48-.73-1.71-.81-.23-.08-.4-.13-.56.13-.17.25-.65.81-.8.98-.14.17-.3.19-.55.06-.25-.13-1.06-.39-2.02-1.24-.75-.67-1.25-1.49-1.4-1.74-.14-.25-.02-.38.11-.5.11-.11.25-.3.38-.44.13-.14.17-.25.25-.42.08-.17.04-.31-.02-.44-.06-.13-.56-1.36-.77-1.86-.2-.49-.41-.42-.56-.43h-.48c-.17 0-.44.06-.67.31-.23.25-.88.86-.88 2.11 0 1.24.9 2.44 1.03 2.6.13.17 1.78 2.73 4.33 3.82.6.26 1.08.42 1.45.54.61.19 1.17.17 1.6.1.49-.07 1.48-.6 1.69-1.19.21-.59.21-1.09.15-1.19-.06-.1-.23-.17-.48-.3z"/></svg>',
+    muebles: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 11V8a3 3 0 0 1 3-3h8a3 3 0 0 1 3 3v3"/><path d="M3 13a2 2 0 0 1 4 0v2h10v-2a2 2 0 0 1 4 0v5H3z"/><path d="M5 18v2M19 18v2"/></svg>'
   };
   function ruta() { return (location.hash.replace('#/', '') || 'hoy').split('?')[0]; }
   function shell(contenido, titulo, sub, acciones) {
@@ -104,8 +110,8 @@
     const pendientes = S.ventas.filter(sinPago).length;
     const waNoLeidos = (S.wa && S.wa.chats || []).reduce((s, c) => s + (admin() || (c.lead && c.lead.vendedorId === S.yo.id) ? (c.noLeidos || 0) : 0), 0);
     const menu = admin()
-      ? [['hoy', 'Hoy'], ['ventas', 'Ventas'], ['sinpago', 'Sin pago', pendientes], ['leads', 'Leads', leadsNuevos], ['whatsapp', 'WhatsApp', waNoLeidos], ['vendedores', 'Usuarios'], ['ajustes', 'Ajustes']]
-      : [['hoy', 'Hoy'], ['leads', 'Mis leads', leadsNuevos], ['whatsapp', 'WhatsApp', waNoLeidos], ['ventas', 'Mis ventas'], ['sinpago', 'Sin pago', pendientes], ['cuenta', 'Mi cuenta']];
+      ? [['hoy', 'Hoy'], ['ventas', 'Ventas'], ['sinpago', 'Sin pago', pendientes], ['leads', 'Leads', leadsNuevos], ['whatsapp', 'WhatsApp', waNoLeidos], ['muebles', 'Muebles'], ['vendedores', 'Usuarios'], ['ajustes', 'Ajustes']]
+      : [['hoy', 'Hoy'], ['muebles', 'Muebles'], ['leads', 'Mis leads', leadsNuevos], ['whatsapp', 'WhatsApp', waNoLeidos], ['ventas', 'Mis ventas'], ['sinpago', 'Sin pago', pendientes], ['cuenta', 'Mi cuenta']];
     const r = ruta();
     $('#app').innerHTML = `<div class="shell">
       <nav class="side" id="side"><div class="brand"><img src="/img/logo.png" alt=""><span>Sistema</span></div>
@@ -149,7 +155,7 @@
       ${!admin() && !S.yo.whatsapp && !compartido() ? `<div class="aviso" style="margin-top:16px">Tu cuenta no tiene WhatsApp registrado: los clientes del sitio llegan al número general. Pídele al administrador que lo agregue.</div>` : ''}
       <div class="two" style="margin-top:16px">
         <div class="box"><h2>Qué hacer hoy</h2>${tareas.length ? `<ul class="lead-list" style="list-style:none;padding:0;margin:0">${tareas.join('')}</ul>` : '<div class="empty">Todo al día. No hay leads nuevos ni pedidos sin pago.</div>'}</div>
-        <div class="box"><h2>Últimas ventas</h2>${S.ventas.some(conPago) ? `<table class="table"><tbody>${S.ventas.filter(conPago).slice(0, 8).map(v => `<tr class="row" data-venta="${v.folio}"><td><b>${v.folio}</b><small>${esc(v.cliente.nombre)}</small></td><td>${badge(v.estado)}</td><td class="num">${fmt(v.total)}</td></tr>`).join('')}</tbody></table>` : '<div class="empty">Aún no hay ventas.</div>'}</div>
+        <div class="box"><h2>Últimas ventas</h2>${S.ventas.some(conPago) ? `<table class="table"><tbody>${S.ventas.filter(conPago).slice(0, 8).map(v => `<tr class="row" data-venta="${v.folio}"><td><b>${v.folio}</b><small>${esc(v.cliente.nombre)}${admin() ? ' · ' + esc(nombreU(v.vendedorId)) : ''}</small></td><td>${badge(v.estado)} ${badge(v.etapa || 'recibido', ETAPA_V)}</td><td class="num">${fmt(v.total)}</td></tr>`).join('')}</tbody></table>` : '<div class="empty">Aún no hay ventas.</div>'}</div>
       </div>`, `Hola, ${esc(S.yo.nombre.split(' ')[0])}`, new Date().toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' }),
       `${'Notification' in window && Notification.permission === 'default' ? '<button class="btn sm" id="avisos">🔔 Activar avisos</button>' : ''}<button class="btn gold sm" id="nuevaVenta">+ Nuevo pedido</button><button class="btn sm" id="nuevoLead">+ Nuevo lead</button>`);
     enlazarComunes();
@@ -190,6 +196,39 @@
     const nl = $('#nuevoLead'); if (nl) nl.onclick = () => formLead();
   }
 
+  // ───────── Muebles (catálogo para vender) ─────────
+  // Lo que el vendedor ve de la tienda: modelos, precio de lista, colores y medidas, con botón para registrar la venta.
+  function vistaMuebles() {
+    const D = window.CARDIAN || { products: [], categories: [], TAPIZ: {} };
+    const f = S.filtros.m || (S.filtros.m = { q: '', cat: '' });
+    const lista = D.products.filter(p => (!f.cat || p.cat === f.cat) && (!f.q || (p.name + ' ' + (p.type || '') + ' ' + (p.short || '')).toLowerCase().includes(f.q.toLowerCase())));
+    const medidas = p => p.dims ? `${(p.dims.largo / 100).toFixed(2)} × ${(p.dims.fondo / 100).toFixed(2)} m · alto ${p.dims.alto} cm` : '';
+    const infoWa = p => `${p.name}${p.type ? ' (' + p.type + ')' : ''}\nPrecio directo: ${fmt(p.price)} *sin IVA\n${medidas(p) ? 'Medidas: ' + medidas(p) + '\n' : ''}${(p.tapiz || []).length ? 'Colores: ' + p.tapiz.map(t => (D.TAPIZ[t] || {}).name || t).join(', ') + '\n' : ''}Entrega: ${p.stock === 'pedido' ? 'sobre pedido, aprox. ' + (p.dias || 15) + ' días' : 'inmediata'}\n${location.origin}/producto?id=${p.id}`;
+    shell(`
+      <div class="filters">
+        <input class="input buscar" id="mq" placeholder="Buscar modelo…" value="${esc(f.q)}">
+        <div class="sel-estado">${[['', 'Todos'], ...D.categories.map(c => [c.id, c.name])].map(([k, t]) => `<button type="button" data-mc="${k}" class="${f.cat === k ? 'on' : ''}">${esc(t)}</button>`).join('')}</div>
+        <span class="note">${lista.length} modelo${lista.length === 1 ? '' : 's'} · *Precios sin IVA</span>
+      </div>
+      <div class="muebles">${lista.length ? lista.map(p => `<article class="mueble">
+        <img src="/${esc((p.imgs || [])[0] || '')}" alt="${esc(p.name)}" loading="lazy">
+        <div class="mb">
+          <b>${esc(p.name)}</b><small>${esc(p.type || '')}</small>
+          <div class="precio">${fmt(p.price)} <span>sin IVA</span></div>
+          ${medidas(p) ? `<div class="note">${medidas(p)}</div>` : ''}
+          ${(p.tapiz || []).length ? `<div class="tapiz">${p.tapiz.map(t => `<i title="${esc((D.TAPIZ[t] || {}).name || t)}" style="background:${(D.TAPIZ[t] || {}).hex || '#ccc'}"></i>`).join('')}</div>` : ''}
+          <div class="note">${p.stock === 'pedido' ? 'Sobre pedido · aprox. ' + (p.dias || 15) + ' días' : 'Entrega inmediata'}</div>
+          <div class="acts"><button class="btn gold sm" data-vender="${p.id}">Registrar venta</button><button class="btn sm" data-copiar="${p.id}">Copiar info</button></div>
+        </div></article>`).join('') : '<div class="empty">No hay modelos con esa búsqueda.</div>'}</div>`,
+      'Muebles', 'Modelos y precios de lista para atender y vender. Si vendiste algo que no está aquí, regístralo con «Modelo que no está en la lista».',
+      `<button class="btn gold sm" id="nuevaVenta">+ Registrar venta</button>`);
+    enlazarComunes();
+    $('#mq').oninput = () => { f.q = $('#mq').value; vistaMuebles(); const i = $('#mq'); i.focus(); i.setSelectionRange(i.value.length, i.value.length); };
+    $$('[data-mc]').forEach(b => b.onclick = () => { f.cat = b.dataset.mc; vistaMuebles(); });
+    $$('[data-vender]').forEach(b => b.onclick = () => formVenta(null, { id: b.dataset.vender }));
+    $$('[data-copiar]').forEach(b => b.onclick = () => { const p = D.products.find(x => x.id === b.dataset.copiar); navigator.clipboard.writeText(infoWa(p)).then(() => toast('Info copiada: pégala en WhatsApp'), () => toast('No se pudo copiar')); });
+  }
+
   // ───────── Ventas ─────────
   function vistaVentas() {
     const f = S.filtros.v || (S.filtros.v = { q: '', estado: '', etapa: '', sucursal: '', origen: '', vendedor: '' });
@@ -207,7 +246,7 @@
         <span class="note">${lista.length} venta${lista.length === 1 ? '' : 's'} · ${fmt(tot)} · cobrado ${fmt(cob)}</span>
       </div>
       <div class="table-wrap">${lista.length ? `<table class="table"><thead><tr><th>Folio</th><th>Cliente</th><th>Artículos</th><th>Pago</th><th>Pagó con</th><th>Pedido</th><th>Origen</th>${admin() ? '<th>Vendedor</th>' : ''}<th>Sucursal</th><th class="num">Total</th><th class="num">Saldo</th></tr></thead><tbody>
-        ${lista.map(v => `<tr class="row" data-venta="${v.folio}"><td><b>${v.folio}</b><small>${dia(v.creado)}</small></td><td>${esc(v.cliente.nombre)}<small>${v.cliente.tel}</small></td><td>${v.lineas.map(l => `${l.qty} × ${esc(l.nombre)}${l.colorNombre ? ' · ' + esc(l.colorNombre) : ''}`).join('<br>')}</td><td>${badge(v.estado)}</td><td><small style="display:block;max-width:180px;white-space:normal">${esc(pagoCon(v))}</small></td><td>${badge(v.etapa || 'recibido', ETAPA_V)}</td><td><span class="badge origen">${ORIGEN[v.origen] || v.origen}</span></td>${admin() ? `<td>${esc(nombreU(v.vendedorId))}</td>` : ''}<td>${esc(v.sucursal || '—')}</td><td class="num">${fmt(v.total)}</td><td class="num">${saldo(v) ? `<b style="color:var(--warn)">${fmt(saldo(v))}</b>` : '<span style="color:var(--ok)">Pagado</span>'}</td></tr>`).join('')}
+        ${lista.map(v => `<tr class="row" data-venta="${v.folio}"><td><b>${v.folio}</b><small>${dia(v.creado)}</small></td><td>${esc(v.cliente.nombre)}<small>${v.cliente.tel}</small></td><td>${v.lineas.map(l => `${l.qty} × ${esc(l.nombre)}${l.colorNombre ? ' · ' + esc(l.colorNombre) : ''}`).join('<br>')}</td><td>${badge(v.estado)}</td><td><small style="display:block;max-width:180px;white-space:normal">${esc(pagoCon(v))}</small></td><td>${badge(v.etapa || 'recibido', ETAPA_V)}</td><td><span class="badge origen">${ORIGEN[v.origen] || v.origen}</span></td>${admin() ? celdaVend(v) : ''}<td>${esc(v.sucursal || '—')}</td><td class="num">${fmt(v.total)}</td><td class="num">${saldo(v) ? `<b style="color:var(--warn)">${fmt(saldo(v))}</b>` : '<span style="color:var(--ok)">Pagado</span>'}</td></tr>`).join('')}
       </tbody></table>` : '<div class="empty">No hay ventas con esos filtros.</div>'}</div>`,
       admin() ? 'Ventas' : 'Mis ventas', 'Solo pedidos con pago o anticipo. Los que no han pagado están en «Sin pago».',
       `<button class="btn gold sm" id="nuevaVenta">+ Nuevo pedido</button>${admin() && S.ajustes.mpConfigurado ? '<button class="btn sm" id="sync">Sincronizar Mercado Pago</button>' : ''}`);
@@ -222,15 +261,18 @@
   }
 
   // Formulario de venta (nueva, o a partir de un lead)
-  function formVenta(lead) {
-    const C = S.catalogo; let lineas = [{ id: C.productos[0].id, color: '', qty: 1, unit: 0, nombre: '' }];
-    const prodOpts = v => opts(C.productos.map(p => [p.id, p.nombre + ' · ' + fmt(p.precio)]).concat([['__manual', 'Otro artículo (escribir)']]), v);
+  function formVenta(lead, pre) {
+    const C = S.catalogo; const ini = pre && C.productos.some(p => p.id === pre.id) ? pre.id : C.productos[0].id;
+    let lineas = [{ id: ini, color: '', qty: 1, unit: 0, nombre: '' }];
+    const prodOpts = v => opts(C.productos.map(p => [p.id, p.nombre + ' · ' + fmt(p.precio)]).concat([['__manual', '✎ Modelo que no está en la lista (escribir modelo y precio)']]), v);
     const lineaHtml = (l, i) => { const p = C.productos.find(x => x.id === l.id); return `<div class="linea" data-i="${i}">
       <select class="input" data-k="id">${prodOpts(l.id || '__manual')}</select>
-      ${p ? `<select class="input" data-k="color">${opts([['', 'Color…']].concat(p.tapiz.map(t => [t, C.tapiz[t].name])), l.color)}</select>` : `<input class="input" data-k="nombre" placeholder="Nombre del artículo" value="${esc(l.nombre)}">`}
-      <input class="input" data-k="qty" type="number" min="1" value="${l.qty}">
-      <input class="input" data-k="unit" type="number" min="0" value="${p ? precioDe(p, l.color) : l.unit}" ${p ? 'readonly' : ''} title="${p ? 'Precio de lista' : 'Precio unitario'}">
+      ${p ? `<select class="input" data-k="color">${opts([['', 'Color…']].concat(p.tapiz.map(t => [t, C.tapiz[t].name])), l.color)}</select>` : `<input class="input" data-k="nombre" placeholder="Modelo que vendiste" value="${esc(l.nombre)}">`}
+      <input class="input" data-k="qty" type="number" min="1" value="${l.qty}" title="Cantidad">
+      <input class="input" data-k="unit" type="number" min="0" value="${p ? precioDe(p, l.color) : (l.unit || '')}" ${p ? 'readonly' : 'placeholder="Precio"'} title="${p ? 'Precio de lista' : 'Precio unitario que cobraste'}">
       <button type="button" class="x" data-del>×</button></div>`; };
+    const origenes = Object.entries(ORIGEN).filter(([k]) => admin() || !ORIGEN_ADMIN.includes(k));
+    const vendedoresOpts = () => S.usuarios.filter(u => u.activo).sort((a, b) => (a.rol === 'admin') - (b.rol === 'admin') || a.nombre.localeCompare(b.nombre)).map(u => [u.id, u.nombre + (u.rol === 'admin' ? ' (admin)' : '')]);
     const precioDe = (p, color) => p.precio;
     const calc = () => { const sub = lineas.reduce((s, l) => { const p = C.productos.find(x => x.id === l.id); return s + (p ? p.precio : +l.unit || 0) * (+l.qty || 1); }, 0); const env = +($('#envCosto') && $('#envCosto').value) || 0; const desc = +($('#desc') && $('#desc').value) || 0; const base = Math.max(0, sub + env - desc); const iva = $('#facV') && $('#facV').checked ? Math.round(base * 0.16) : 0; return { sub, env, desc, iva, total: base + iva }; };
     const m = modal(lead ? 'Registrar venta de ' + esc(lead.nombre || lead.tel) : 'Nuevo pedido', `
@@ -238,9 +280,9 @@
         <div class="field"><label>Cliente</label><input class="input" id="cNombre" value="${esc(lead ? lead.nombre : '')}" placeholder="Nombre completo"></div>
         <div class="field"><label>WhatsApp (10 dígitos)</label><input class="input" id="cTel" inputmode="tel" value="${esc(lead ? lead.tel : '')}"></div>
         <div class="field"><label>Correo (opcional)</label><input class="input" id="cEmail" type="email"></div>
-        <div class="field"><label>¿Dónde compró?</label><select class="input" id="origen">${opts(Object.entries(ORIGEN), lead ? (lead.origen === 'sitio' ? 'whatsapp' : lead.origen) : 'sucursal')}</select></div>
+        <div class="field"><label>¿Dónde compró?</label><select class="input" id="origen">${opts(origenes, lead ? (ORIGEN_ADMIN.includes(lead.origen) && !admin() ? 'whatsapp' : lead.origen === 'sitio' ? 'whatsapp' : lead.origen) : 'sucursal')}</select></div>
         <div class="field"><label>Sucursal</label>${S.sucursales.length ? `<select class="input" id="suc">${opts(S.sucursales, S.yo.sucursal || S.sucursales[0], 'Sin sucursal')}</select>` : `<input class="input" id="suc" value="${esc(S.yo.sucursal || '')}" placeholder="Opcional">`}</div>
-        ${admin() ? `<div class="field"><label>Vendedor</label><select class="input" id="vend">${opts(S.usuarios.filter(u => u.activo).map(u => [u.id, u.nombre]), lead && lead.vendedorId ? lead.vendedorId : S.yo.id)}</select></div>` : ''}
+        ${admin() ? `<div class="field"><label>Vendedor (a quién se le asigna)</label><select class="input" id="vend">${opts(vendedoresOpts(), lead && lead.vendedorId ? lead.vendedorId : S.yo.id)}</select><span class="note">Para ventas de Mercado Libre, elige el vendedor que la va a atender.</span></div>` : ''}
       </div>
       <div class="field"><label>Artículos</label><div class="lineas" id="lineas"></div><button type="button" class="btn sm" id="addL" style="margin-top:8px">+ Agregar artículo</button></div>
       <div class="fields">
@@ -281,6 +323,7 @@
       const tel = $('#cTel').value.replace(/\D/g, '');
       if ($('#cNombre').value.trim().length < 2) return toast('Escribe el nombre del cliente');
       if (tel.length !== 10) return toast('El WhatsApp debe tener 10 dígitos');
+      if (lineas.some(l => !l.id && (String(l.nombre || '').trim().length < 2 || !(+l.unit > 0)))) return toast('Escribe el modelo y el precio del artículo que no está en la lista');
       if ($('#envTipo').value === 'domicilio' && $('#envDir').value.trim().length < 5) return toast('Escribe la dirección de entrega');
       if ($('#facV').checked && ($('#facR').value.trim().length < 2 || $('#facRfc').value.trim().length < 12)) return toast('Escribe razón social y RFC para la factura');
       try {
@@ -308,7 +351,7 @@
       $('#dv').innerHTML = `
         <div class="two">
           <div>
-            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px">${badge(vv.estado)}<span class="badge origen">${ORIGEN[vv.origen] || vv.origen}</span><span class="note">${fecha(vv.creado)}${vv.sucursal ? ' · ' + esc(vv.sucursal) : ''} · ${esc(nombreU(vv.vendedorId))}</span></div>
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px">${badge(vv.estado)}<span class="badge origen">${ORIGEN[vv.origen] || vv.origen}</span><span class="note">${fecha(vv.creado)}${vv.sucursal ? ' · ' + esc(vv.sucursal) : ''} · Vendedor: ${esc(nombreU(vv.vendedorId))}${admin() ? ' · Alta: ' + esc(altaDe(vv)) : ''}</span></div>
             <div class="box" style="padding:14px 16px;margin-bottom:12px"><b>${esc(vv.cliente.nombre)}</b> <span class="note">${vv.cliente.tel}${vv.cliente.email ? ' · ' + esc(vv.cliente.email) : ''}</span><div class="note" style="margin-top:4px">${vv.envio.tipo === 'domicilio' ? 'Envío a ' + esc(vv.envio.direccion || '') + ' · ' + esc(vv.envio.estado) : 'Recoger en bodega'}${vv.factura ? ' · Factura: ' + esc(vv.factura.razon) + ' ' + esc(vv.factura.rfc) : ''}</div>${vv.notas ? `<div class="note" style="margin-top:4px">Notas: ${esc(vv.notas)}</div>` : ''}</div>
             <table class="table"><tbody>${vv.lineas.map(l => `<tr><td>${l.qty} × ${esc(l.nombre)}${l.colorNombre ? `<small>Color ${esc(l.colorNombre)}</small>` : ''}</td><td class="num">${fmt(l.unit * l.qty)}</td></tr>`).join('')}</tbody></table>
             <div class="totales"><div><span>Subtotal</span><span>${fmt(vv.sub)}</span></div><div><span>Envío</span><span>${vv.costoEnvio ? fmt(vv.costoEnvio) : 'Gratis'}</span></div>${vv.descuento ? `<div><span>Descuento</span><span>−${fmt(vv.descuento)}</span></div>` : ''}${vv.iva ? `<div><span>IVA 16 % (factura)</span><span>${fmt(vv.iva)}</span></div>` : ''}<div class="t"><span>Total</span><span>${fmt(vv.total)}</span></div></div>
@@ -321,11 +364,12 @@
               <div style="display:grid;gap:8px;margin-top:10px"><button class="btn sm" id="guardaSeg">Guardar fecha y nota</button><button class="btn gold sm" id="enviarEstado">Enviar estado al cliente</button></div>
             </div>
             <div class="box" style="padding:14px 16px"><h2 style="font-size:14px">Pagos</h2>
-              <div class="pagos">${(vv.pagos || []).map(p => `<div><span>${fecha(p.cuando)}<br><small>${esc(p.metodo)}${p.ref ? ' · ' + esc(p.ref) : ''} · ${esc(p.quien || '')}</small></span><span class="num"><b>${fmt(p.monto)}</b>${admin() ? ` <button class="x" data-qp="${p.id}" title="Quitar" style="border:none;background:none;cursor:pointer;color:var(--muted)">×</button>` : ''}</span></div>`).join('') || '<div class="note">Sin pagos todavía.</div>'}</div>
+              <div class="pagos">${(vv.pagos || []).map(p => `<div><span>${fecha(p.cuando)}<br><small>${esc(METODO_N[p.metodo] || p.metodo)}${p.ref ? ' · ' + esc(p.ref) : ''} · ${esc(p.quien || '')}</small></span><span class="num"><b>${fmt(p.monto)}</b>${admin() ? ` <button class="x" data-qp="${p.id}" title="Quitar" style="border:none;background:none;cursor:pointer;color:var(--muted)">×</button>` : ''}</span></div>`).join('') || '<div class="note">Sin pagos todavía.</div>'}</div>
               <div class="saldo"><span>${saldo(vv) > 0 ? 'Saldo por cobrar' : 'Pagado completo'}</span><b>${saldo(vv) > 0 ? fmt(saldo(vv)) : fmt(pagado(vv))}</b></div>
               ${saldo(vv) > 0 && vv.estado !== 'cancelado' ? `<div class="fields" style="margin-top:12px"><div class="field"><label>Registrar pago</label><input class="input" id="abMonto" type="number" min="1" placeholder="${saldo(vv)}"></div><div class="field"><label>Método</label><select class="input" id="abMet">${opts(METODOS, 'efectivo')}</select></div><div class="field full"><input class="input" id="abRef" placeholder="Referencia o nota (opcional)"></div></div><button class="btn primary sm" id="abonar" style="width:100%">Guardar pago</button>${S.ajustes.mpConfigurado ? `<button class="btn sm" id="mpLink" style="width:100%;margin-top:8px">Enlace de pago Mercado Pago</button>` : ''}` : ''}
             </div>
-            <div class="box" style="padding:14px 16px;margin-top:12px"><h2 style="font-size:14px">Estado del pago</h2><select class="input" id="estV">${opts(Object.entries(ESTADO_V), vv.estado)}</select>
+            <div class="box" style="padding:14px 16px;margin-top:12px"><h2 style="font-size:14px">Estado del pago</h2>${admin() ? `<select class="input" id="estV">${opts(Object.entries(ESTADO_V), vv.estado)}</select>
+              <div class="field" style="margin-top:10px"><label>Vendedor asignado</label><select class="input" id="asigV">${opts(S.usuarios.filter(u => u.activo || u.id === vv.vendedorId).sort((a, b) => (a.rol === 'admin') - (b.rol === 'admin') || a.nombre.localeCompare(b.nombre)).map(u => [u.id, u.nombre + (u.rol === 'admin' ? ' (admin)' : '')]), vv.vendedorId, 'Sin vendedor')}</select></div>` : `<div>${badge(vv.estado)}</div><p class="note" style="margin:6px 0 0">Se actualiza solo al registrar pagos.</p>`}
               <div style="display:grid;gap:8px;margin-top:12px"><a class="btn ink sm" style="background:var(--ink);color:var(--ink-fg)" href="${ticketUrl(folio, k)}" target="_blank" rel="noopener">Ver / imprimir ticket</a>${vv.cliente.tel ? `<a class="btn wa sm" href="${waLink(vv.cliente.tel, waTicket)}" target="_blank" rel="noopener">Mandar ticket por WhatsApp</a>` : ''}<button class="btn sm" id="editV">Editar datos del cliente</button><button class="btn sm" id="notaV">Agregar nota</button>${admin() ? '<button class="btn sm" id="elimV" style="color:#b4322b;border-color:#e7b9b4">Eliminar pedido (prueba)</button>' : ''}</div>
             </div>
           </div>
@@ -336,7 +380,8 @@
       $$('[data-et]').forEach(b => b.onclick = async () => { try { await guardarSeg({ etapa: b.dataset.et, fechaEntrega: $('#feEnt').value, notaCliente: $('#notaCli').value }); toast('Pedido: ' + ETAPA_V[b.dataset.et]); enviarEstado(folio, k); } catch (e) { toast(e.message); } });
       $('#guardaSeg').onclick = async () => { try { await guardarSeg({ fechaEntrega: $('#feEnt').value, notaCliente: $('#notaCli').value }); toast('Guardado'); } catch (e) { toast(e.message); } };
       $('#enviarEstado').onclick = async () => { try { await guardarSeg({ fechaEntrega: $('#feEnt').value, notaCliente: $('#notaCli').value }); } catch (e) {} enviarEstado(folio, k); };
-      $('#estV').onchange = async () => { try { await api('/api/datos?c=ventas', { accion: 'estado', folio, estado: $('#estV').value }); toast('Estado actualizado'); await cargar(); pintar(); } catch (e) { toast(e.message); } };
+      const est = $('#estV'); if (est) est.onchange = async () => { try { await api('/api/datos?c=ventas', { accion: 'estado', folio, estado: est.value }); toast('Estado actualizado'); await cargar(); pintar(); } catch (e) { toast(e.message); } };
+      const asg = $('#asigV'); if (asg) asg.onchange = async () => { try { await api('/api/datos?c=ventas', { accion: 'editar', folio, vendedorId: asg.value }); toast('Venta asignada a ' + nombreU(asg.value)); await cargar(); pintar(); } catch (e) { toast(e.message); } };
       const mpb = $('#mpLink'); if (mpb) mpb.onclick = async () => { try { const r = await api('/api/mp', { accion: 'enlace', folio }); await navigator.clipboard.writeText(r.url).catch(() => {}); toast('Enlace de pago copiado'); window.open(r.url, '_blank'); } catch (e) { toast(e.message); } };
       $('#editV').onclick = () => { const vv2 = S.ventas.find(x => x.folio === folio); const m2 = modal('Editar venta ' + folio, `<div class="fields"><div class="field"><label>Nombre</label><input class="input" id="eN" value="${esc(vv2.cliente.nombre)}"></div><div class="field"><label>WhatsApp</label><input class="input" id="eT" value="${vv2.cliente.tel}"></div><div class="field"><label>Correo</label><input class="input" id="eE" value="${esc(vv2.cliente.email || '')}"></div><div class="field"><label>Sucursal</label><input class="input" id="eS" value="${esc(vv2.sucursal || '')}"></div>${admin() ? `<div class="field"><label>Vendedor</label><select class="input" id="eV">${opts(S.usuarios.map(u => [u.id, u.nombre]), vv2.vendedorId, 'Sin vendedor')}</select></div>` : ''}<div class="field full"><label>Dirección de entrega</label><input class="input" id="eD" value="${esc(vv2.envio.direccion || '')}"></div><div class="field full"><label>Notas</label><input class="input" id="eNo" value="${esc(vv2.notas || '')}"></div></div>`, `<button class="btn primary sm" id="okE">Guardar</button>`);
         $('#okE').onclick = async () => { try { await api('/api/datos?c=ventas', { accion: 'editar', folio, cliente: { nombre: $('#eN').value, tel: $('#eT').value, email: $('#eE').value }, sucursal: $('#eS').value, vendedorId: $('#eV') ? $('#eV').value : undefined, envio: { tipo: vv2.envio.tipo, estado: vv2.envio.estado, direccion: $('#eD').value }, notas: $('#eNo').value }); m2.cerrar(); await cargar(); detalleVenta(folio, k); } catch (e) { toast(e.message); } }; };
@@ -391,7 +436,7 @@
         <span class="note">${lista.length} pedido${lista.length === 1 ? '' : 's'} · ${fmt(lista.reduce((s, v) => s + v.total, 0))}</span>
       </div>
       <div class="table-wrap">${lista.length ? `<table class="table"><thead><tr><th>Folio</th><th>Cliente</th><th>Artículos</th><th>Origen</th>${admin() ? '<th>Vendedor</th>' : ''}<th class="num">Total</th><th></th></tr></thead><tbody>
-        ${lista.map(v => `<tr data-sp="${v.folio}"><td><b>${v.folio}</b><small>${hace(v.creado)}</small></td><td>${esc(v.cliente.nombre)}<small>${v.cliente.tel}</small></td><td>${v.lineas.map(l => `${l.qty} × ${esc(l.nombre)}${l.colorNombre ? ' · ' + esc(l.colorNombre) : ''}`).join('<br>')}</td><td><span class="badge origen">${ORIGEN[v.origen] || v.origen}</span></td>${admin() ? `<td>${esc(nombreU(v.vendedorId))}</td>` : ''}<td class="num">${fmt(v.total)}</td>
+        ${lista.map(v => `<tr data-sp="${v.folio}"><td><b>${v.folio}</b><small>${hace(v.creado)}</small></td><td>${esc(v.cliente.nombre)}<small>${v.cliente.tel}</small></td><td>${v.lineas.map(l => `${l.qty} × ${esc(l.nombre)}${l.colorNombre ? ' · ' + esc(l.colorNombre) : ''}`).join('<br>')}</td><td><span class="badge origen">${ORIGEN[v.origen] || v.origen}</span></td>${admin() ? celdaVend(v) : ''}<td class="num">${fmt(v.total)}</td>
           <td><div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end">${v.cliente.tel ? `<a class="btn wa sm" target="_blank" rel="noopener" href="${waLink(v.cliente.tel, msg(v))}">Escribirle</a>` : ''}<button class="btn sm" data-ver="${v.folio}">Ver / cobrar</button>${f.desc ? `<button class="btn sm" data-rec="${v.folio}">Recuperar</button>` : `<button class="btn sm" data-desc="${v.folio}">Descartar</button>`}</div></td></tr>`).join('')}
       </tbody></table>` : `<div class="empty">${f.desc ? 'No hay pedidos descartados.' : 'No hay pedidos sin pago. 🎉'}</div>`}</div>`,
       'Sin pago', 'Pedidos que aún no pagan. No cuentan en ventas; en cuanto registras un pago pasan a Ventas.',
@@ -441,7 +486,7 @@
         <div class="field"><label>Nombre</label><input class="input" id="lN" placeholder="Como aparece en WhatsApp"></div>
         <div class="field"><label>WhatsApp (10 dígitos)</label><input class="input" id="lT" inputmode="tel"></div>
         <div class="field"><label>¿Qué le interesa?</label><input class="input" id="lP" list="prods" placeholder="Sala Tokio, comedor…"><datalist id="prods">${S.catalogo.productos.map(p => `<option value="${esc(p.nombre)}">`).join('')}</datalist></div>
-        <div class="field"><label>Origen</label><select class="input" id="lO">${opts(Object.entries(ORIGEN).filter(([k]) => k !== 'sitio' && k !== 'mercado-pago'), 'whatsapp')}</select></div>
+        <div class="field"><label>Origen</label><select class="input" id="lO">${opts(Object.entries(ORIGEN).filter(([k]) => k !== 'sitio' && k !== 'mercado-pago' && (admin() || k !== 'mercado-libre')), 'whatsapp')}</select></div>
         ${S.sucursales.length ? `<div class="field"><label>Sucursal</label><select class="input" id="lS">${opts(S.sucursales, S.yo.sucursal, 'Sin sucursal')}</select></div>` : ''}
         ${admin() ? `<div class="field"><label>Asignar a</label><select class="input" id="lV">${opts([['', 'Al azar parejo entre vendedores activos']].concat(S.usuarios.filter(u => u.activo).map(u => [u.id, u.nombre])), '')}</select></div>` : `<div class="field" style="display:flex;align-items:end"><label class="chk"><input type="checkbox" id="lMio"> Es un cliente que yo traje (me lo quedo)</label></div>`}
         <div class="field full"><label>Mensaje o nota</label><input class="input" id="lM" placeholder="Lo que preguntó"></div>
@@ -497,7 +542,7 @@
           ${lista.map(u => { const c = cuenta(u); return `<tr><td><b>${esc(u.nombre)}</b><small>${u.rol === 'admin' ? 'Administrador' : 'Vendedor'}${!u.activo ? ' · <b style="color:#b4322b">desactivado</b>' : u.rol === 'vendedor' && u.recibeLeads === false ? ' · no recibe leads' : ''}${u.cambiarClave ? ' · debe cambiar contraseña' : ''}${!compartido() && u.whatsapp ? ' · WA ' + u.whatsapp : ''}</small></td><td>${esc(u.usuario)}</td><td>${esc(u.sucursal || '—')}</td><td>${c.abiertos}</td><td>${c.semana}</td><td class="num">${fmt(c.ventas)}</td><td style="white-space:nowrap"><button class="btn sm" data-edit="${u.id}">Editar</button> <button class="btn sm" data-clave="${u.id}">Contraseña</button></td></tr>`; }).join('')}
         </tbody></table></div>
         <div class="box"><h2>Sucursales</h2><p class="note" style="margin:0 0 10px">Para filtrar ventas y leads por sucursal. Una por línea.</p><textarea class="input" id="sucs" style="min-height:110px">${esc(S.sucursales.join('\n'))}</textarea><button class="btn sm" id="okSucs" style="margin-top:8px">Guardar sucursales</button>
-          <h2 style="margin-top:22px">Cómo se reparten los leads</h2><p class="note">Cada contacto nuevo (del sitio o capturado aquí) se asigna <b>al azar parejo</b>: entre los vendedores activos que reciben leads, le toca a uno de los que llevan menos en la semana. Si el lead trae sucursal y hay vendedores de esa sucursal, se reparte entre ellos.${compartido() ? ' Todos contestan desde el mismo WhatsApp Business del negocio, firmando con su nombre.' : ''}</p></div>
+          <h2 style="margin-top:22px">Cómo se reparten los leads</h2><p class="note">Cada contacto nuevo (del sitio, del WhatsApp o capturado aquí) se asigna <b>al azar parejo solo entre los vendedores</b> activos que reciben leads (a los administradores no les llegan): le toca a uno de los que llevan menos en la semana. Si solo hay un vendedor, le llegan todos. Si el lead trae sucursal y hay vendedores de esa sucursal, se reparte entre ellos.${compartido() ? ' Todos contestan desde el mismo WhatsApp Business del negocio, firmando con su nombre.' : ''}</p></div>
       </div>`, 'Usuarios', 'Agrega a tu equipo, asígnales contraseña y decide quién recibe leads. Cada quien ve solo sus leads y sus ventas.', `<button class="btn gold sm" id="nuevoU">+ Agregar usuario</button>`);
     $('#nuevoU').onclick = () => formUsuario();
     $$('[data-edit]').forEach(b => b.onclick = () => formUsuario(S.usuarios.find(u => u.id === b.dataset.edit)));
@@ -510,7 +555,7 @@
       <div class="fields">
         <div class="field"><label>Nombre</label><input class="input" id="uN" value="${esc(u ? u.nombre : '')}" placeholder="Nombre y apellido"></div>
         <div class="field"><label>Usuario para entrar</label><input class="input" id="uU" value="${esc(u ? u.usuario : '')}" ${u ? 'readonly' : 'placeholder="ej. maria (sin espacios)"'}></div>
-        <div class="field"><label>Rol</label><select class="input" id="uR" ${u && u.id === S.yo.id ? 'disabled' : ''}>${opts([['vendedor', 'Vendedor (ve solo lo suyo)'], ['admin', 'Administrador (ve todo)']], u ? u.rol : 'vendedor')}</select></div>
+        <div class="field"><label>Rol</label><select class="input" id="uR" ${u && u.id === S.yo.id ? 'disabled' : ''}>${opts([['vendedor', 'Vendedor (muebles, sus leads y sus ventas)'], ['admin', 'Administrador (ve todo)']], u ? u.rol : 'vendedor')}</select><span class="note">El vendedor ve el catálogo con precios, registra lo que vende (aunque el modelo no esté en la lista), imprime o manda el ticket, y solo ve sus leads y sus ventas.</span></div>
         <div class="field"><label>Sucursal</label>${S.sucursales.length ? `<select class="input" id="uS">${opts(S.sucursales, u ? u.sucursal : '', 'Sin sucursal')}</select>` : `<input class="input" id="uS" value="${esc(u ? u.sucursal : '')}" placeholder="Opcional">`}</div>
         ${compartido() ? `<input type="hidden" id="uW" value="${u ? u.whatsapp || '' : ''}">` : `<div class="field"><label>WhatsApp propio (10 dígitos)</label><input class="input" id="uW" inputmode="tel" value="${u ? u.whatsapp || '' : ''}"><span class="note">A este número llegan los clientes del sitio que le toquen.</span></div>`}
         <div class="field" style="display:flex;flex-direction:column;justify-content:end;gap:8px"><label class="chk"><input type="checkbox" id="uL" ${!u || u.recibeLeads !== false ? 'checked' : ''}> Recibe leads del reparto</label>${u && u.id !== S.yo.id ? `<label class="chk"><input type="checkbox" id="uA" ${u.activo ? 'checked' : ''}> Cuenta activa (si la quitas, ya no puede entrar)</label>` : ''}</div>
@@ -595,7 +640,7 @@
   }
   function vistaCuenta() {
     shell(`<div class="box" style="max-width:520px"><h2>${esc(S.yo.nombre)}</h2><p class="note">Usuario <b>${esc(S.yo.usuario)}</b>${S.yo.sucursal ? ' · ' + esc(S.yo.sucursal) : ''}${S.yo.whatsapp ? ' · WhatsApp ' + S.yo.whatsapp : ''}</p><button class="btn sm" id="clave" style="margin-top:10px">Cambiar mi contraseña</button>
-      <h2 style="margin-top:22px">Cómo trabajar</h2><ol style="font-size:13.5px;padding-left:18px;line-height:1.6;margin:0"><li>Abre el WhatsApp Business del negocio en tu compu o celular como <b>dispositivo vinculado</b> (en el teléfono del negocio: WhatsApp → Dispositivos vinculados → Vincular). Activa los avisos en <b>Hoy</b>.</li><li>En <b>Mis leads</b> ves los contactos que te tocaron. Escríbeles con el botón de WhatsApp y firma con tu nombre; si llega un chat nuevo, captúralo arriba.</li><li>Marca el estado de cada uno: contactado, sin respuesta, cotizado, compró o no compró, y deja una nota.</li><li>Si compra, pulsa <b>Registrar venta</b>: el sistema genera el folio y el ticket para mandárselo.</li><li>En <b>Mis ventas</b> registras los pagos que vayan haciendo y ves el saldo.</li></ol></div>`, 'Mi cuenta');
+      <h2 style="margin-top:22px">Cómo trabajar</h2><ol style="font-size:13.5px;padding-left:18px;line-height:1.6;margin:0"><li>Abre el WhatsApp Business del negocio en tu compu o celular como <b>dispositivo vinculado</b> (en el teléfono del negocio: WhatsApp → Dispositivos vinculados → Vincular). Activa los avisos en <b>Hoy</b>.</li><li>En <b>Mis leads</b> ves los contactos que te tocaron. Escríbeles con el botón de WhatsApp y firma con tu nombre; si llega un chat nuevo, captúralo arriba.</li><li>Marca el estado de cada uno: contactado, sin respuesta, cotizado, compró o no compró, y deja una nota.</li><li>Si compra, pulsa <b>Registrar venta</b>: el sistema genera el folio y el ticket para mandárselo.</li><li><b>¿Vendiste en tienda?</b> En <b>Muebles</b> pulsa «Registrar venta» en el modelo. Si el modelo no está en la lista, elige «Modelo que no está en la lista» y escribe el modelo y el precio que cobraste.</li><li>Al guardar puedes <b>imprimir el ticket</b> o <b>mandarle el estado del pedido</b> al cliente por WhatsApp.</li><li>En <b>Mis ventas</b> registras los pagos que vayan haciendo y ves el saldo. Las ventas de Mercado Libre que te asigne el administrador también aparecen ahí.</li></ol></div>`, 'Mi cuenta');
     $('#clave').onclick = () => pedirClave(false);
   }
 
@@ -808,7 +853,7 @@
     const r = ruta();
     // Si se sale de WhatsApp, para los timers
     if (r !== 'whatsapp') waStop();
-    const vistas = { hoy: vistaHoy, ventas: vistaVentas, sinpago: vistaSinPago, leads: vistaLeads, whatsapp: vistaWhatsApp, vendedores: admin() ? vistaVendedores : vistaHoy, ajustes: admin() ? vistaAjustes : vistaCuenta, cuenta: vistaCuenta };
+    const vistas = { hoy: vistaHoy, muebles: vistaMuebles, ventas: vistaVentas, sinpago: vistaSinPago, leads: vistaLeads, whatsapp: vistaWhatsApp, vendedores: admin() ? vistaVendedores : vistaHoy, ajustes: admin() ? vistaAjustes : vistaCuenta, cuenta: vistaCuenta };
     // La primera vez que se entra a WhatsApp, cargar en segundo plano y re-pintar
     if (r === 'whatsapp' && !S.wa._cargado) { S.wa._cargado = true; waCargarChats().then(() => { if (ruta() === 'whatsapp') vistaWhatsApp(); }); waSync(); }
     (vistas[r] || vistaHoy)();
