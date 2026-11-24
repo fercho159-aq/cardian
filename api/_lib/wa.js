@@ -77,6 +77,29 @@ async function enviar(jid, texto) {
   return llamar(`/api/accounts/${encodeURIComponent(ACCOUNT)}/send`, { method: 'POST', body: { jid, text: body.slice(0, 4000) } });
 }
 
+// Adjuntos (documentos, fotos, videos). Dos caminos:
+// 1) Boleto de un solo uso: el navegador sube el archivo directo al servidor WA (sin el límite de 4.5 MB de Vercel).
+//    Requiere que el servidor WA tenga el dominio del sistema en ALLOWED_ORIGINS (CORS).
+// 2) Respaldo: el archivo pasa por la función de Vercel y de ahí a /send-media (máx. ~4 MB).
+async function boletoSubida(jid) {
+  if (!jid) throw new Error('Falta jid');
+  const r = await llamar(`/api/accounts/${encodeURIComponent(ACCOUNT)}/upload-grant`, { method: 'POST', body: { jid } });
+  return { url: URL_ + '/api/upload/' + encodeURIComponent(r.token), expira: r.expires_in };
+}
+async function enviarArchivo(jid, { buffer, mimetype, nombre, caption }) {
+  if (!waEnabled) sinConfig();
+  const fd = new FormData();
+  fd.append('jid', jid);
+  if (caption) fd.append('caption', String(caption).slice(0, 4000));
+  fd.append('file', new Blob([buffer], { type: mimetype || 'application/octet-stream' }), nombre || 'archivo');
+  const r = await fetch(URL_ + `/api/accounts/${encodeURIComponent(ACCOUNT)}/send-media`, {
+    method: 'POST', headers: { 'X-Service-Token': TOKEN, 'X-Act-As': ACT_AS }, body: fd, signal: AbortSignal.timeout(25000), cache: 'no-store',
+  });
+  const txt = await r.text(); let j; try { j = txt ? JSON.parse(txt) : null; } catch (e) { j = txt; }
+  if (!r.ok) throw new Error('WA ' + r.status + ': ' + ((j && j.error) || 'no se pudo enviar el archivo'));
+  return j;
+}
+
 // URL pública del avatar (la pintamos desde el navegador; el servidor sirve PNG/JPG).
 function avatarUrl(jid) { return `${URL_}/api/accounts/${encodeURIComponent(ACCOUNT)}/avatar/${encodeURIComponent(jid)}`; }
 
@@ -97,4 +120,4 @@ function jidDeTel(tel10) {
   return '52' + d + '@s.whatsapp.net';
 }
 
-module.exports = { waEnabled, cuentas, miCuenta, chats, mensajes, enviar, avatarUrl, telDeJid, jidDeTel, ACCOUNT, ACT_AS, URL_ };
+module.exports = { waEnabled, cuentas, miCuenta, chats, mensajes, enviar, boletoSubida, enviarArchivo, avatarUrl, telDeJid, jidDeTel, ACCOUNT, ACT_AS, URL_ };

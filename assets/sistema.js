@@ -666,6 +666,27 @@
       return r;
     } catch (e) { toast(e.message); throw e; }
   }
+  // Manda un archivo: primero directo al servidor de WhatsApp con un boleto de un solo uso (sin límite de Vercel);
+  // si el navegador no puede llegar ahí (CORS), lo pasa por /api/wa-archivo (máx. 4 MB).
+  // Antes de subir directo se prueba CORS con un OPTIONS: si el servidor no lo permite, el navegador lo corta sin
+  // mandar nada, y así nunca se manda el archivo dos veces (un POST sin CORS sí llegaría aunque no se pueda leer la respuesta).
+  async function waEnviarArchivo(jid, file, pie) {
+    let g = null;
+    try { g = await api('/api/wa-archivo?accion=boleto', { jid }); await fetch(g.url, { method: 'OPTIONS' }); }
+    catch (e) { g = null; }
+    if (g) {
+      const fd = new FormData(); if (pie) fd.append('caption', pie); fd.append('file', file, file.name);
+      const r = await fetch(g.url, { method: 'POST', body: fd });
+      if (!r.ok) { const j = await r.json().catch(() => ({})); throw new Error('WhatsApp no aceptó el archivo: ' + (j.error || 'error ' + r.status)); }
+      api('/api/wa-archivo?accion=registro', { jid, nombre: file.name }).catch(() => {});
+      return;
+    }
+    if (file.size > 4 * 1048576) throw new Error('El archivo pesa más de 4 MB. Mándalo más ligero o desde el WhatsApp del negocio.');
+    const qs = new URLSearchParams({ accion: 'enviar', jid, nombre: file.name, tipo: file.type || 'application/octet-stream', caption: pie || '' });
+    const r = await fetch('/api/wa-archivo?' + qs, { method: 'POST', headers: { 'Content-Type': 'application/octet-stream' }, body: file });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(j.error || 'No se pudo enviar el archivo');
+  }
   async function waSync() {
     try { await api('/api/wa-sync', {}); await cargar(); } catch (e) { /* throttled o VPS caído */ }
   }
@@ -732,7 +753,8 @@
         const quien = m.fromMe ? 'me' : '';
         const st = m.status ? ` data-st="${esc(m.status)}"` : '';
         const sender = (!m.fromMe && m.remitente) ? `<span class="sender">${esc(m.remitente)}</span>` : '';
-        const txt = esc(m.texto || (m.tipo ? '[' + m.tipo + ']' : ''));
+        const TIPO_M = { image: '📷 Foto', video: '🎬 Video', audio: '🎤 Audio', voice: '🎤 Nota de voz', document: '📄 Documento', sticker: 'Sticker' };
+        const txt = (m.tipo ? '<span class="tipo">' + esc(TIPO_M[m.tipo] || m.tipo) + '</span>' + (m.texto ? '<br>' : '') : '') + esc(m.texto || '');
         hilo += `<div class="wa-msg ${quien}"${st}>${sender}${txt}<span class="meta">${m.hora ? new Date(m.hora * 1000).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }) : ''}</span></div>`;
       });
       if (!hilo) hilo = `<div class="wa-msgs-vacio">Sin mensajes en este chat</div>`;
@@ -749,7 +771,7 @@
           <div class="acciones">${estadoSel}${asignarSel}${crearLeadBtn}${lead ? `<a class="btn sm" href="#/leads" data-ver-lead="${lead.id}" title="Abrir ficha del lead">Ficha</a>` : ''}</div>
         </div>
         <div class="wa-msgs" id="waMsgs">${hilo}</div>
-        <form class="wa-input" id="waForm"><textarea id="waTxt" rows="1" placeholder="Escribe un mensaje…" ${estado !== 'connected' ? 'disabled title="La cuenta de WhatsApp no está conectada"' : ''}></textarea><button class="btn wa" type="submit" ${estado !== 'connected' ? 'disabled' : ''}>Enviar</button></form>
+        <form class="wa-input" id="waForm"><input type="file" id="waFile" hidden accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.zip,image/*,video/*,audio/*"><button type="button" class="btn wa-clip" id="waClip" title="Adjuntar documento, foto o video" ${estado !== 'connected' ? 'disabled' : ''}>📎</button><textarea id="waTxt" rows="1" placeholder="Escribe un mensaje…" ${estado !== 'connected' ? 'disabled title="La cuenta de WhatsApp no está conectada"' : ''}></textarea><button class="btn wa" type="submit" ${estado !== 'connected' ? 'disabled' : ''}>Enviar</button></form>
       </div>`;
     }
 
@@ -816,6 +838,21 @@
         ta.disabled = false; ta.focus();
         vistaWhatsApp();
       };
+      // Adjuntar: el texto escrito en la caja va como pie del archivo.
+      const clip = $('#waClip'), fi = $('#waFile');
+      if (clip && fi) {
+        clip.onclick = () => fi.click();
+        fi.onchange = async () => {
+          const file = fi.files[0]; fi.value = ''; if (!file || !S.wa.activo) return;
+          const pie = ta.value.trim();
+          if (!confirm(`¿Mandar «${file.name}» (${(file.size / 1048576).toFixed(1)} MB)${pie ? ' con el texto escrito como pie' : ''}?`)) return;
+          clip.disabled = true; toast('Enviando ' + file.name + '…');
+          try { await waEnviarArchivo(S.wa.activo, file, pie); ta.value = ''; toast('Archivo enviado'); }
+          catch (x) { toast(x.message); }
+          clip.disabled = false;
+          await Promise.all([waCargarMensajes(S.wa.activo), waCargarChats()]); vistaWhatsApp();
+        };
+      }
     }
 
     // Estado del lead y reasignar

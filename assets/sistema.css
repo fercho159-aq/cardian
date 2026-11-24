@@ -150,6 +150,9 @@ body.sys{background:var(--bg);color:var(--fg);font-family:var(--font);margin:0;m
 
 /* ───────── Bandeja de WhatsApp (estilo WhatsApp Web) ───────── */
 .wa-wrap{display:grid;grid-template-columns:360px 1fr;gap:0;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--surface);height:calc(100vh - 170px);min-height:520px}
+/* la fila del panel no crece con la lista de chats: así la lista y los mensajes hacen scroll y la caja para escribir queda visible */
+.wa-wrap{grid-template-rows:minmax(0,1fr)}
+.wa-side,.wa-chat,.wa-list,.wa-msgs{min-height:0}
 .wa-side{display:flex;flex-direction:column;border-right:1px solid var(--line);background:var(--surface);min-width:0}
 .wa-head{background:#128c7e;color:#fff;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;flex:none}
 .wa-head h2{margin:0;font-size:16px;font-weight:600}
@@ -260,3 +263,7 @@ body.sys{background:var(--bg);color:var(--fg);font-family:var(--font);margin:0;m
 .mueble .tapiz{display:flex;gap:5px;flex-wrap:wrap}
 .mueble .tapiz i{width:16px;height:16px;border-radius:50%;border:1px solid rgba(0,0,0,.15);display:block}
 .mueble .acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:auto;padding-top:8px}
+
+/* Adjuntar en la bandeja de WhatsApp */
+.wa-input .wa-clip{min-width:44px;width:44px;padding:0;font-size:18px;background:#fff;border:1px solid #e9edef}
+.wa-msg .tipo{font-weight:600;color:#54656f;font-size:13px}
