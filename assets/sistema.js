@@ -224,7 +224,7 @@
         </div></article>`).join('') : '<div class="empty">No hay modelos con esa búsqueda.</div>'}</div>
       ${extras.length ? `<h2 style="font-size:15px;margin:26px 0 10px">Modelos agregados por el equipo</h2><p class="note" style="margin:-4px 0 12px">Modelos que no estaban en el catálogo y alguien vendió en tienda. Solo existen dentro del sistema (no se publican en la página web) y quedan aquí para la próxima venta${admin() ? '; tú puedes cambiar su precio o quitarlos' : ''}.</p>
       <div class="table-wrap"><table class="table"><thead><tr><th>Modelo</th><th>Agregado por</th><th class="num">Precio</th><th></th></tr></thead><tbody>${extras.map(e => `<tr><td><b>${esc(e.nombre)}</b></td><td>${esc(e.creadoNombre || '—')}<small>${dia(e.creado)}</small></td><td class="num">${fmt(e.precio)}</td><td style="white-space:nowrap;text-align:right"><button class="btn gold sm" data-vender="${e.id}">Registrar venta</button>${admin() ? ` <button class="btn sm" data-mxp="${e.id}">Precio</button> <button class="btn sm" data-mxq="${e.id}">Quitar</button>` : ''}</td></tr>`).join('')}</tbody></table></div>` : ''}`,
-      'Muebles', 'Modelos y precios de lista para atender y vender. Si vendiste algo que no está aquí, regístralo con «Modelo que no está en la lista».',
+      'Muebles.', 'Modelos y precios de lista para atender y vender. Si vendiste algo que no está aquí, regístralo con «Modelo que no está en la lista».',
       `<button class="btn gold sm" id="nuevaVenta">+ Registrar venta</button>`);
     enlazarComunes();
     $('#mq').oninput = () => { f.q = $('#mq').value; vistaMuebles(); const i = $('#mq'); i.focus(); i.setSelectionRange(i.value.length, i.value.length); };
