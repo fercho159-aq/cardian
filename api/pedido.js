@@ -28,6 +28,7 @@ module.exports = seguro(async (req, res) => {
   v.pagoElegido = 'mp';
   await store.actualizar('ventas', l => { l.unshift(v); });
   const out = { folio, k: M.llaveTicket(folio), total: v.total };
+  await require('./_lib/bitacora').anotar('Página web', 'Venta', 'Pedido ' + folio + ' de ' + v.cliente.nombre + ' por $' + Math.round(v.total).toLocaleString('es-MX') + ' (aún sin pago) · vendedor: ' + (vend ? vend.nombre : 'nadie'), folio);
   if (v.pagoElegido === 'mp' && MP.configurado()) {
     try { const pref = await MP.crearPreferencia(v, req); out.mpUrl = pref.init_point; await store.actualizar('ventas', l => { const x = l.find(y => y.folio === folio); if (x) x.mp = { preferenciaId: pref.id, creado: new Date().toISOString() }; }); }
     catch (e) { out.mpError = 'No se pudo abrir Mercado Pago: ' + e.message; }

@@ -48,10 +48,11 @@ async function aplicarPago(p) {
   if (!p || p.status !== 'approved') return null;
   const folio = p.external_reference || (p.metadata && p.metadata.folio);
   if (!folio) return null;
-  let afectada = null;
+  let afectada = null, nuevo = false;
   await store.actualizar('ventas', lista => {
     const v = lista.find(x => x.folio === folio); if (!v) return;
     if ((v.pagos || []).some(x => x.mpId === String(p.id))) { afectada = v; return; }
+    nuevo = true;
     v.pagos.push({ id: crypto.randomBytes(4).toString('hex'), mpId: String(p.id), cuando: p.date_approved || p.date_created, monto: Math.round(p.transaction_amount), metodo: 'mercado-pago', ref: (p.payment_method_id || '') + (p.installments > 1 ? ' · ' + p.installments + ' meses' : ''), quien: 'Mercado Pago' });
     v.estado = M.estadoPorPago(v);
     // el correo ya no se pide en el sitio: lo tomamos del pago (Mercado Pago lo pide al pagar)
@@ -60,6 +61,7 @@ async function aplicarPago(p) {
     (v.historial = v.historial || []).push({ cuando: new Date().toISOString(), quien: 'Mercado Pago', que: 'Pago aprobado $' + Math.round(p.transaction_amount).toLocaleString('es-MX') });
     afectada = v;
   });
+  if (nuevo && afectada) await require('./bitacora').anotar('Mercado Pago', 'Venta', 'Pago aprobado de $' + Math.round(p.transaction_amount).toLocaleString('es-MX') + ' en el pedido ' + afectada.folio + ' de ' + ((afectada.cliente || {}).nombre || 'cliente'), afectada.folio);
   return afectada;
 }
 // Valida la firma x-signature del webhook (si hay MP_WEBHOOK_SECRET configurado).

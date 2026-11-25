@@ -8,6 +8,7 @@ const store = require('./_lib/store');
 const wa = require('./_lib/wa');
 const { ok, error, cuerpo, query, seguro, ahora } = require('./_lib/http');
 
+const B = require('./_lib/bitacora');
 const MAX = 4 * 1024 * 1024;
 
 function leerBinario(req) {
@@ -26,7 +27,8 @@ async function permiso(u, jid) {
   return { lead };
 }
 
-async function huella(lead, u, nombre) {
+async function huella(lead, u, nombre, jid) {
+  await B.anotar(u, 'WhatsApp', 'Le mandó el archivo «' + String(nombre || 'archivo').slice(0, 120) + '» a ' + ((lead && (lead.nombre || lead.tel)) || jid || 'un cliente'), jid);
   if (!lead) return;
   await store.actualizar('leads', lista => {
     const L = lista.find(x => x.id === lead.id); if (!L) return;
@@ -52,7 +54,7 @@ module.exports = seguro(async (req, res) => {
     const nombre = String(q.nombre || 'archivo').slice(0, 120);
     try { await wa.enviarArchivo(jid, { buffer, mimetype: String(q.tipo || 'application/octet-stream').slice(0, 100), nombre, caption: q.caption ? String(q.caption).slice(0, 1000) : '' }); }
     catch (e) { return error(res, 502, 'WhatsApp no aceptó el archivo: ' + e.message); }
-    await huella(p.lead, u, nombre);
+    await huella(p.lead, u, nombre, jid);
     return ok(res, { ok: true });
   }
 
@@ -63,6 +65,6 @@ module.exports = seguro(async (req, res) => {
     try { return ok(res, await wa.boletoSubida(jid)); }
     catch (e) { return error(res, 502, 'No se pudo preparar la subida: ' + e.message); }
   }
-  if (q.accion === 'registro') { await huella(p.lead, u, b.nombre); return ok(res, { ok: true }); }
+  if (q.accion === 'registro') { await huella(p.lead, u, b.nombre, jid); return ok(res, { ok: true }); }
   return error(res, 400, 'Acción desconocida');
 });

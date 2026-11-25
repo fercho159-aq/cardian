@@ -122,6 +122,7 @@
     ventas: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16l-1.5 12h-13z"/><path d="M9 7V5a3 3 0 0 1 6 0v2"/></svg>',
     leads: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-5A8 8 0 1 1 21 12z"/></svg>',
     vendedores: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17" cy="9" r="2.5"/><path d="M15.5 14.5a5 5 0 0 1 6 5"/></svg>',
+    bitacora: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4"/><path d="M9 12h7M9 16h7M9 8h3"/></svg>',
     ajustes: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
     sinpago: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
     cuenta: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>',
@@ -138,7 +139,7 @@
     const menu = sup()
       ? [['muebles', 'Muebles'], ['leads', 'Leads', leadsNuevos], ['whatsapp', 'WhatsApp', waNoLeidos], ['cuenta', 'Mi cuenta']]
       : admin()
-      ? [['hoy', 'Hoy'], ['ventas', 'Ventas'], ['sinpago', 'Sin pago', pendientes], ['leads', 'Leads', leadsNuevos], ['whatsapp', 'WhatsApp', waNoLeidos], ['muebles', 'Muebles'], ['vendido', 'Lo vendido'], ['vendedores', 'Usuarios'], ['ajustes', 'Ajustes']]
+      ? [['hoy', 'Hoy'], ['ventas', 'Ventas'], ['sinpago', 'Sin pago', pendientes], ['leads', 'Leads', leadsNuevos], ['whatsapp', 'WhatsApp', waNoLeidos], ['muebles', 'Muebles'], ['vendido', 'Lo vendido'], ['bitacora', 'Bitácora'], ['vendedores', 'Usuarios'], ['ajustes', 'Ajustes']]
       : [['hoy', 'Hoy'], ['muebles', 'Muebles'], ['leads', 'Mis leads', leadsNuevos], ['whatsapp', 'WhatsApp', waNoLeidos], ['ventas', 'Mis ventas'], ['vendido', 'Lo que vendí'], ['sinpago', 'Sin pago', pendientes], ['cuenta', 'Mi cuenta']];
     const r = ruta();
     $('#app').innerHTML = `<div class="shell">
@@ -351,6 +352,46 @@
       if (!confirm('¿Quitar los cambios y dejar «' + p.name + '» como estaba originalmente (precio, textos y fotos)?')) return;
       try { await api('/api/datos?c=tienda', { accion: 'original', id }); m.cerrar(); toast('Producto como estaba originalmente'); await cargar(); render(); } catch (e) { toast(e.message); }
     };
+  }
+
+  // ───────── Bitácora general (solo administrador) ─────────
+  // Todo lo que hace el equipo: mensajes de WhatsApp (quién le escribió a quién), clientes, ventas, pagos,
+  // productos, usuarios y accesos. Se pide aparte de los demás datos porque puede ser larga.
+  const BIT = { lista: [], cuando: 0, cargando: false, f: { tipo: '', quien: '', q: '' } };
+  const BIT_TIPOS = ['WhatsApp', 'Cliente', 'Venta', 'Producto', 'Usuario', 'Acceso', 'Ajustes'];
+  const BIT_CLASE = { WhatsApp: 'pagado', Venta: 'apartado', Cliente: 'recibido', Producto: 'listo', Usuario: 'origen', Acceso: 'origen', Ajustes: 'origen' };
+  async function cargarBitacora() {
+    if (BIT.cargando) return; BIT.cargando = true;
+    try { const d = await api('/api/datos?c=bitacora&n=1000'); BIT.lista = d.bitacora || []; BIT.cuando = Date.now(); } catch (e) { toast(e.message); }
+    BIT.cargando = false;
+    if (ruta() === 'bitacora' && !$('#modal')) { const act = document.activeElement && document.activeElement.id === 'bq'; vistaBitacora(); if (act) { const i = $('#bq'); i.focus(); i.setSelectionRange(i.value.length, i.value.length); } }
+  }
+  function vistaBitacora() {
+    const f = BIT.f;
+    if (Date.now() - BIT.cuando > 25000) cargarBitacora();
+    const nombres = [...new Set(BIT.lista.map(x => x.quien))].sort((a, b) => a.localeCompare(b));
+    const q = f.q.toLowerCase();
+    const lista = BIT.lista.filter(x => (!f.tipo || x.tipo === f.tipo) && (!f.quien || x.quien === f.quien) && (!q || (x.que + ' ' + x.quien + ' ' + (x.ref || '')).toLowerCase().includes(q)));
+    const diaDe = s => new Date(s).toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' });
+    let ultimoDia = '';
+    const filas = lista.slice(0, 400).map(x => {
+      const d = diaDe(x.cuando); const sep = d !== ultimoDia ? `<tr class="bit-dia"><td colspan="4">${esc(d)}</td></tr>` : ''; ultimoDia = d;
+      return sep + `<tr><td style="white-space:nowrap">${new Date(x.cuando).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}</td><td><b>${esc(x.quien)}</b>${x.rol ? `<small>${esc(ROL_N[x.rol] || x.rol)}</small>` : ''}</td><td><span class="badge ${BIT_CLASE[x.tipo] || 'origen'}">${esc(x.tipo)}</span></td><td class="bit-que">${esc(x.que)}</td></tr>`;
+    }).join('');
+    shell(`
+      <div class="filters">
+        <input class="input buscar" id="bq" placeholder="Buscar cliente, folio, texto del mensaje…" value="${esc(f.q)}">
+        <div class="sel-estado">${[['', 'Todo'], ...BIT_TIPOS.map(t => [t, t])].map(([k, t]) => `<button type="button" data-bt="${k}" class="${f.tipo === k ? 'on' : ''}">${t}${k ? ` (${BIT.lista.filter(x => x.tipo === k).length})` : ''}</button>`).join('')}</div>
+        <select class="input" id="bu">${opts(nombres, f.quien, 'Todas las personas')}</select>
+        <span class="note">${lista.length} movimiento${lista.length === 1 ? '' : 's'}${lista.length > 400 ? ' · se muestran los 400 más recientes' : ''}</span>
+      </div>
+      <div class="table-wrap">${filas ? `<table class="table bit"><thead><tr><th>Hora</th><th>Quién</th><th>Tipo</th><th>Qué hizo</th></tr></thead><tbody>${filas}</tbody></table>` : `<div class="empty">${BIT.cuando ? (BIT.lista.length ? 'Nada coincide con esos filtros.' : 'Todavía no hay movimientos. La bitácora empieza a llenarse desde hoy con lo que haga el equipo.') : 'Cargando la bitácora…'}</div>`}</div>`,
+      'Bitácora', 'Todo lo que hace el equipo: quién le escribe a qué cliente por WhatsApp, altas y cambios de clientes, ventas, pagos, productos, usuarios y accesos.',
+      `<button class="btn sm" id="bRef">↻ Actualizar</button>`);
+    $('#bq').oninput = () => { f.q = $('#bq').value; vistaBitacora(); const i = $('#bq'); i.focus(); i.setSelectionRange(i.value.length, i.value.length); };
+    $$('[data-bt]').forEach(b => b.onclick = () => { f.tipo = b.dataset.bt; vistaBitacora(); });
+    $('#bu').onchange = () => { f.quien = $('#bu').value; vistaBitacora(); };
+    $('#bRef').onclick = () => { BIT.cuando = 0; cargarBitacora(); };
   }
 
   // ───────── Lo vendido (control por modelo y por vendedor) ─────────
@@ -838,7 +879,7 @@
   }
   async function waEnviar(jid, texto) {
     try {
-      const r = await api('/api/wa-send', { jid, texto });
+      const r = await api('/api/wa-send', { jid, texto, nombre: ((S.wa.chats || []).find(c => c.jid === jid) || {}).nombre || '' });
       await Promise.all([waCargarMensajes(jid), waCargarChats()]);
       return r;
     } catch (e) { toast(e.message); throw e; }
@@ -1073,7 +1114,7 @@
     if (r !== 'whatsapp') waStop();
     // El admin de atención solo entra a Muebles, Leads, WhatsApp y Mi cuenta.
     if (sup() && !SOLO_SUP.includes(r)) { location.replace('#/muebles'); return; }
-    const vistas = { hoy: vistaHoy, muebles: vistaMuebles, vendido: vistaVendido, ventas: vistaVentas, sinpago: vistaSinPago, leads: vistaLeads, whatsapp: vistaWhatsApp, vendedores: admin() ? vistaVendedores : vistaHoy, ajustes: admin() ? vistaAjustes : vistaCuenta, cuenta: vistaCuenta };
+    const vistas = { hoy: vistaHoy, muebles: vistaMuebles, vendido: vistaVendido, ventas: vistaVentas, sinpago: vistaSinPago, leads: vistaLeads, whatsapp: vistaWhatsApp, vendedores: admin() ? vistaVendedores : vistaHoy, bitacora: admin() ? vistaBitacora : vistaHoy, ajustes: admin() ? vistaAjustes : vistaCuenta, cuenta: vistaCuenta };
     // La primera vez que se entra a WhatsApp, cargar en segundo plano y re-pintar
     if (r === 'whatsapp' && !S.wa._cargado) { S.wa._cargado = true; waCargarChats().then(() => { if (ruta() === 'whatsapp') vistaWhatsApp(); }); waSync(); }
     (vistas[r] || vistaHoy)();

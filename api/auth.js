@@ -4,7 +4,11 @@ const store = require('./_lib/store');
 const { cuerpo, ok, error, ahora, seguro, ip } = require('./_lib/http');
 
 // Bitácora de accesos (últimos 200), visible para el admin en Ajustes.
-const anotar = (usuario, dir, okk, motivo) => store.actualizar('accesos', l => [{ cuando: ahora(), usuario, ip: dir, ok: okk, motivo: motivo || '' }, ...l].slice(0, 200)).catch(() => {});
+const B = require('./_lib/bitacora');
+const anotar = async (usuario, dir, okk, motivo) => {
+  await store.actualizar('accesos', l => [{ cuando: ahora(), usuario, ip: dir, ok: okk, motivo: motivo || '' }, ...l].slice(0, 200)).catch(() => {});
+  await B.anotar(usuario || '(sin usuario)', 'Acceso', okk ? 'Entró al sistema' + (motivo ? ' · ' + motivo : '') : 'No pudo entrar: ' + (motivo || 'falló'), dir);
+};
 
 module.exports = seguro(async (req, res) => {
   if (req.method === 'GET') {

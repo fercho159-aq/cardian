@@ -6,6 +6,7 @@ const store = require('./_lib/store');
 const M = require('./_lib/modelo');
 const wa = require('./_lib/wa');
 const { ok, error, cuerpo, seguro, ahora } = require('./_lib/http');
+const B = require('./_lib/bitacora');
 
 module.exports = seguro(async (req, res) => {
   const u = await A.exigir(req, res); if (!u) return;
@@ -44,5 +45,7 @@ module.exports = seguro(async (req, res) => {
     });
   }
 
+  const cliente = (lead && (lead.nombre || lead.tel)) || String(b.nombre || '').slice(0, 60) || jid;
+  await B.anotar(u, 'WhatsApp', 'Le escribió a ' + cliente + ': «' + texto.slice(0, 300) + '»', jid);
   return ok(res, { ok: true, waId });
 });

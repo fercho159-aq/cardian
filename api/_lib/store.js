@@ -123,9 +123,21 @@ async function borrarConteo(key) {
   const all = leerLocal(); if (all._rl) { delete all._rl[key]; escribirLocal(all); }
 }
 
+// Listas (bitácora): se agrega al inicio y se recorta a «max». En Redis es LPUSH + LTRIM, sin leer la lista.
+async function listaPush(key, val, max = 5000) {
+  sinBase();
+  if (remoto) { await llamar(['LPUSH', PREFIX + key, JSON.stringify(val)]); await llamar(['LTRIM', PREFIX + key, '0', String(max - 1)]); return; }
+  const all = leerLocal(); const l = Array.isArray(all[key]) ? all[key] : []; l.unshift(val); all[key] = l.slice(0, max); escribirLocal(all);
+}
+async function listaLeer(key, n = 500) {
+  sinBase();
+  if (remoto) { const r = await llamar(['LRANGE', PREFIX + key, '0', String(n - 1)]); return (r || []).map(x => { try { return JSON.parse(x); } catch (e) { return null; } }).filter(Boolean); }
+  const all = leerLocal(); return (Array.isArray(all[key]) ? all[key] : []).slice(0, n);
+}
+
 // Modo de almacenamiento, para mostrarlo en Ajustes.
 function modo() { return remoto ? 'upstash' : 'local'; }
 // Token privado de la base, solo para derivar la llave de firma (secreto.js).
 function tokenBase() { return remoto ? TOKEN : ''; }
 
-module.exports = { get, set, del, actualizar, conCandado, incr, contar, verConteo, borrarConteo, modo, tokenBase };
+module.exports = { listaPush, listaLeer, get, set, del, actualizar, conCandado, incr, contar, verConteo, borrarConteo, modo, tokenBase };

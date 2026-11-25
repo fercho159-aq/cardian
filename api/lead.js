@@ -31,6 +31,7 @@ async function manejar(req, res) {
   }
   await store.set('leads', leads);
   const vend = usuarios.find(x => x.id === lead.vendedorId);
+  await require('./_lib/bitacora').anotar('Página web', 'Cliente', (previo ? 'Volvió a pedir informes: ' : 'Pidió informes: ') + (lead.nombre || lead.tel) + (lead.producto ? ' · ' + lead.producto : '') + ' · asignado a ' + (vend ? vend.nombre : 'nadie'), lead.id);
   const ajustes = await store.get('ajustes', {});
   // Con número compartido (lo normal en Cardian) el cliente siempre escribe al WhatsApp Business del negocio;
   // el lead ya quedó asignado en el sistema y el vendedor le contesta desde ese mismo número.

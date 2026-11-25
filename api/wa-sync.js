@@ -23,7 +23,7 @@ module.exports = seguro(async (req, res) => {
   try { lista = await wa.chats({ limit: 300 }); } catch (e) { return ok(res, { ok: false, saltado: 'wa_error', error: e.message, creados: 0 }); }
 
   const usuarios = await A.usuarios();
-  let creados = 0, actualizados = 0;
+  let creados = 0, actualizados = 0; const altas = [];
 
   await store.actualizar('leads', leads => {
     const porTel = new Map(), porJid = new Map();
@@ -64,9 +64,10 @@ module.exports = seguro(async (req, res) => {
       leads.unshift(lead);
       if (tel) porTel.set(tel, lead);
       porJid.set(jid, lead);
-      creados++;
+      creados++; altas.push((nombre || tel || 'cliente') + ' → ' + (vend ? vend.nombre : 'sin vendedor'));
     }
   });
 
+  for (const a of altas.slice(0, 25)) await require('./_lib/bitacora').anotar('WhatsApp', 'Cliente', 'Chat nuevo de WhatsApp: ' + a, '');
   return ok(res, { ok: true, creados, actualizados });
 });

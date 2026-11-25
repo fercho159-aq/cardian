@@ -17,17 +17,81 @@ const hist = (obj, quien, que) => { (obj.historial = obj.historial || []).push({
 
 const COLECCIONES = ['ventas', 'leads', 'usuarios', 'sucursales', 'ajustes', 'modelos', 'tienda'];
 const T = require('./_lib/tienda');
+const B = require('./_lib/bitacora');
+
+// ───── Bitácora: cada cambio hecho por /api/datos queda anotado (quién, qué, cuándo) ─────
+// Se engancha en res.end para registrar ANTES de contestar (en Vercel lo que corre después de contestar puede no terminar).
+const ETAPA_N = { recibido: 'Recibido', fabricando: 'En fabricación', listo: 'Listo para entrega', 'en-camino': 'En camino', entregado: 'Entregado' };
+const ESTADO_LN = { nuevo: 'Nuevo', contactado: 'Contactado', 'sin-respuesta': 'Sin respuesta', cotizado: 'Cotizado', compro: 'Compró', 'no-compro': 'No compró' };
+const ROL_NOM = { admin: 'Administrador', supervisor: 'Admin de atención', vendedor: 'Vendedor' };
+const pesos = n => '$' + Math.round(n || 0).toLocaleString('es-MX');
+async function describir(col, b, out) {
+  const ac = b.accion;
+  const us = await A.usuarios(); const nom = id => (us.find(x => x.id === id) || {}).nombre || 'sin vendedor';
+  if (col === 'ventas') {
+    const v = out.venta || {}; const f = v.folio || b.folio || ''; const cli = (v.cliente || {}).nombre || 'cliente';
+    if (ac === 'crear') return ['Venta', 'Registró el pedido ' + f + ' de ' + cli + ' por ' + pesos(v.total) + ' · vendedor: ' + nom(v.vendedorId), f];
+    if (ac === 'abonar') return ['Venta', 'Registró un pago de ' + pesos(b.monto) + ' (' + (b.metodo || 'efectivo') + ') en el pedido ' + f + ' de ' + cli, f];
+    if (ac === 'quitarPago') return ['Venta', 'Quitó un pago del pedido ' + f + ' de ' + cli, f];
+    if (ac === 'etapa') return ['Venta', b.etapa ? 'Pedido ' + f + ' de ' + cli + ': ' + (ETAPA_N[b.etapa] || b.etapa) : 'Actualizó la fecha o la nota de entrega del pedido ' + f, f];
+    if (ac === 'estado') return ['Venta', 'Pedido ' + f + ' de ' + cli + ': estado de pago «' + b.estado + '»', f];
+    if (ac === 'editar') return ['Venta', b.vendedorId !== undefined && !b.cliente ? 'Asignó el pedido ' + f + ' de ' + cli + ' a ' + nom(v.vendedorId) : 'Editó los datos del pedido ' + f + ' de ' + cli, f];
+    if (ac === 'nota') return ['Venta', 'Nota en el pedido ' + f + ': ' + String(b.texto || '').slice(0, 200), f];
+    if (ac === 'eliminar') return ['Venta', 'Eliminó el pedido ' + b.folio, b.folio];
+  }
+  if (col === 'leads') {
+    const l = out.lead || {}; const cli = l.nombre || l.tel || 'cliente';
+    if (ac === 'crear') return ['Cliente', 'Dio de alta al cliente ' + cli + (l.tel ? ' (' + l.tel + ')' : '') + ' · asignado a ' + nom(l.vendedorId), l.id];
+    if (ac === 'repartir') return ['Cliente', 'Repartió ' + (out.asignados || 0) + ' clientes que no tenían vendedor', ''];
+    if (ac === 'eliminar') return ['Cliente', 'Eliminó un cliente de la lista', b.id];
+    if (ac === 'estado') return ['Cliente', 'Cliente ' + cli + ': ' + (ESTADO_LN[b.estado] || b.estado) + (b.nota ? ' · ' + String(b.nota).slice(0, 160) : ''), l.id];
+    if (ac === 'nota') return ['Cliente', 'Nota sobre ' + cli + ': ' + String(b.texto || '').slice(0, 200), l.id];
+    if (ac === 'asignar') return ['Cliente', 'Asignó el cliente ' + cli + ' a ' + nom(l.vendedorId), l.id];
+    if (ac === 'editar') return ['Cliente', 'Editó los datos del cliente ' + cli, l.id];
+  }
+  if (col === 'usuarios') {
+    const x = out.usuario || us.find(y => y.id === b.id) || {};
+    if (ac === 'crear') return ['Usuario', 'Creó el usuario ' + x.usuario + ' (' + x.nombre + ') · ' + (ROL_NOM[x.rol] || x.rol), x.id];
+    if (ac === 'editar') return ['Usuario', 'Editó el usuario ' + x.usuario + ' · ' + (ROL_NOM[x.rol] || x.rol) + (x.activo === false ? ' · cuenta desactivada' : ''), x.id];
+    if (ac === 'clave') return ['Usuario', 'Cambió la contraseña del usuario ' + x.usuario, x.id];
+  }
+  if (col === 'modelos') {
+    const m = out.modelo || {};
+    if (ac === 'crear' && !out.existia) return ['Producto', 'Agregó el modelo «' + m.nombre + '» (' + pesos(m.precio) + ') a la lista interna', m.id];
+    if (ac === 'editar') return ['Producto', 'Cambió el modelo interno «' + m.nombre + '»: ' + pesos(m.precio), m.id];
+    if (ac === 'quitar') return ['Producto', 'Quitó el modelo interno «' + m.nombre + '»', m.id];
+  }
+  if (col === 'sucursales') return ['Ajustes', 'Cambió la lista de sucursales', ''];
+  if (col === 'ajustes') return ['Ajustes', ac === 'limpiarBitacora' ? 'Limpió el registro de accesos' : 'Cambió los ajustes del negocio', ''];
+  return null; // «tienda» se anota en su propio bloque, con el detalle del cambio
+}
+function registrarAlTerminar(req, res, col) {
+  const fin = res.end.bind(res);
+  res.end = cuerpoTxt => {
+    (async () => {
+      if (res.statusCode !== 200 || !req._u) return;
+      let out = {}; try { out = JSON.parse(cuerpoTxt); } catch (e) {}
+      const d = await describir(col, req._b || {}, out);
+      if (d) await B.anotar(req._u, d[0], d[1], d[2]);
+    })().catch(() => {}).finally(() => fin(cuerpoTxt));
+  };
+}
 // Modelos que agrega el equipo cuando venden algo que no está en el catálogo del sitio (id «x-…»).
 const normal = s => String(s || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ');
 module.exports = seguro(async (req, res) => {
   const col = query(req).c;
-  if (req.method === 'POST' && COLECCIONES.includes(col)) return store.conCandado(col, () => manejar(req, res));
+  if (req.method === 'POST' && COLECCIONES.includes(col)) { registrarAlTerminar(req, res, col); return store.conCandado(col, () => manejar(req, res)); }
   return manejar(req, res);
 });
 
 async function manejar(req, res) {
   const u = await A.exigir(req, res); if (!u) return;
+  req._u = u;
   const q = query(req); const c = q.c || 'todo';
+  if (req.method === 'GET' && c === 'bitacora') {
+    if (!esAdmin(u)) return error(res, 403, 'Solo el administrador ve la bitácora');
+    return ok(res, { bitacora: await B.leer(Math.min(2000, parseInt(q.n, 10) || 600)) });
+  }
   const tienda = await M.cargarTienda(); // el catálogo con las altas y cambios del administrador
 
   if (req.method === 'GET') {
@@ -47,6 +111,7 @@ async function manejar(req, res) {
   }
   if (req.method !== 'POST') return error(res, 405, 'Método no permitido');
   const b = await cuerpo(req); const ac = b.accion;
+  req._b = b;
 
   // ───── Ventas ─────
   if (c === 'ventas') {
@@ -238,7 +303,7 @@ async function manejar(req, res) {
     let r = b.id ? lista.find(x => x.id === b.id) : null;
     const pesos = n => '$' + Math.round(n || 0).toLocaleString('es-MX');
     const vigente = () => ({ ...(original || {}), ...((r && r.datos) || {}) }); // el producto como se ve hoy
-    const anotar = (accion, id, nombre, detalle) => store.actualizar('bitacoraTienda', l => [{ cuando: ahora(), quien: u.nombre, accion, id, nombre, detalle: detalle || '' }, ...l].slice(0, 300));
+    const anotar = async (accion, id, nombre, detalle) => { await store.actualizar('bitacoraTienda', l => [{ cuando: ahora(), quien: u.nombre, accion, id, nombre, detalle: detalle || '' }, ...l].slice(0, 300)); await B.anotar(u, 'Producto', accion + ' · ' + nombre + (detalle ? ' · ' + detalle : ''), id); };
     if (ac === 'guardar') {
       if (r && r.eliminado) return error(res, 409, 'Ese producto está eliminado. Restáuralo desde la bitácora para editarlo.');
       let d; try { d = T.normalizar({ ...(original || {}), ...(b.datos || {}) }, D); } catch (e) { return error(res, 400, e.message); }
