@@ -1,5 +1,6 @@
 // POST /api/wa-sync  → sincroniza los chats de WhatsApp con los leads del sistema.
-// Para cada chat que no sea lead todavía (por tel10) crea uno nuevo con asignación «al azar parejo»,
+// Para cada chat RECIENTE (mensajes en los últimos 3 días) que no sea lead todavía crea uno nuevo con asignación
+// «al azar parejo». El historial viejo del WhatsApp no se convierte en clientes nuevos: solo se actualizan los leads que ya existen,
 // marcado como origen 'whatsapp'. Ignora grupos y broadcasts. Idempotente: no duplica.
 // Throttled: solo corre si pasaron >60 s desde la última sync (el estado del throttle vive en KV).
 const A = require('./_lib/auth');
@@ -27,7 +28,9 @@ module.exports = seguro(async (req, res) => {
 
   await store.actualizar('leads', leads => {
     const porTel = new Map(), porJid = new Map();
-    for (const l of leads) { if (l.tel) porTel.set(l.tel, l); if (l.waJid) porJid.set(l.waJid, l); }
+    // La lista va del más nuevo al más viejo: gana el lead más reciente de cada cliente. (Si ganara el viejo ya
+    // cerrado, cada sincronización volvería a dar de alta al mismo cliente.)
+    for (const l of leads) { if (l.tel && !porTel.has(l.tel)) porTel.set(l.tel, l); if (l.waJid && !porJid.has(l.waJid)) porJid.set(l.waJid, l); }
     const RECIENTE = Date.now() / 1000 - 3 * 86400;
 
     for (const c of lista) {
@@ -35,9 +38,10 @@ module.exports = seguro(async (req, res) => {
       if (/@g\.us$/.test(jid) || /^status@/i.test(jid)) continue;
       const tel = wa.telDeJid(c.phone_jid || jid);
       // WhatsApp a veces no da el teléfono (chat …@lid): el lead se liga por el jid. Para no llenar la lista con
-      // conversaciones viejas, un chat sin teléfono solo se da de alta solo si tuvo mensajes en los últimos 3 días.
+      // conversaciones viejas, un chat solo se da de alta como cliente si tuvo mensajes en los últimos 3 días.
       const conocido = porJid.get(jid) || (tel ? porTel.get(tel) : null) || null;
-      if (!tel && !conocido && !(c.last_ts && c.last_ts >= RECIENTE)) continue;
+      const reciente = !!(c.last_ts && c.last_ts >= RECIENTE);
+      if (!conocido && !reciente) continue;
 
       const ultimoMsg = c.last_text ? { cuando: c.last_ts ? new Date(c.last_ts * 1000).toISOString() : ahora(), texto: String(c.last_text).slice(0, 400), from: 'cliente' } : null;
       const nombre = String(c.name || '').trim();
@@ -54,6 +58,7 @@ module.exports = seguro(async (req, res) => {
       }
 
       // Si el cliente ya compró antes, asignar a su vendedor anterior (fidelización).
+      if (!reciente) continue; // un chat viejo (aunque sea de un cliente que ya compró) no se da de alta como cliente nuevo
       const anterior = conocido;
       const vendPrev = anterior && anterior.estado === 'compro' ? usuarios.find(x => x.id === anterior.vendedorId && x.activo) : null;
       const vend = vendPrev || M.elegirVendedor(usuarios, '', leads);

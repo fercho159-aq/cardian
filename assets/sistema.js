@@ -910,8 +910,8 @@
   }
   const waAvatar = jid => `/api/wa-avatar?jid=${encodeURIComponent(jid)}`; // (opcional, no implementado: usamos iniciales)
   const waIniciales = s => { const p = (s || '?').trim().split(/\s+/).map(x => x[0]).filter(Boolean).slice(0, 2).join(''); return (p || '?').toUpperCase(); };
-  const waHora = ts => { if (!ts) return ''; const d = new Date(ts * 1000); const hoy = new Date(); return d.toDateString() === hoy.toDateString() ? d.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }) : d.toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit' }); };
-  const waSepDia = ts => { if (!ts) return ''; const d = new Date(ts * 1000); const hoy = new Date(); const ayer = new Date(); ayer.setDate(hoy.getDate() - 1); if (d.toDateString() === hoy.toDateString()) return 'HOY'; if (d.toDateString() === ayer.toDateString()) return 'AYER'; return d.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' }).toUpperCase(); };
+  const waHora = ts => { if (!ts) return ''; const d = new Date(ts * 1000); const hoy = new Date(); return d.toDateString() === hoy.toDateString() ? d.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }) : d.toLocaleDateString('es-MX', d.getFullYear() === hoy.getFullYear() ? { day: '2-digit', month: '2-digit' } : { day: '2-digit', month: '2-digit', year: '2-digit' }); };
+  const waSepDia = ts => { if (!ts) return ''; const d = new Date(ts * 1000); const hoy = new Date(); const ayer = new Date(); ayer.setDate(hoy.getDate() - 1); if (d.toDateString() === hoy.toDateString()) return 'HOY'; if (d.toDateString() === ayer.toDateString()) return 'AYER'; return d.toLocaleDateString('es-MX', d.getFullYear() === hoy.getFullYear() ? { weekday: 'long', day: 'numeric', month: 'long' } : { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).toUpperCase(); };
 
   function vistaWhatsApp() {
     const estado = S.wa.account && S.wa.account.estado;
@@ -925,7 +925,12 @@
       return;
     }
     const q = (S.wa.busca || '').toLowerCase();
+    // Por defecto solo lo reciente: el WhatsApp del negocio trae meses de historial. Al buscar se revisan todos.
+    const corteWa = Date.now() / 1000 - 30 * 86400;
+    const esViejo = c => !(c.hora && c.hora >= corteWa);
+    const nViejos = S.wa.chats.filter(esViejo).length;
     const chats = S.wa.chats.filter(c => {
+      if (!S.wa.verViejos && !q && esViejo(c) && c.jid !== S.wa.activo) return false;
       if (S.wa.fEstado && (!c.lead || c.lead.estado !== S.wa.fEstado)) return false;
       if (S.wa.fVend === '__sin' && c.lead && c.lead.vendedorId) return false;
       if (S.wa.fVend && S.wa.fVend !== '__sin' && (!c.lead || c.lead.vendedorId !== S.wa.fVend)) return false;
@@ -1008,19 +1013,21 @@
           ${Object.entries(ESTADO_L).map(([k, t]) => `<button data-fe="${k}" class="${S.wa.fEstado === k ? 'on' : ''}">${t}</button>`).join('')}
           ${veTodo() ? `<select class="input" id="waFv" style="height:28px;padding:0 8px;font-size:11.5px;border-radius:999px"><option value="">Todos los vendedores</option><option value="__sin" ${S.wa.fVend === '__sin' ? 'selected' : ''}>Sin vendedor</option>${S.usuarios.filter(u => u.rol === 'vendedor').map(u => `<option value="${u.id}" ${S.wa.fVend === u.id ? 'selected' : ''}>${esc(u.nombre)}</option>`).join('')}</select>` : ''}
           <button data-sinleads class="${S.wa.sinLeads ? 'on' : ''}">Sin lead</button>
+          ${nViejos ? `<button data-viejos class="${S.wa.verViejos ? 'on' : ''}" title="Chats sin mensajes en los últimos 30 días">${S.wa.verViejos ? 'Ocultar anteriores' : 'Ver anteriores (' + nViejos + ')'}</button>` : ''}
         </div>
         <div class="wa-list" id="waList">
-          ${chats.length ? chats.map(itemHtml).join('') : `<div class="wa-empty-list">${S.wa.chats.length ? 'Ningún chat coincide con el filtro.' : (estado === 'connected' ? 'Aún no llegan chats. Pide al cliente que te escriba.' : 'Esperando a que la cuenta de WhatsApp quede conectada…')}</div>`}
+          ${chats.length ? chats.map(itemHtml).join('') : `<div class="wa-empty-list">${S.wa.chats.length ? (!S.wa.verViejos && !q && nViejos ? 'No hay chats de los últimos 30 días con ese filtro. Usa «Ver anteriores» o busca por nombre.' : 'Ningún chat coincide con el filtro.') : (estado === 'connected' ? 'Aún no llegan chats. Pide al cliente que te escriba.' : 'Esperando a que la cuenta de WhatsApp quede conectada…')}</div>`}
         </div>
       </aside>
       ${chatHtml}
-    </div>`, 'WhatsApp', `${S.wa.chats.length} chat${S.wa.chats.length === 1 ? '' : 's'} · ${veTodo() ? 'Vista de administrador: todos los chats' : 'Solo tus leads asignados'}`);
+    </div>`, 'WhatsApp', `${S.wa.chats.length - nViejos} chat${S.wa.chats.length - nViejos === 1 ? '' : 's'} de los últimos 30 días${nViejos ? ' · ' + nViejos + (nViejos === 1 ? ' anterior' : ' anteriores') : ''} · ${veTodo() ? 'Vista de administrador: todos los chats' : 'Solo tus leads asignados'}`);
 
     // Enlaces
     $('#waBusca').oninput = e => { S.wa.busca = e.target.value; vistaWhatsApp(); const i = $('#waBusca'); i.focus(); i.setSelectionRange(i.value.length, i.value.length); };
     $$('[data-fe]').forEach(b => b.onclick = () => { S.wa.fEstado = b.dataset.fe; vistaWhatsApp(); });
     const fv = $('#waFv'); if (fv) fv.onchange = () => { S.wa.fVend = fv.value; vistaWhatsApp(); };
     const sl = $('[data-sinleads]'); if (sl) sl.onclick = () => { S.wa.sinLeads = !S.wa.sinLeads; vistaWhatsApp(); };
+    const vj = $('[data-viejos]'); if (vj) vj.onclick = () => { S.wa.verViejos = !S.wa.verViejos; vistaWhatsApp(); };
     $$('[data-jid]').forEach(el => el.onclick = async () => {
       S.wa.activo = el.dataset.jid; S.wa.mensajes = [];
       vistaWhatsApp();
