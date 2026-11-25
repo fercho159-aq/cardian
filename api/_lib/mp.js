@@ -26,6 +26,13 @@ async function crearPreferencia(v, req) {
   if (v.costoEnvio) items.push({ id: 'envio', title: 'Envío y armado', quantity: 1, unit_price: v.costoEnvio, currency_id: 'MXN' });
   if (v.descuento) items.push({ id: 'descuento', title: 'Descuento', quantity: 1, unit_price: -v.descuento, currency_id: 'MXN' });
   if (v.iva) items.push({ id: 'iva', title: 'IVA 16 % (factura)', quantity: 1, unit_price: v.iva, currency_id: 'MXN' });
+  // Mercado Pago rechaza artículos con precio negativo. Si el pedido lleva descuento (cupón), se cobra en un solo
+  // artículo por el total ya descontado, con el detalle en el título.
+  if (v.descuento) {
+    const detalle = v.lineas.map(l => l.qty + ' × ' + l.nombre).join(', ').slice(0, 180);
+    items.length = 0;
+    items.push({ id: v.folio, title: 'Pedido ' + v.folio + ' · ' + detalle + (v.cupon ? ' · cupón ' + v.cupon.codigo : ' · con descuento'), quantity: 1, unit_price: v.total, currency_id: 'MXN' });
+  }
   const body = {
     items, external_reference: v.folio, statement_descriptor: 'CARDIAN MUEBLES',
     payer: { name: v.cliente.nombre, email: v.cliente.email || undefined, phone: v.cliente.tel ? { area_code: '52', number: v.cliente.tel } : undefined },
@@ -61,6 +68,7 @@ async function aplicarPago(p) {
     (v.historial = v.historial || []).push({ cuando: new Date().toISOString(), quien: 'Mercado Pago', que: 'Pago aprobado $' + Math.round(p.transaction_amount).toLocaleString('es-MX') });
     afectada = v;
   });
+  if (nuevo && afectada && afectada.cupon && !afectada.cupon.contado) await require('./cupones').contarPago(afectada.folio);
   if (nuevo && afectada) await require('./bitacora').anotar('Mercado Pago', 'Venta', 'Pago aprobado de $' + Math.round(p.transaction_amount).toLocaleString('es-MX') + ' en el pedido ' + afectada.folio + ' de ' + ((afectada.cliente || {}).nombre || 'cliente'), afectada.folio);
   return afectada;
 }

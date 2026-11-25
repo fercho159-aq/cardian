@@ -26,7 +26,7 @@
     return `<a class="card reveal" style="--d:${(i % 4) * 80}ms" href="/producto?id=${p.id}">
       <div class="ph"><img class="bgblur" src="/${p.imgs[0]}" alt="" aria-hidden="true" loading="lazy"><img src="/${p.imgs[0]}" alt="${p.name}" loading="lazy">${alt}<span class="tag ${stockClass(p)}">${p.stock === 'inmediata' ? 'Entrega inmediata' : p.stock === 'medida' ? 'A medida' : 'Hecho para ti'}</span></div>
       <div class="c"><div class="cat">${c.name}</div><h3>${p.name}</h3><div class="type">${p.type}</div>${sw ? `<div class="sw">${sw}</div>` : ''}
-      <div class="price num">${p.quote ? 'Cotiza a tu medida' : fmt(p.price) + '<small>MXN</small>'}</div>
+      <div class="price num">${p.quote ? 'Cotiza a tu medida' : fmt(p.price) + '<small>MXN</small>' + (p.oldPrice ? '<s style="margin-left:8px;font-size:.62em;font-weight:400;color:#8a8580">' + fmt(p.oldPrice) + '</s><span style="margin-left:6px;font-size:.55em;font-weight:600;color:#b4322b">−' + Math.round((1 - p.price / p.oldPrice) * 100) + ' %</span>' : '')}</div>
       <div class="msi num">${p.quote ? 'Precio según tus medidas, sin compromiso' : 'Paga a meses con Mercado Pago'}</div></div></a>`;
   }
 

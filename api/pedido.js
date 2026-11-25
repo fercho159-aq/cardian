@@ -4,13 +4,26 @@ const store = require('./_lib/store');
 const A = require('./_lib/auth');
 const M = require('./_lib/modelo');
 const MP = require('./_lib/mp');
+const CU = require('./_lib/cupones');
 const { cuerpo, ok, error, tel10, seguro, ip } = require('./_lib/http');
 
 module.exports = seguro(async (req, res) => {
   if (req.method !== 'POST') return error(res, 405, 'Método no permitido');
   const b = await cuerpo(req);
-  // Anti-spam: campo trampa y máximo 10 pedidos por IP por hora.
-  if (b.web) return error(res, 400, 'Pedido inválido');
+  if (b.web) return error(res, 400, 'Pedido inválido'); // campo trampa
+  // Validar un cupón antes de pagar: { accion: 'cupon', codigo, lineas } → { codigo, descuento, etiqueta }.
+  // Máximo 30 intentos por hora por conexión, para que nadie adivine códigos probando.
+  if (b.accion === 'cupon') {
+    if ((await store.contar('cupon:' + ip(req), 3600)) > 30) return error(res, 429, 'Demasiados intentos. Espera un rato o escríbenos por WhatsApp.');
+    const ls = (Array.isArray(b.lineas) ? b.lineas : []).filter(l => l.id).map(l => ({ id: l.id, color: l.color, qty: l.qty }));
+    if (!ls.length) return error(res, 400, 'El carrito está vacío');
+    await M.cargarTienda();
+    const cup = (await store.get('cupones', [])).find(x => x.codigo === CU.norm(b.codigo));
+    const ev = CU.evaluar(cup, M.calcular(ls, { tipo: 'bodega' }).lineas.filter(l => l.id), M.D().products);
+    if (!ev.ok) return error(res, 409, ev.motivo);
+    return ok(res, { codigo: cup.codigo, descuento: ev.descuento, etiqueta: CU.etiqueta(cup) });
+  }
+  // Anti-spam: máximo 10 pedidos por IP por hora.
   if ((await store.contar('pedido:' + ip(req), 3600)) > 10) return error(res, 429, 'Recibimos varios pedidos seguidos desde tu conexión. Escríbenos por WhatsApp y te ayudamos.');
   if (!Array.isArray(b.lineas) || !b.lineas.length) return error(res, 400, 'El carrito está vacío');
   if (!b.cliente || !tel10(b.cliente.tel) || !b.cliente.nombre) return error(res, 400, 'Faltan tus datos de contacto');
@@ -21,14 +34,25 @@ module.exports = seguro(async (req, res) => {
   // Si el carrito trae un producto que ya no está en la tienda (el admin lo ocultó o lo quitó), no se crea el pedido.
   const faltan = lineas.filter(l => !M.D().products.some(p => p.id === l.id));
   if (faltan.length) return error(res, 409, 'Un producto de tu carrito ya no está disponible. Quítalo del carrito o escríbenos por WhatsApp.');
+  // Cupón: se vuelve a validar aquí con los precios vigentes; el descuento nunca viene del navegador.
+  let cupon = null;
+  if (b.cupon) {
+    const cup = (await store.get('cupones', [])).find(x => x.codigo === CU.norm(b.cupon));
+    const ev = CU.evaluar(cup, M.calcular(lineas, { tipo: 'bodega' }).lineas.filter(l => l.id), M.D().products);
+    if (!ev.ok) return error(res, 409, ev.motivo + ' Quita el cupón para continuar.');
+    cupon = { codigo: cup.codigo, descuento: ev.descuento, etiqueta: CU.etiqueta(cup) };
+    envio.descuento = ev.descuento;
+  }
   const folio = await M.folioNuevo();
   // el pedido del sitio también se reparte al azar para que un vendedor le dé seguimiento
   const vend = M.elegirVendedor(await A.usuarios());
   const v = M.nuevaVenta({ folio, origen: 'sitio', vendedorId: vend ? vend.id : null, lineas, envio, cliente: b.cliente, notas: [b.pago ? 'Forma de pago elegida: ' + b.pago : '', b.notas || ''].filter(Boolean).join(' · '), factura: b.factura }, null);
   v.pagoElegido = 'mp';
+  if (cupon) { v.cupon = cupon; v.historial.push({ cuando: new Date().toISOString(), quien: 'Sitio web', que: 'Cupón ' + cupon.codigo + ': −$' + cupon.descuento.toLocaleString('es-MX') }); }
   await store.actualizar('ventas', l => { l.unshift(v); });
-  const out = { folio, k: M.llaveTicket(folio), total: v.total };
-  await require('./_lib/bitacora').anotar('Página web', 'Venta', 'Pedido ' + folio + ' de ' + v.cliente.nombre + ' por $' + Math.round(v.total).toLocaleString('es-MX') + ' (aún sin pago) · vendedor: ' + (vend ? vend.nombre : 'nadie'), folio);
+  if (cupon) await store.actualizar('cupones', l => { const c = l.find(x => x.codigo === cupon.codigo); if (c) c.pedidos = (c.pedidos || 0) + 1; }).catch(() => {});
+  const out = { folio, k: M.llaveTicket(folio), total: v.total, descuento: v.descuento || 0 };
+  await require('./_lib/bitacora').anotar('Página web', 'Venta', 'Pedido ' + folio + ' de ' + v.cliente.nombre + ' por $' + Math.round(v.total).toLocaleString('es-MX') + ' (aún sin pago)' + (cupon ? ' · cupón ' + cupon.codigo : '') + ' · vendedor: ' + (vend ? vend.nombre : 'nadie'), folio);
   if (v.pagoElegido === 'mp' && MP.configurado()) {
     try { const pref = await MP.crearPreferencia(v, req); out.mpUrl = pref.init_point; await store.actualizar('ventas', l => { const x = l.find(y => y.folio === folio); if (x) x.mp = { preferenciaId: pref.id, creado: new Date().toISOString() }; }); }
     catch (e) { out.mpError = 'No se pudo abrir Mercado Pago: ' + e.message; }

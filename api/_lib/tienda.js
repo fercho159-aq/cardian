@@ -12,6 +12,12 @@ function fusionar(base, regs) {
     if (i >= 0) Object.assign(out[i], r.datos || {});
     else if (r.datos && r.datos.name && r.datos.price > 0 && r.datos.imgs && r.datos.imgs.length) out.push(Object.assign({ id: r.id }, r.datos));
   });
+  // Precio de oferta: mientras esté vigente, «price» es el de oferta y «oldPrice» el normal (sale tachado).
+  var hoy = new Date(Date.now() - 6 * 3600e3).toISOString().slice(0, 10); // fecha de México
+  out.forEach(function (p) {
+    var o = p.oferta;
+    if (o && o.price > 0 && o.price < p.price && (!o.hasta || hoy <= o.hasta)) { p.oldPrice = p.price; p.price = o.price; p.enOferta = true; }
+  });
   return out;
 }
 
@@ -37,6 +43,11 @@ function normalizar(b, D) {
   if (tap.length) { d.tapiz = tap; d.defaultColor = tap.includes(b.defaultColor) ? b.defaultColor : tap[0]; d.optLabel = d.cat === 'salas' ? 'Color de tapiz' : 'Color'; d.varImgs = false; }
   const L = Math.round(+((b.dims || {}).largo) || 0), F = Math.round(+((b.dims || {}).fondo) || 0), A = Math.round(+((b.dims || {}).alto) || 0);
   if (L > 0 && F > 0) d.dims = { largo: Math.min(L, 900), fondo: Math.min(F, 900), alto: Math.min(A || 0, 400) };
+  const of = b.oferta || {}; const op = Math.round(+of.price || 0);
+  if (op > 0) {
+    if (op >= d.price) throw new Error('El precio de oferta debe ser menor al precio normal');
+    d.oferta = { price: op, hasta: /^\d{4}-\d{2}-\d{2}$/.test(String(of.hasta || '')) ? String(of.hasta) : '' };
+  }
   d.factor = [0.5, 0.6, 0.8, 0.9, 1, 1.2].includes(+b.factor) ? +b.factor : 1;
   d.bultos = Math.max(1, Math.min(12, Math.round(+b.bultos || 1)));
   d.specs = [];
@@ -49,7 +60,7 @@ function normalizar(b, D) {
 // Para un producto del catálogo base se guarda solo lo que cambió respecto al original.
 function diferencias(d, original) {
   const out = {};
-  const campos = ['name', 'cat', 'price', 'type', 'short', 'desc', 'stock', 'dias', 'imgs', 'tapiz', 'defaultColor'];
+  const campos = ['name', 'cat', 'price', 'type', 'short', 'desc', 'stock', 'dias', 'imgs', 'tapiz', 'defaultColor', 'oferta'];
   campos.forEach(k => { if (d[k] !== undefined && JSON.stringify(d[k]) !== JSON.stringify(original[k])) out[k] = d[k]; });
   return out;
 }

@@ -15,9 +15,10 @@ const visiblesVentas = (lista, u) => esAdmin(u) ? lista : lista.filter(v => v.ve
 const visiblesLeads = (lista, u) => veTodo(u) ? lista : lista.filter(l => l.vendedorId === u.id);
 const hist = (obj, quien, que) => { (obj.historial = obj.historial || []).push({ cuando: ahora(), quien, que }); };
 
-const COLECCIONES = ['ventas', 'leads', 'usuarios', 'sucursales', 'ajustes', 'modelos', 'tienda'];
+const COLECCIONES = ['ventas', 'leads', 'usuarios', 'sucursales', 'ajustes', 'modelos', 'tienda', 'cupones'];
 const T = require('./_lib/tienda');
 const B = require('./_lib/bitacora');
+const CU = require('./_lib/cupones');
 
 // ───── Bitácora: cada cambio hecho por /api/datos queda anotado (quién, qué, cuándo) ─────
 // Se engancha en res.end para registrar ANTES de contestar (en Vercel lo que corre después de contestar puede no terminar).
@@ -60,6 +61,12 @@ async function describir(col, b, out) {
     if (ac === 'crear' && !out.existia) return ['Producto', 'Agregó el modelo «' + m.nombre + '» (' + pesos(m.precio) + ') a la lista interna', m.id];
     if (ac === 'editar') return ['Producto', 'Cambió el modelo interno «' + m.nombre + '»: ' + pesos(m.precio), m.id];
     if (ac === 'quitar') return ['Producto', 'Quitó el modelo interno «' + m.nombre + '»', m.id];
+  }
+  if (col === 'cupones') {
+    const c = out.cupon || {}; const cod = c.codigo || b.codigo || '';
+    if (ac === 'crear') return ['Cupón', 'Creó el cupón ' + cod + ': ' + CU.etiqueta(c) + (c.vence ? ' · vence ' + c.vence : '') + (c.usosMax ? ' · máx. ' + c.usosMax + ' usos' : ''), cod];
+    if (ac === 'editar') return ['Cupón', (b.soloEstado ? (c.activo === false ? 'Pausó' : 'Reactivó') + ' el cupón ' + cod : 'Editó el cupón ' + cod + ': ' + CU.etiqueta(c)), cod];
+    if (ac === 'eliminar') return ['Cupón', 'Eliminó el cupón ' + cod, cod];
   }
   if (col === 'sucursales') return ['Ajustes', 'Cambió la lista de sucursales', ''];
   if (col === 'ajustes') return ['Ajustes', ac === 'limpiarBitacora' ? 'Limpió el registro de accesos' : 'Cambió los ajustes del negocio', ''];
@@ -107,6 +114,7 @@ async function manejar(req, res) {
     const extras = (await store.get('modelos', [])).filter(m => m.activo !== false);
     out.catalogo = { productos: M.D().products.map(p => ({ id: p.id, nombre: p.name, precio: p.price || 0, cat: p.cat, tapiz: p.tapiz || [] })), tapiz: M.D().TAPIZ, estados: M.D().states, estadosVenta: M.ESTADOS_VENTA, estadosLead: M.ESTADOS_LEAD, origenes: M.ORIGENES, extras, tienda };
     if (esAdmin(u)) out.catalogo.bitacoraTienda = (await store.get('bitacoraTienda', [])).slice(0, 80);
+    if (esAdmin(u)) out.cupones = (await store.get('cupones', [])).map(x => ({ ...x, estado: CU.estado(x) }));
     return ok(res, out);
   }
   if (req.method !== 'POST') return error(res, 405, 'Método no permitido');
@@ -152,6 +160,7 @@ async function manejar(req, res) {
       const monto = Math.round(+b.monto || 0); if (monto <= 0) return error(res, 400, 'Escribe el monto del pago');
       if (monto > M.saldo(v) + 0.5 && !b.forzar) return error(res, 400, 'El pago (' + monto + ') es mayor al saldo (' + M.saldo(v) + ')');
       v.pagos.push({ id: id(6), cuando: b.cuando || ahora(), monto, metodo: String(b.metodo || 'efectivo').slice(0, 30), ref: String(b.ref || '').slice(0, 60), quien: u.nombre });
+      if (v.cupon && !v.cupon.contado) { v.cupon.contado = true; await CU.sumarUso(v.cupon.codigo); }
       v.estado = M.estadoPorPago(v); hist(v, u.nombre, 'Pago de $' + monto.toLocaleString('es-MX') + ' (' + v.pagos[v.pagos.length - 1].metodo + ')');
     } else if (ac === 'quitarPago') {
       if (!esAdmin(u)) return error(res, 403, 'Solo el administrador quita pagos');
@@ -326,12 +335,13 @@ async function manejar(req, res) {
         lista.push(r);
       }
       await store.set('tienda', lista);
-      if (!antes) await anotar('Alta', r.id, d.name, 'Precio ' + pesos(d.price) + (b.oculto ? ' · sin publicar' : ''));
+      if (!antes) await anotar('Alta', r.id, d.name, 'Precio ' + pesos(d.price) + (d.oferta ? ' · oferta ' + pesos(d.oferta.price) : '') + (b.oculto ? ' · sin publicar' : ''));
       else {
         const cambios = [];
         if (d.price !== antes.price) cambios.push('Precio ' + pesos(antes.price) + ' → ' + pesos(d.price));
         if (d.name !== antes.name) cambios.push('Nombre: «' + antes.name + '» → «' + d.name + '»');
         if (JSON.stringify(d.imgs) !== JSON.stringify(antes.imgs)) cambios.push('Fotos');
+        if (JSON.stringify(d.oferta || null) !== JSON.stringify(antes.oferta || null)) cambios.push(d.oferta ? 'Oferta ' + pesos(d.oferta.price) + (d.oferta.hasta ? ' hasta ' + d.oferta.hasta : '') : 'Quitó la oferta');
         if (!!b.oculto !== antes.oculto) cambios.push(b.oculto ? 'Se ocultó de la tienda' : 'Se volvió a publicar');
         await anotar('Edición', r.id, d.name, cambios.join(' · ') || 'Textos, colores o entrega');
       }
@@ -363,6 +373,36 @@ async function manejar(req, res) {
       await store.set('tienda', lista);
       await anotar('Volvió al original', b.id, original.name, 'Precio ' + pesos(original.price));
       return ok(res, { ok: true, tienda: lista });
+    }
+    return error(res, 400, 'Acción desconocida');
+  }
+
+  // ───── Cupones de descuento de la tienda. Solo el administrador. ─────
+  if (c === 'cupones') {
+    if (!esAdmin(u)) return error(res, 403, 'Solo el administrador maneja los cupones');
+    const lista = await store.get('cupones', []);
+    if (ac === 'crear') {
+      let datos; try { datos = CU.normalizar(b, M.D()); } catch (e) { return error(res, 400, e.message); }
+      let codigo = CU.norm(b.codigo);
+      if (!codigo) { do { codigo = CU.generar(b.prefijo); } while (lista.some(x => x.codigo === codigo)); }
+      if (codigo.length < 4) return error(res, 400, 'El código debe tener al menos 4 letras o números');
+      if (lista.some(x => x.codigo === codigo)) return error(res, 409, 'Ya existe un cupón con ese código');
+      const cup = { codigo, ...datos, usos: 0, pedidos: 0, creado: ahora(), creadoPor: u.nombre };
+      lista.unshift(cup); await store.set('cupones', lista);
+      return ok(res, { cupon: { ...cup, estado: CU.estado(cup) } });
+    }
+    const cup = lista.find(x => x.codigo === CU.norm(b.codigo)); if (!cup) return error(res, 404, 'No existe ese cupón');
+    if (ac === 'editar') {
+      if (b.soloEstado) cup.activo = b.activo !== false;
+      else { let datos; try { datos = CU.normalizar(b, M.D()); } catch (e) { return error(res, 400, e.message); } Object.assign(cup, datos); }
+      cup.editado = ahora(); cup.editadoPor = u.nombre;
+      await store.set('cupones', lista);
+      return ok(res, { cupon: { ...cup, estado: CU.estado(cup) } });
+    }
+    if (ac === 'eliminar') {
+      lista.splice(lista.indexOf(cup), 1); await store.set('cupones', lista);
+      await store.actualizar('eliminados', l => [{ cuando: ahora(), quien: u.nombre, tipo: 'Cupón', ref: cup.codigo, detalle: CU.etiqueta(cup) + ' · ' + (cup.usos || 0) + ' usos' }, ...l].slice(0, 100));
+      return ok(res, { ok: true, cupon: cup });
     }
     return error(res, 400, 'Acción desconocida');
   }

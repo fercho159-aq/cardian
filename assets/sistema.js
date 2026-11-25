@@ -32,7 +32,7 @@
   }
   async function cargar() {
     const d = await api('/api/datos?c=todo');
-    Object.assign(S, { ventas: d.ventas, leads: d.leads, usuarios: d.usuarios, sucursales: d.sucursales, ajustes: d.ajustes || {}, catalogo: d.catalogo, yo: d.yo, accesos: d.accesos || [], eliminados: d.eliminados || [] });
+    Object.assign(S, { ventas: d.ventas, leads: d.leads, usuarios: d.usuarios, sucursales: d.sucursales, ajustes: d.ajustes || {}, catalogo: d.catalogo, yo: d.yo, accesos: d.accesos || [], eliminados: d.eliminados || [], cupones: d.cupones || [] });
     if (window.CARDIAN && window.CARDIAN.aplicarTienda && d.catalogo) window.CARDIAN.aplicarTienda(d.catalogo.tienda || []);
   }
   // ───────── versión nueva ─────────
@@ -129,6 +129,7 @@
     whatsapp: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.11 4.9A10 10 0 0 0 4.1 18.4L3 22l3.7-1A10 10 0 1 0 19.11 4.9zM12 20.3a8.3 8.3 0 0 1-4.24-1.17l-.3-.18-2.19.57.59-2.14-.2-.31A8.3 8.3 0 1 1 12 20.3zm4.56-6.22c-.25-.13-1.48-.73-1.71-.81-.23-.08-.4-.13-.56.13-.17.25-.65.81-.8.98-.14.17-.3.19-.55.06-.25-.13-1.06-.39-2.02-1.24-.75-.67-1.25-1.49-1.4-1.74-.14-.25-.02-.38.11-.5.11-.11.25-.3.38-.44.13-.14.17-.25.25-.42.08-.17.04-.31-.02-.44-.06-.13-.56-1.36-.77-1.86-.2-.49-.41-.42-.56-.43h-.48c-.17 0-.44.06-.67.31-.23.25-.88.86-.88 2.11 0 1.24.9 2.44 1.03 2.6.13.17 1.78 2.73 4.33 3.82.6.26 1.08.42 1.45.54.61.19 1.17.17 1.6.1.49-.07 1.48-.6 1.69-1.19.21-.59.21-1.09.15-1.19-.06-.1-.23-.17-.48-.3z"/></svg>'
 ,
     vendido: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
+    cupones: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9V6a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v3a3 3 0 0 0 0 6v3a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-3a3 3 0 0 0 0-6z"/><path d="M9.5 9.5h.01M14.5 14.5h.01M15 9l-6 6"/></svg>',
     muebles: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 11V8a3 3 0 0 1 3-3h8a3 3 0 0 1 3 3v3"/><path d="M3 13a2 2 0 0 1 4 0v2h10v-2a2 2 0 0 1 4 0v5H3z"/><path d="M5 18v2M19 18v2"/></svg>'
   };
   function ruta() { return (location.hash.replace('#/', '') || 'hoy').split('?')[0]; }
@@ -139,7 +140,7 @@
     const menu = sup()
       ? [['muebles', 'Muebles'], ['leads', 'Leads', leadsNuevos], ['whatsapp', 'WhatsApp', waNoLeidos], ['cuenta', 'Mi cuenta']]
       : admin()
-      ? [['hoy', 'Hoy'], ['ventas', 'Ventas'], ['sinpago', 'Sin pago', pendientes], ['leads', 'Leads', leadsNuevos], ['whatsapp', 'WhatsApp', waNoLeidos], ['muebles', 'Muebles'], ['vendido', 'Lo vendido'], ['bitacora', 'Bitácora'], ['vendedores', 'Usuarios'], ['ajustes', 'Ajustes']]
+      ? [['hoy', 'Hoy'], ['ventas', 'Ventas'], ['sinpago', 'Sin pago', pendientes], ['leads', 'Leads', leadsNuevos], ['whatsapp', 'WhatsApp', waNoLeidos], ['muebles', 'Muebles'], ['cupones', 'Cupones'], ['vendido', 'Lo vendido'], ['bitacora', 'Bitácora'], ['vendedores', 'Usuarios'], ['ajustes', 'Ajustes']]
       : [['hoy', 'Hoy'], ['muebles', 'Muebles'], ['leads', 'Mis leads', leadsNuevos], ['whatsapp', 'WhatsApp', waNoLeidos], ['ventas', 'Mis ventas'], ['vendido', 'Lo que vendí'], ['sinpago', 'Sin pago', pendientes], ['cuenta', 'Mi cuenta']];
     const r = ruta();
     $('#app').innerHTML = `<div class="shell">
@@ -249,7 +250,7 @@
         <img src="/${esc((p.imgs || [])[0] || '')}" alt="${esc(p.name)}" loading="lazy">
         <div class="mb">
           <b>${esc(p.name)}</b><small>${esc(p.type || '')}</small>
-          <div class="precio">${fmt(p.price)} <span>sin IVA</span></div>
+          <div class="precio">${fmt(p.price)} <span>sin IVA</span>${p.oldPrice ? ` <s>${fmt(p.oldPrice)}</s> <em>Oferta −${Math.round((1 - p.price / p.oldPrice) * 100)} %</em>` : ''}</div>
           ${medidas(p) ? `<div class="note">${medidas(p)}</div>` : ''}
           ${(p.tapiz || []).length ? `<div class="tapiz">${p.tapiz.map(t => `<i title="${esc((D.TAPIZ[t] || {}).name || t)}" style="background:${(D.TAPIZ[t] || {}).hex || '#ccc'}"></i>`).join('')}</div>` : ''}
           <div class="note">${p.stock === 'pedido' ? 'Sobre pedido · aprox. ' + (p.dias || 15) + ' días' : 'Entrega inmediata'}</div>
@@ -312,6 +313,8 @@
         <div class="field"><label>Categoría</label><select class="input" id="pC">${opts(D.categories.map(c => [c.id, c.name]), p.cat)}</select></div>
         <div class="field"><label>Precio (sin IVA)</label><input class="input" id="pP" type="number" min="1" step="1" value="${p.price || ''}" placeholder="Ej. 18500"></div>
         <div class="field"><label>Tipo (una línea)</label><input class="input" id="pT" maxlength="70" value="${esc(p.type || '')}" placeholder="Ej. Juego 3-2-1 con reposet"></div>
+        <div class="field"><label>Precio de oferta (opcional)</label><input class="input" id="pOf" type="number" min="0" step="1" value="${(p.oferta && p.oferta.price) || ''}" placeholder="Déjalo vacío si no hay descuento"><span class="note" id="pOfN">En la tienda sale el precio normal tachado y este como precio a pagar.</span></div>
+        <div class="field"><label>Oferta válida hasta (opcional)</label><input class="input" id="pOfH" type="date" value="${(p.oferta && p.oferta.hasta) || ''}"><span class="note">Ese día todavía aplica; al siguiente vuelve solo al precio normal.</span></div>
         <div class="field full"><label>Descripción corta</label><input class="input" id="pS" maxlength="180" value="${esc(p.short || '')}" placeholder="Lo que se lee junto al precio"></div>
         <div class="field full"><label>Descripción completa</label><textarea class="input" id="pD" maxlength="900" style="min-height:90px" placeholder="Materiales, qué incluye, para cuántas personas…">${esc(p.desc || '')}</textarea></div>
         <div class="field full"><label>Fotos (la primera es la principal)</label><div class="prod-fotos" id="pF"></div><input type="file" id="pFile" accept="image/*" multiple hidden><button type="button" class="btn sm" id="pAdd" style="margin-top:8px">+ Agregar fotos</button><span class="note" style="display:block;margin-top:6px">Usa fotos originales y nítidas del mueble. Máximo 6.</span></div>
@@ -333,15 +336,19 @@
     $('#pFile').onchange = async () => { const fl = [...$('#pFile').files]; $('#pFile').value = ''; for (const file of fl) { if (fotos.length >= 6) { toast('Máximo 6 fotos'); break; } try { fotos.push({ data: await comprimirFoto(file) }); } catch (e) { toast(e.message); } } pintarFotos(); };
     $$('#pCol input').forEach(c => c.onchange = () => { c.checked ? colores.add(c.value) : colores.delete(c.value); c.parentElement.classList.toggle('on', c.checked); });
     const sync = () => { $('#pDi').disabled = $('#pSt').value === 'inmediata'; }; $('#pSt').onchange = sync; sync();
+    const notaOf = () => { const n = +$('#pP').value, o = +$('#pOf').value; $('#pOfN').textContent = o > 0 && n > 0 ? (o < n ? 'Descuento de ' + Math.round((1 - o / n) * 100) + ' % (' + fmt(n - o) + ' menos). En la tienda sale ' + fmt(n) + ' tachado.' : 'Debe ser menor al precio normal.') : 'En la tienda sale el precio normal tachado y este como precio a pagar.'; };
+    $('#pOf').oninput = notaOf; $('#pP').oninput = notaOf; notaOf();
     $('#pOk').onclick = async () => {
       if ($('#pN').value.trim().length < 3) return toast('Escribe el nombre del producto');
       if (!(+$('#pP').value > 0)) return toast('Escribe el precio (sin IVA)');
+      if (+$('#pOf').value > 0 && +$('#pOf').value >= +$('#pP').value) return toast('El precio de oferta debe ser menor al precio normal');
       if (!fotos.length) return toast('Sube al menos una foto');
       const btn = $('#pOk'); btn.disabled = true; btn.textContent = 'Guardando…';
       try {
         for (const x of fotos) if (x.data) { const r = await api('/api/tienda', { data: x.data }); x.src = r.ruta; delete x.data; }
         const datos = { name: $('#pN').value, cat: $('#pC').value, price: +$('#pP').value, type: $('#pT').value, short: $('#pS').value, desc: $('#pD').value, imgs: fotos.map(x => x.src),
-          tapiz: Object.keys(D.TAPIZ).filter(k => colores.has(k)), defaultColor: p.defaultColor, stock: $('#pSt').value, dias: +$('#pDi').value || 15 };
+          tapiz: Object.keys(D.TAPIZ).filter(k => colores.has(k)), defaultColor: p.defaultColor, stock: $('#pSt').value, dias: +$('#pDi').value || 15,
+          oferta: +$('#pOf').value > 0 ? { price: +$('#pOf').value, hasta: $('#pOfH').value } : null };
         if (!base) Object.assign(datos, { dims: { largo: +$('#pL').value || 0, fondo: +$('#pFo').value || 0, alto: +$('#pA').value || 0 }, factor: +$('#pFa').value || 1, bultos: p.bultos || 1 });
         await api('/api/datos?c=tienda', { accion: 'guardar', id: id || undefined, datos, oculto: !$('#pPub').checked });
         m.cerrar(); toast(id ? 'Producto actualizado' : 'Producto publicado en la tienda'); await cargar(); render();
@@ -354,11 +361,69 @@
     };
   }
 
+  // ───────── Cupones y ofertas (solo administrador) ─────────
+  // Cupón: código que el cliente escribe al pagar en la página. Oferta: precio rebajado de un producto (se pone
+  // en Muebles → Editar / precio). El descuento del cupón lo calcula siempre el servidor.
+  const CUP_EST = { activo: ['Activo', 'pagado'], pausado: ['Pausado', 'origen'], vencido: ['Vencido', 'cancelado'], agotado: ['Agotado', 'cancelado'] };
+  const cupDesc = c => c.tipo === 'monto' ? fmt(c.valor) : c.valor + ' %';
+  const cupAlcance = a => { const D = window.CARDIAN; if (!a || a === 'todo') return 'Toda la tienda'; if (a.startsWith('cat:')) return 'Solo ' + ((D.categories.find(x => x.id === a.slice(4)) || {}).name || a.slice(4)).toLowerCase(); const p = (D.products || []).find(x => x.id === a.slice(5)) || (D.productsBase || []).find(x => x.id === a.slice(5)); return 'Solo ' + (p ? p.name : 'un producto que ya no está'); };
+  const fechaCorta = s => s ? new Date(s + 'T12:00:00').toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+  function vistaCupones() {
+    const D = window.CARDIAN; const lista = S.cupones || [];
+    const enOferta = (D.products || []).filter(p => p.oldPrice);
+    const msg = c => `Usa el cupón ${c.codigo} en cardianmuebles.com y llévate ${cupDesc(c)} de descuento${c.alcance && c.alcance !== 'todo' ? ' en ' + cupAlcance(c.alcance).replace('Solo ', '') : ''}${c.minimo ? ' en compras desde ' + fmt(c.minimo) : ''}${c.vence ? '. Válido hasta el ' + fechaCorta(c.vence) : ''}.`;
+    shell(`
+      <div class="table-wrap">${lista.length ? `<table class="table"><thead><tr><th>Código</th><th>Descuento</th><th>Aplica a</th><th>Condiciones</th><th class="num">Usos</th><th>Estado</th><th></th></tr></thead><tbody>
+        ${lista.map(c => { const e = CUP_EST[c.estado] || CUP_EST.activo; return `<tr><td><b class="cup-cod">${esc(c.codigo)}</b>${c.nota ? `<small>${esc(c.nota)}</small>` : ''}</td><td><b>${cupDesc(c)}</b></td><td>${esc(cupAlcance(c.alcance))}</td>
+          <td><small style="display:block">${c.minimo ? 'Compra mínima ' + fmt(c.minimo) : 'Sin compra mínima'}</small><small style="display:block">${c.vence ? 'Vence el ' + fechaCorta(c.vence) : 'Sin fecha de vencimiento'}</small></td>
+          <td class="num"><b>${c.usos || 0}</b>${c.usosMax ? ' / ' + c.usosMax : ''}<small>${c.pedidos || 0} pedido${(c.pedidos || 0) === 1 ? '' : 's'} creados</small></td>
+          <td><span class="badge ${e[1]}">${e[0]}</span></td>
+          <td style="white-space:nowrap;text-align:right"><button class="btn sm" data-ccop="${esc(c.codigo)}">Copiar mensaje</button> <button class="btn sm" data-cpau="${esc(c.codigo)}">${c.activo === false ? 'Reactivar' : 'Pausar'}</button> <button class="btn sm" data-cedi="${esc(c.codigo)}">Editar</button> <button class="btn sm" data-celi="${esc(c.codigo)}" style="color:#b4322b;border-color:#e7b9b4">Eliminar</button></td></tr>`; }).join('')}
+      </tbody></table>` : '<div class="empty">Todavía no hay cupones. Crea el primero con «+ Nuevo cupón».</div>'}</div>
+      <p class="note" style="margin-top:10px">«Usos» cuenta los pedidos que sí se pagaron con el cupón. El cliente lo escribe en la página al pagar, en «Cupón de descuento». El descuento se aplica a los productos, no al envío.</p>
+      <h2 style="font-size:15px;margin:26px 0 10px">Productos con precio de oferta</h2>
+      <p class="note" style="margin:-4px 0 12px">Para poner un producto en oferta: <a href="#/muebles">Muebles</a> → «Editar / precio» → «Precio de oferta». En la tienda sale el precio normal tachado.</p>
+      <div class="table-wrap">${enOferta.length ? `<table class="table"><thead><tr><th>Producto</th><th class="num">Precio normal</th><th class="num">Precio de oferta</th><th>Descuento</th><th>Válida hasta</th><th></th></tr></thead><tbody>${enOferta.map(p => `<tr><td><b>${esc(p.name)}</b></td><td class="num"><s>${fmt(p.oldPrice)}</s></td><td class="num"><b>${fmt(p.price)}</b></td><td>−${Math.round((1 - p.price / p.oldPrice) * 100)} %</td><td>${p.oferta && p.oferta.hasta ? fechaCorta(p.oferta.hasta) : 'Sin fecha'}</td><td style="text-align:right"><button class="btn sm" data-edprod="${p.id}">Editar</button></td></tr>`).join('')}</tbody></table>` : '<div class="empty">Ningún producto tiene precio de oferta ahora.</div>'}</div>`,
+      'Cupones y ofertas', 'Códigos de descuento para que el cliente los use al pagar en la página, y productos con precio rebajado.', `<button class="btn gold sm" id="nuevoCup">+ Nuevo cupón</button>`);
+    $('#nuevoCup').onclick = () => formCupon(null);
+    const de = cod => lista.find(c => c.codigo === cod);
+    $$('[data-cedi]').forEach(b => b.onclick = () => formCupon(de(b.dataset.cedi)));
+    $$('[data-ccop]').forEach(b => b.onclick = () => navigator.clipboard.writeText(msg(de(b.dataset.ccop))).then(() => toast('Mensaje copiado: pégalo en WhatsApp o en redes'), () => toast('No se pudo copiar')));
+    $$('[data-cpau]').forEach(b => b.onclick = async () => { const c = de(b.dataset.cpau); try { await api('/api/datos?c=cupones', { accion: 'editar', codigo: c.codigo, soloEstado: true, activo: c.activo === false }); toast(c.activo === false ? 'Cupón reactivado' : 'Cupón pausado: ya no se puede usar'); await cargar(); render(); } catch (e) { toast(e.message); } });
+    $$('[data-celi]').forEach(b => b.onclick = async () => { const c = de(b.dataset.celi); if (!confirm('¿Eliminar el cupón ' + c.codigo + '? Ya nadie podrá usarlo. Los pedidos que ya lo usaron no cambian.')) return; try { await api('/api/datos?c=cupones', { accion: 'eliminar', codigo: c.codigo }); toast('Cupón eliminado'); await cargar(); render(); } catch (e) { toast(e.message); } });
+    $$('[data-edprod]').forEach(b => b.onclick = () => formProducto(b.dataset.edprod));
+  }
+  function formCupon(c) {
+    const D = window.CARDIAN;
+    const alcances = `<option value="todo">Toda la tienda</option>${D.categories.map(x => `<option value="cat:${x.id}" ${c && c.alcance === 'cat:' + x.id ? 'selected' : ''}>Solo ${esc(x.name.toLowerCase())}</option>`).join('')}<optgroup label="Un solo producto">${(D.products || []).map(p => `<option value="prod:${p.id}" ${c && c.alcance === 'prod:' + p.id ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}</optgroup>`;
+    const m = modal(c ? 'Editar cupón ' + esc(c.codigo) : 'Nuevo cupón', `
+      <div class="fields">
+        <div class="field full"><label>Código del cupón</label><div style="display:flex;gap:8px"><input class="input" id="kCod" maxlength="24" value="${esc(c ? c.codigo : '')}" ${c ? 'readonly' : 'placeholder="Ej. NAVIDAD10 (o déjalo vacío y se genera)"'} style="text-transform:uppercase">${c ? '' : '<button type="button" class="btn sm" id="kGenC">Generar</button>'}</div><span class="note">Letras y números, sin espacios. Es lo que el cliente escribe al pagar.</span></div>
+        <div class="field"><label>Tipo de descuento</label><select class="input" id="kTipo">${opts([['porcentaje', 'Porcentaje (%)'], ['monto', 'Monto fijo ($)']], c ? c.tipo : 'porcentaje')}</select></div>
+        <div class="field"><label id="kValL">Descuento</label><input class="input" id="kVal" type="number" min="1" step="1" value="${c ? c.valor : ''}"></div>
+        <div class="field full"><label>¿A qué aplica?</label><select class="input" id="kAlc">${alcances}</select></div>
+        <div class="field"><label>Compra mínima (opcional)</label><input class="input" id="kMin" type="number" min="0" step="1" value="${c && c.minimo ? c.minimo : ''}" placeholder="Sin mínimo"></div>
+        <div class="field"><label>Máximo de usos (opcional)</label><input class="input" id="kUsos" type="number" min="0" step="1" value="${c && c.usosMax ? c.usosMax : ''}" placeholder="Sin límite"></div>
+        <div class="field"><label>Vence (opcional)</label><input class="input" id="kVen" type="date" value="${c && c.vence ? c.vence : ''}"><span class="note">Ese día todavía sirve.</span></div>
+        <div class="field"><label>Nota interna (opcional)</label><input class="input" id="kNota" maxlength="120" value="${esc(c ? c.nota || '' : '')}" placeholder="Ej. Campaña de Navidad"></div>
+        <div class="field full"><label class="chk"><input type="checkbox" id="kAct" ${!c || c.activo !== false ? 'checked' : ''}> Activo (los clientes ya lo pueden usar)</label></div>
+      </div>`, `<button class="btn primary sm" id="kOkC">${c ? 'Guardar cambios' : 'Crear cupón'}</button>`);
+    const etiq = () => { $('#kValL').textContent = $('#kTipo').value === 'monto' ? 'Descuento en pesos' : 'Descuento en % (1 a 90)'; }; $('#kTipo').onchange = etiq; etiq();
+    const gen = $('#kGenC'); if (gen) gen.onclick = () => { const abc = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; $('#kCod').value = 'CARDIAN-' + Array.from({ length: 5 }, () => abc[Math.floor(Math.random() * abc.length)]).join(''); };
+    $('#kOkC').onclick = async () => {
+      if (!(+$('#kVal').value > 0)) return toast('Escribe de cuánto es el descuento');
+      try {
+        await api('/api/datos?c=cupones', { accion: c ? 'editar' : 'crear', codigo: $('#kCod').value, tipo: $('#kTipo').value, valor: +$('#kVal').value, alcance: $('#kAlc').value, minimo: +$('#kMin').value || 0, usosMax: +$('#kUsos').value || 0, vence: $('#kVen').value, nota: $('#kNota').value, activo: $('#kAct').checked });
+        m.cerrar(); toast(c ? 'Cupón actualizado' : 'Cupón creado'); await cargar(); render();
+      } catch (e) { toast(e.message); }
+    };
+  }
+
   // ───────── Bitácora general (solo administrador) ─────────
   // Todo lo que hace el equipo: mensajes de WhatsApp (quién le escribió a quién), clientes, ventas, pagos,
   // productos, usuarios y accesos. Se pide aparte de los demás datos porque puede ser larga.
   const BIT = { lista: [], cuando: 0, cargando: false, f: { tipo: '', quien: '', q: '' } };
-  const BIT_TIPOS = ['WhatsApp', 'Cliente', 'Venta', 'Producto', 'Usuario', 'Acceso', 'Ajustes'];
+  const BIT_TIPOS = ['WhatsApp', 'Cliente', 'Venta', 'Producto', 'Cupón', 'Usuario', 'Acceso', 'Ajustes'];
   const BIT_CLASE = { WhatsApp: 'pagado', Venta: 'apartado', Cliente: 'recibido', Producto: 'listo', Usuario: 'origen', Acceso: 'origen', Ajustes: 'origen' };
   async function cargarBitacora() {
     if (BIT.cargando) return; BIT.cargando = true;
@@ -1121,7 +1186,7 @@
     if (r !== 'whatsapp') waStop();
     // El admin de atención solo entra a Muebles, Leads, WhatsApp y Mi cuenta.
     if (sup() && !SOLO_SUP.includes(r)) { location.replace('#/muebles'); return; }
-    const vistas = { hoy: vistaHoy, muebles: vistaMuebles, vendido: vistaVendido, ventas: vistaVentas, sinpago: vistaSinPago, leads: vistaLeads, whatsapp: vistaWhatsApp, vendedores: admin() ? vistaVendedores : vistaHoy, bitacora: admin() ? vistaBitacora : vistaHoy, ajustes: admin() ? vistaAjustes : vistaCuenta, cuenta: vistaCuenta };
+    const vistas = { hoy: vistaHoy, muebles: vistaMuebles, vendido: vistaVendido, ventas: vistaVentas, sinpago: vistaSinPago, leads: vistaLeads, whatsapp: vistaWhatsApp, vendedores: admin() ? vistaVendedores : vistaHoy, cupones: admin() ? vistaCupones : vistaHoy, bitacora: admin() ? vistaBitacora : vistaHoy, ajustes: admin() ? vistaAjustes : vistaCuenta, cuenta: vistaCuenta };
     // La primera vez que se entra a WhatsApp, cargar en segundo plano y re-pintar
     if (r === 'whatsapp' && !S.wa._cargado) { S.wa._cargado = true; waCargarChats().then(() => { if (ruta() === 'whatsapp') vistaWhatsApp(); }); waSync(); }
     (vistas[r] || vistaHoy)();

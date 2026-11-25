@@ -287,3 +287,8 @@ body.sys{background:var(--bg);color:var(--fg);font-family:var(--font);margin:0;m
 .table.bit td{vertical-align:top}
 .table.bit .bit-que{white-space:normal;line-height:1.45;max-width:720px}
 .table.bit tr.bit-dia td{background:var(--surface-2);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600;padding:7px 14px}
+
+/* Cupones y ofertas */
+.cup-cod{font-family:ui-monospace,Consolas,monospace;letter-spacing:.04em;font-size:13.5px}
+.mueble .precio s{font-size:13px;font-weight:400;color:var(--muted);margin-left:4px}
+.mueble .precio em{font-style:normal;font-size:11px;font-weight:600;color:#b4322b;background:#f8e1df;border-radius:999px;padding:2px 8px;margin-left:4px;white-space:nowrap}
