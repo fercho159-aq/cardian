@@ -22,13 +22,14 @@ window.CARDIAN = (function () {
     negro:      { name: 'Negro',            hex: '#1c1c1e' },
     grisOxford: { name: 'Gris oxford',      hex: '#4e545c' },
     grisPlata:  { name: 'Gris plata',       hex: '#a9aeb4' },
-    cocoa:      { name: 'Cocoa',            hex: '#7d5c45' },
-    chocolate:  { name: 'Chocolate',        hex: '#4a3226' },
+    cocoa:      { name: 'Cocoa',            hex: '#4a3226' }, // tapiz: el café oscuro
+    chocolate:  { name: 'Chocolate',        hex: '#7d5c45' }, // tapiz: el café claro
     beige:      { name: 'Beige',            hex: '#cdb795' },
     azulMarino: { name: 'Azul marino',      hex: '#223355' },
     nogal:      { name: 'Nogal americano',  hex: '#6b4526' },
     magnolia:   { name: 'Magnolia',         hex: '#ece6d9' },
-    grisMadera: { name: 'Gris',             hex: '#8a8d90' }
+    grisMadera: { name: 'Gris',             hex: '#8a8d90' },
+    chocolateMadera: { name: 'Chocolate',   hex: '#4a3226' } // acabado de madera de los comedores
   };
 
   const TAPIZ_SALAS = ['negro', 'grisOxford', 'grisPlata', 'cocoa', 'chocolate', 'beige'];
@@ -45,7 +46,7 @@ window.CARDIAN = (function () {
       desc: 'Nuestra sala más vendida. Modular en escuadra con un reposet y consola central con portavasos y compartimento. Tapizada en tela de alto tránsito sobre estructura de madera y espuma de alta densidad.',
       specs: [['Medidas', '2.60 × 3.60 m'], ['Reposet', '1 incluido'], ['Consola central', 'Con portavasos'], ['Colores', '6 a elegir']] },
 
-    { id: 'sala-africa', defaultColor: 'cocoa', cat: 'salas', name: 'Sala África', type: 'Juego 3-2-1 con reposet', price: 25000, stock: 'pedido', dias: 15,
+    { id: 'sala-africa', defaultColor: 'chocolate', cat: 'salas', name: 'Sala África', type: 'Juego 3-2-1 con reposet', price: 25000, stock: 'pedido', dias: 15,
       imgs: ['img/sala-africa-321.jpg'], featured: true,
       tapiz: TAPIZ_SALAS, optLabel: 'Color de tapiz', varImgs: false,
       dims: { largo: 235, fondo: 95, alto: 100 }, bultos: 3, factor: 1.0,
@@ -53,7 +54,7 @@ window.CARDIAN = (function () {
       desc: 'Juego de tres piezas con reposet en cada una: sofá, loveseat y sillón. La misma comodidad de la Sala modular África en formato de juego, ideal para salas rectangulares.',
       specs: [['Sofá', '2.35 m'], ['Loveseat', '1.80 m'], ['Sillón', '95 cm'], ['Reposet', 'En las tres piezas'], ['Colores', '6 a elegir']] },
 
-    { id: 'sala-tokio', defaultColor: 'chocolate', cat: 'salas', name: 'Sala Tokio', type: 'Juego 3-2-1 con reposet', price: 25000, stock: 'pedido', dias: 15,
+    { id: 'sala-tokio', defaultColor: 'cocoa', cat: 'salas', name: 'Sala Tokio', type: 'Juego 3-2-1 con reposet', price: 25000, stock: 'pedido', dias: 15,
       imgs: ['img/sala-tokio.jpg'], featured: true,
       tapiz: TAPIZ_SALAS, optLabel: 'Color de tapiz', varImgs: false,
       dims: { largo: 235, fondo: 95, alto: 102 }, bultos: 3, factor: 1.0,
@@ -61,7 +62,7 @@ window.CARDIAN = (function () {
       desc: 'Juego de tres piezas con reposet en cada una. Respaldos altos y brazos acolchados; se ve bien tanto en tela como en acabado tipo piel.',
       specs: [['Sofá', '2.35 m'], ['Loveseat', '1.80 m'], ['Sillón', '95 cm'], ['Reposet', 'En las tres piezas'], ['Colores', '6 a elegir']] },
 
-    { id: 'sala-delta', defaultColor: 'cocoa', cat: 'salas', name: 'Sala Delta', type: 'Juego 3-2-1', price: 19500, stock: 'pedido', dias: 15,
+    { id: 'sala-delta', defaultColor: 'chocolate', cat: 'salas', name: 'Sala Delta', type: 'Juego 3-2-1', price: 19500, stock: 'pedido', dias: 15,
       imgs: ['img/sala-delta.jpg'],
       tapiz: TAPIZ_SALAS, optLabel: 'Color de tapiz', varImgs: false,
       dims: { largo: 235, fondo: 95, alto: 95 }, bultos: 3, factor: 1.0,
@@ -112,7 +113,7 @@ window.CARDIAN = (function () {
     // ===== COMEDORES =====
     { id: 'comedor-delta-8', cat: 'comedores', name: 'Comedor Delta 8 personas', type: 'Mesa con pedestal y almacén, 8 sillas', price: 34000, stock: 'pedido', dias: 20,
       imgs: ['img/comedor-delta-8.jpg'], featured: true,
-      tapiz: ['nogal', 'magnolia', 'chocolate'], optLabel: 'Acabado',
+      tapiz: ['nogal', 'magnolia', 'chocolateMadera'], optLabel: 'Acabado',
       dims: { largo: 200, fondo: 100, alto: 76 }, bultos: 9, factor: 0.9,
       short: 'Para 8 personas, enchapado de encino, con pedestal, puertas y almacén.',
       desc: 'Comedor para ocho personas enchapado de encino. La base es un pedestal con puertas que sirve de almacén para vajilla y mantelería.',
@@ -120,7 +121,7 @@ window.CARDIAN = (function () {
 
     { id: 'comedor-dubai', cat: 'comedores', name: 'Comedor Dubai', type: 'Mesa de vidrio templado, 6 sillas', price: 28000, stock: 'pedido', dias: 20,
       imgs: ['img/comedor-dubai.jpg'], featured: true,
-      tapiz: ['nogal', 'chocolate'], optLabel: 'Acabado',
+      tapiz: ['nogal', 'chocolateMadera'], optLabel: 'Acabado',
       dims: { largo: 160, fondo: 100, alto: 76 }, bultos: 7, factor: 0.8,
       short: 'Para 6 personas, cubierta de vidrio templado sobre madera de pino.',
       desc: 'Comedor para seis personas con cubierta de vidrio templado y base de madera de pino. Las sillas son de respaldo curvo y asiento tapizado.',
@@ -128,7 +129,7 @@ window.CARDIAN = (function () {
 
     { id: 'comedor-madrid', cat: 'comedores', name: 'Comedor Madrid', type: 'Mesa de vidrio templado, 6 sillas', price: 26000, stock: 'pedido', dias: 20,
       imgs: ['img/comedor-madrid.jpg'],
-      tapiz: ['chocolate', 'grisMadera', 'nogal'], optLabel: 'Acabado',
+      tapiz: ['chocolateMadera', 'grisMadera', 'nogal'], optLabel: 'Acabado',
       dims: { largo: 160, fondo: 100, alto: 76 }, bultos: 7, factor: 0.8,
       short: 'Para 6 personas, vidrio templado y madera de pino, líneas rectas.',
       desc: 'Comedor para seis personas con cubierta de vidrio templado y base de madera de pino. Sillas de líneas rectas con asiento tapizado.',
@@ -136,7 +137,7 @@ window.CARDIAN = (function () {
 
     { id: 'comedor-delta-4', cat: 'comedores', name: 'Comedor Delta 4 personas', type: 'Mesa con pedestal y almacén, 4 sillas', price: 16500, stock: 'pedido', dias: 20,
       imgs: ['img/comedor-delta-4.jpg'],
-      tapiz: ['nogal', 'magnolia', 'chocolate'], optLabel: 'Acabado',
+      tapiz: ['nogal', 'magnolia', 'chocolateMadera'], optLabel: 'Acabado',
       dims: { largo: 100, fondo: 100, alto: 76 }, bultos: 5, factor: 0.6,
       short: 'Para 4 personas, enchapado de encino, con pedestal y almacén.',
       desc: 'La versión de cuatro personas del Comedor Delta: mesa cuadrada enchapada de encino sobre pedestal con puertas y almacén.',
