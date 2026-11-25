@@ -230,7 +230,9 @@
     const lista = D.products.filter(p => (!f.cat || p.cat === f.cat) && (!f.q || (p.name + ' ' + (p.type || '') + ' ' + (p.short || '')).toLowerCase().includes(f.q.toLowerCase())));
     const extras = ((S.catalogo && S.catalogo.extras) || []).filter(e => !f.q || e.nombre.toLowerCase().includes(f.q.toLowerCase()));
     const regsT = (S.catalogo && S.catalogo.tienda) || [];
-    const ocultos = regsT.filter(r => r.oculto);
+    const ocultos = regsT.filter(r => r.oculto && !r.eliminado);
+    const eliminadosT = regsT.filter(r => r.eliminado).sort((a, b) => (b.eliminado.cuando || '').localeCompare(a.eliminado.cuando || ''));
+    const bitT = (S.catalogo && S.catalogo.bitacoraTienda) || [];
     const nombreProd = r => (r.datos && r.datos.name) || ((D.productsBase || []).find(p => p.id === r.id) || {}).name || r.id;
     const medidas = p => p.dims ? `${(p.dims.largo / 100).toFixed(2)} × ${(p.dims.fondo / 100).toFixed(2)} m · alto ${p.dims.alto} cm` : '';
     const infoWa = p => `${p.name}${p.type ? ' (' + p.type + ')' : ''}\nPrecio directo: ${fmt(p.price)} *sin IVA\n${medidas(p) ? 'Medidas: ' + medidas(p) + '\n' : ''}${(p.tapiz || []).length ? 'Colores: ' + p.tapiz.map(t => (D.TAPIZ[t] || {}).name || t).join(', ') + '\n' : ''}Entrega: ${p.stock === 'pedido' ? 'sobre pedido, aprox. ' + (p.dias || 15) + ' días' : 'inmediata'}\n${location.origin}/producto?id=${p.id}`;
@@ -248,16 +250,20 @@
           ${medidas(p) ? `<div class="note">${medidas(p)}</div>` : ''}
           ${(p.tapiz || []).length ? `<div class="tapiz">${p.tapiz.map(t => `<i title="${esc((D.TAPIZ[t] || {}).name || t)}" style="background:${(D.TAPIZ[t] || {}).hex || '#ccc'}"></i>`).join('')}</div>` : ''}
           <div class="note">${p.stock === 'pedido' ? 'Sobre pedido · aprox. ' + (p.dias || 15) + ' días' : 'Entrega inmediata'}</div>
-          <div class="acts"><button class="btn gold sm" data-vender="${p.id}">Registrar venta</button><button class="btn sm" data-copiar="${p.id}">Copiar info</button>${admin() ? `<button class="btn sm" data-edprod="${p.id}">Editar / precio</button>` : ''}</div>
+          <div class="acts"><button class="btn gold sm" data-vender="${p.id}">Registrar venta</button><button class="btn sm" data-copiar="${p.id}">Copiar info</button>${admin() ? `<button class="btn sm" data-edprod="${p.id}">Editar / precio</button><button class="btn sm" data-delprod="${p.id}" style="color:#b4322b;border-color:#e7b9b4">Eliminar</button>` : ''}</div>
         </div></article>`).join('') : '<div class="empty">No hay modelos con esa búsqueda.</div>'}</div>
       ${admin() && ocultos.length ? `<h2 style="font-size:15px;margin:26px 0 10px">Ocultos de la tienda</h2><p class="note" style="margin:-4px 0 12px">No se ven en la página web ni se pueden comprar. Ábrelos para volver a publicarlos.</p><div class="table-wrap"><table class="table"><tbody>${ocultos.map(r => `<tr><td><b>${esc(nombreProd(r))}</b><small>${r.base ? 'Del catálogo' : 'Alta del sistema'} · oculto por ${esc(r.editadoPor || '—')}</small></td><td style="text-align:right"><button class="btn sm" data-edprod="${r.id}">Editar / publicar</button></td></tr>`).join('')}</tbody></table></div>` : ''}
       ${extras.length ? `<h2 style="font-size:15px;margin:26px 0 10px">Modelos agregados por el equipo</h2><p class="note" style="margin:-4px 0 12px">Modelos que no estaban en el catálogo y alguien vendió en tienda. Solo existen dentro del sistema (no se publican en la página web) y quedan aquí para la próxima venta${admin() ? '; tú puedes cambiar su precio o quitarlos' : ''}.</p>
-      <div class="table-wrap"><table class="table"><thead><tr><th>Modelo</th><th>Agregado por</th><th class="num">Precio</th><th></th></tr></thead><tbody>${extras.map(e => `<tr><td><b>${esc(e.nombre)}</b></td><td>${esc(e.creadoNombre || '—')}<small>${dia(e.creado)}</small></td><td class="num">${fmt(e.precio)}</td><td style="white-space:nowrap;text-align:right"><button class="btn gold sm" data-vender="${e.id}">Registrar venta</button>${admin() ? ` <button class="btn sm" data-mxp="${e.id}">Precio</button> <button class="btn sm" data-mxq="${e.id}">Quitar</button>` : ''}</td></tr>`).join('')}</tbody></table></div>` : ''}`,
+      <div class="table-wrap"><table class="table"><thead><tr><th>Modelo</th><th>Agregado por</th><th class="num">Precio</th><th></th></tr></thead><tbody>${extras.map(e => `<tr><td><b>${esc(e.nombre)}</b></td><td>${esc(e.creadoNombre || '—')}<small>${dia(e.creado)}</small></td><td class="num">${fmt(e.precio)}</td><td style="white-space:nowrap;text-align:right"><button class="btn gold sm" data-vender="${e.id}">Registrar venta</button>${admin() ? ` <button class="btn sm" data-mxp="${e.id}">Precio</button> <button class="btn sm" data-mxq="${e.id}">Quitar</button>` : ''}</td></tr>`).join('')}</tbody></table></div>` : ''}
+      ${admin() && eliminadosT.length ? `<h2 style="font-size:15px;margin:26px 0 10px">Productos eliminados</h2><p class="note" style="margin:-4px 0 12px">Ya no salen en la página web ni se pueden vender. Si fue un error, restáuralos.</p><div class="table-wrap"><table class="table"><tbody>${eliminadosT.map(r => `<tr><td><b>${esc(nombreProd(r))}</b><small>Eliminado por ${esc(r.eliminado.quien || '—')} · ${fecha(r.eliminado.cuando)}</small></td><td style="text-align:right"><button class="btn sm" data-resprod="${r.id}">Restaurar</button></td></tr>`).join('')}</tbody></table></div>` : ''}
+      ${admin() && bitT.length ? `<h2 style="font-size:15px;margin:26px 0 10px">Bitácora de productos</h2><p class="note" style="margin:-4px 0 12px">Altas, cambios de precio, eliminaciones y restauraciones: quién lo hizo y cuándo.</p><div class="table-wrap"><table class="table"><thead><tr><th>Cuándo</th><th>Quién</th><th>Movimiento</th><th>Producto</th><th>Detalle</th></tr></thead><tbody>${bitT.slice(0, 40).map(x => `<tr><td style="white-space:nowrap">${fecha(x.cuando)}</td><td>${esc(x.quien)}</td><td><span class="badge ${x.accion === 'Eliminó' ? 'cancelado' : x.accion === 'Alta' || x.accion === 'Restauró' ? 'pagado' : 'origen'}">${esc(x.accion)}</span></td><td><b>${esc(x.nombre)}</b></td><td>${esc(x.detalle)}</td></tr>`).join('')}</tbody></table></div>` : ''}`,
       'Muebles.', 'Modelos y precios de lista para atender y vender. Si vendiste algo que no está aquí, regístralo con «Modelo que no está en la lista».',
       `${admin() ? '<button class="btn sm" id="nuevoProd">+ Producto para la tienda</button>' : ''}<button class="btn gold sm" id="nuevaVenta">+ Registrar venta</button>`);
     enlazarComunes();
     const np = $('#nuevoProd'); if (np) np.onclick = () => formProducto(null);
     $$('[data-edprod]').forEach(b => b.onclick = () => formProducto(b.dataset.edprod));
+    $$('[data-delprod]').forEach(b => b.onclick = () => eliminarProducto(b.dataset.delprod));
+    $$('[data-resprod]').forEach(b => b.onclick = async () => { try { await api('/api/datos?c=tienda', { accion: 'restaurar', id: b.dataset.resprod }); toast('Producto restaurado: ya está otra vez en la tienda'); await cargar(); render(); } catch (e) { toast(e.message); } });
     $('#mq').oninput = () => { f.q = $('#mq').value; vistaMuebles(); const i = $('#mq'); i.focus(); i.setSelectionRange(i.value.length, i.value.length); };
     $$('[data-mc]').forEach(b => b.onclick = () => { f.cat = b.dataset.mc; vistaMuebles(); });
     $$('[data-vender]').forEach(b => b.onclick = () => formVenta(null, { id: b.dataset.vender }));
@@ -280,6 +286,13 @@
     img.onerror = () => rej(new Error('No se pudo leer la foto «' + file.name + '»'));
     img.src = URL.createObjectURL(file);
   });
+  async function eliminarProducto(id, alTerminar) {
+    const p = (window.CARDIAN.products || []).find(x => x.id === id) || (window.CARDIAN.productsBase || []).find(x => x.id === id) || {};
+    const reg = ((S.catalogo && S.catalogo.tienda) || []).find(r => r.id === id);
+    const nombre = (reg && reg.datos && reg.datos.name) || p.name || id;
+    if (!confirm('¿Eliminar «' + nombre + '» de la tienda?\n\nDeja de verse en la página web y ya no se podrá vender. Queda anotado en la bitácora con tu nombre y lo puedes restaurar después. Las ventas que ya lo tienen no cambian.')) return false;
+    try { await api('/api/datos?c=tienda', { accion: 'eliminar', id }); if (alTerminar) alTerminar(); toast('Producto eliminado. Quedó en la bitácora.'); await cargar(); render(); return true; } catch (e) { toast(e.message); return false; }
+  }
   function formProducto(id) {
     const D = window.CARDIAN; const regs = (S.catalogo && S.catalogo.tienda) || [];
     const reg = id ? regs.find(r => r.id === id) : null;
@@ -308,7 +321,7 @@
         <div class="field"><label>Tamaño para calcular el envío</label><select class="input" id="pFa">${opts([['0.5', 'Pieza chica (sofá cama, sillón)'], ['0.8', 'Mediano (comedor, sala chica)'], ['1', 'Sala o juego completo'], ['1.2', 'Modular grande']], String(p.factor || 1))}</select></div>`}
         <div class="field full"><label class="chk"><input type="checkbox" id="pPub" ${reg && reg.oculto ? '' : 'checked'}> Publicado en la tienda (los clientes lo ven y lo pueden comprar)</label></div>
       </div>`,
-      `${reg ? `<button class="btn sm" id="pDel" style="color:#b4322b;border-color:#e7b9b4">${reg.base ? 'Restaurar el original' : 'Eliminar producto'}</button>` : ''}<button class="btn primary sm" id="pOk">${id ? 'Guardar cambios' : 'Publicar producto'}</button>`, { wide: true });
+      `${id ? '<button class="btn sm" id="pDel" style="color:#b4322b;border-color:#e7b9b4">Eliminar producto</button>' : ''}${reg && reg.base && Object.keys(reg.datos || {}).length ? '<button class="btn sm" id="pOrig">Volver al original</button>' : ''}<button class="btn primary sm" id="pOk">${id ? 'Guardar cambios' : 'Publicar producto'}</button>`, { wide: true });
     const pintarFotos = () => { $('#pF').innerHTML = fotos.length ? fotos.map((x, i) => `<div class="pf"><img src="${x.data || '/' + esc(x.src)}" alt="">${i === 0 ? '<span>Principal</span>' : `<button type="button" data-pri="${i}" title="Poner como principal">★</button>`}<button type="button" class="x" data-qf="${i}" title="Quitar">×</button></div>`).join('') : '<div class="note">Aún no hay fotos.</div>';
       $$('[data-qf]', $('#pF')).forEach(b => b.onclick = () => { fotos.splice(+b.dataset.qf, 1); pintarFotos(); });
       $$('[data-pri]', $('#pF')).forEach(b => b.onclick = () => { const [x] = fotos.splice(+b.dataset.pri, 1); fotos.unshift(x); pintarFotos(); }); };
@@ -331,9 +344,10 @@
         m.cerrar(); toast(id ? 'Producto actualizado' : 'Producto publicado en la tienda'); await cargar(); render();
       } catch (e) { toast(e.message); btn.disabled = false; btn.textContent = id ? 'Guardar cambios' : 'Publicar producto'; pintarFotos(); }
     };
-    const del = $('#pDel'); if (del) del.onclick = async () => {
-      if (!confirm(reg.base ? '¿Quitar los cambios y dejar «' + p.name + '» como estaba originalmente?' : '¿Eliminar «' + p.name + '» de la tienda para siempre? Las ventas que ya lo tienen no cambian.')) return;
-      try { await api('/api/datos?c=tienda', { accion: 'eliminar', id }); m.cerrar(); toast(reg.base ? 'Producto restaurado' : 'Producto eliminado'); await cargar(); render(); } catch (e) { toast(e.message); }
+    const del = $('#pDel'); if (del) del.onclick = () => eliminarProducto(id, () => m.cerrar());
+    const orig = $('#pOrig'); if (orig) orig.onclick = async () => {
+      if (!confirm('¿Quitar los cambios y dejar «' + p.name + '» como estaba originalmente (precio, textos y fotos)?')) return;
+      try { await api('/api/datos?c=tienda', { accion: 'original', id }); m.cerrar(); toast('Producto como estaba originalmente'); await cargar(); render(); } catch (e) { toast(e.message); }
     };
   }
 

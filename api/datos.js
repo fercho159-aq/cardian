@@ -42,6 +42,7 @@ async function manejar(req, res) {
     out.yo = A.publico(u);
     const extras = (await store.get('modelos', [])).filter(m => m.activo !== false);
     out.catalogo = { productos: M.D().products.map(p => ({ id: p.id, nombre: p.name, precio: p.price || 0, cat: p.cat, tapiz: p.tapiz || [] })), tapiz: M.D().TAPIZ, estados: M.D().states, estadosVenta: M.ESTADOS_VENTA, estadosLead: M.ESTADOS_LEAD, origenes: M.ORIGENES, extras, tienda };
+    if (esAdmin(u)) out.catalogo.bitacoraTienda = (await store.get('bitacoraTienda', [])).slice(0, 80);
     return ok(res, out);
   }
   if (req.method !== 'POST') return error(res, 405, 'Método no permitido');
@@ -224,15 +225,22 @@ async function manejar(req, res) {
     await store.set('sucursales', [...new Set(lista)]);
     return ok(res, { sucursales: [...new Set(lista)] });
   }
-  // ───── Productos de la tienda (página web): alta, edición, precio y ocultar. Solo el administrador. ─────
+  // ───── Productos de la tienda (página web): alta, edición, precio, ocultar y eliminar. Solo el administrador. ─────
+  // Todo movimiento queda en «bitacoraTienda» (quién, cuándo, qué). Eliminar no borra el registro: lo marca
+  // como eliminado y lo saca de la tienda, para que quede en la bitácora y se pueda restaurar.
   if (c === 'tienda') {
-    if (!esAdmin(u)) return error(res, 403, 'Solo el administrador da de alta o cambia productos de la tienda');
+    if (!esAdmin(u)) return error(res, 403, 'Solo el administrador da de alta, cambia o elimina productos de la tienda');
     const D = M.D(); const base = M.productosBase();
     const lista = await store.get('tienda', []);
     const original = b.id ? base.find(p => p.id === b.id) : null;
     let r = b.id ? lista.find(x => x.id === b.id) : null;
+    const pesos = n => '$' + Math.round(n || 0).toLocaleString('es-MX');
+    const vigente = () => ({ ...(original || {}), ...((r && r.datos) || {}) }); // el producto como se ve hoy
+    const anotar = (accion, id, nombre, detalle) => store.actualizar('bitacoraTienda', l => [{ cuando: ahora(), quien: u.nombre, accion, id, nombre, detalle: detalle || '' }, ...l].slice(0, 300));
     if (ac === 'guardar') {
+      if (r && r.eliminado) return error(res, 409, 'Ese producto está eliminado. Restáuralo desde la bitácora para editarlo.');
       let d; try { d = T.normalizar({ ...(original || {}), ...(b.datos || {}) }, D); } catch (e) { return error(res, 400, e.message); }
+      const antes = b.id && (original || r) ? { ...vigente(), oculto: !!(r && r.oculto) } : null;
       if (original) {
         // producto del catálogo base: se guarda solo lo que cambió (si no cambió nada, el registro desaparece)
         if (!(b.datos || {}).tapiz || !(b.datos.tapiz || []).length) { delete d.tapiz; delete d.defaultColor; }
@@ -251,15 +259,42 @@ async function manejar(req, res) {
         lista.push(r);
       }
       await store.set('tienda', lista);
+      if (!antes) await anotar('Alta', r.id, d.name, 'Precio ' + pesos(d.price) + (b.oculto ? ' · sin publicar' : ''));
+      else {
+        const cambios = [];
+        if (d.price !== antes.price) cambios.push('Precio ' + pesos(antes.price) + ' → ' + pesos(d.price));
+        if (d.name !== antes.name) cambios.push('Nombre: «' + antes.name + '» → «' + d.name + '»');
+        if (JSON.stringify(d.imgs) !== JSON.stringify(antes.imgs)) cambios.push('Fotos');
+        if (!!b.oculto !== antes.oculto) cambios.push(b.oculto ? 'Se ocultó de la tienda' : 'Se volvió a publicar');
+        await anotar('Edición', r.id, d.name, cambios.join(' · ') || 'Textos, colores o entrega');
+      }
       return ok(res, { producto: r, tienda: lista });
     }
+    if (!b.id || (!original && !r)) return error(res, 404, 'No existe ese producto');
+    const nombre = vigente().name || b.id, precio = vigente().price;
     if (ac === 'eliminar') {
-      // producto nuevo: se borra con sus fotos. Producto base: se quitan los cambios y vuelve a como estaba.
-      if (!r) return error(res, 404, 'No existe ese producto');
+      if (r && r.eliminado) return error(res, 409, 'Ese producto ya está eliminado');
+      if (!r) { r = { id: original.id, base: true, datos: {}, creado: ahora(), creadoPor: u.nombre }; lista.push(r); }
+      Object.assign(r, { oculto: true, eliminado: { cuando: ahora(), quien: u.nombre }, editado: ahora(), editadoPor: u.nombre });
+      await store.set('tienda', lista);
+      await anotar('Eliminó', r.id, nombre, 'Precio ' + pesos(precio) + (r.base ? ' · del catálogo' : ' · alta del sistema'));
+      await store.actualizar('eliminados', l => [{ cuando: ahora(), quien: u.nombre, tipo: 'Producto de tienda', ref: r.id, detalle: nombre + ' · ' + pesos(precio) }, ...l].slice(0, 100));
+      return ok(res, { ok: true, tienda: lista });
+    }
+    if (ac === 'restaurar') {
+      if (!r || !r.eliminado) return error(res, 409, 'Ese producto no está eliminado');
+      delete r.eliminado; Object.assign(r, { oculto: false, editado: ahora(), editadoPor: u.nombre });
+      if (r.base && !Object.keys(r.datos || {}).length) lista.splice(lista.indexOf(r), 1);
+      await store.set('tienda', lista);
+      await anotar('Restauró', b.id, nombre, 'Vuelve a la tienda · ' + pesos(precio));
+      return ok(res, { ok: true, tienda: lista });
+    }
+    if (ac === 'original') {
+      // producto del catálogo: quita los cambios hechos en el sistema y vuelve a como estaba
+      if (!r || !r.base || r.eliminado) return error(res, 409, 'Ese producto no tiene cambios que quitar');
       lista.splice(lista.indexOf(r), 1);
       await store.set('tienda', lista);
-      if (!r.base) for (const src of ((r.datos || {}).imgs || [])) { const m = String(src).match(/^img\/tienda\/([\w-]+)\.jpg$/); if (m) await store.del('timg:' + m[1]).catch(() => {}); }
-      await store.actualizar('eliminados', l => [{ cuando: ahora(), quien: u.nombre, tipo: r.base ? 'Cambios de producto' : 'Producto de tienda', ref: r.id, detalle: (r.datos || {}).name || '' }, ...l].slice(0, 100));
+      await anotar('Volvió al original', b.id, original.name, 'Precio ' + pesos(original.price));
       return ok(res, { ok: true, tienda: lista });
     }
     return error(res, 400, 'Acción desconocida');
