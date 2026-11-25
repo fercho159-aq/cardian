@@ -16,12 +16,10 @@ module.exports = seguro(async (req, res) => {
   const limit = Math.min(200, Math.max(1, parseInt(q.limit, 10) || 50));
   if (!jid) return error(res, 400, 'Falta jid');
 
-  const tel10 = wa.telDeJid(jid);
-  const esAdmin = u.rol === 'admin' || u.rol === 'supervisor'; // el admin de atención ve todos los chats
-  if (!esAdmin) {
-    const leads = await store.get('leads', []);
-    const lead = tel10 ? leads.find(l => l.tel === tel10) : null;
-    if (!lead || lead.vendedorId !== u.id) return error(res, 403, 'Ese chat es de otro vendedor');
+  // Vendedor: solo los chats de sus leads (por jid guardado o por teléfono). Admin y admin de atención: todos.
+  if (u.rol !== 'admin' && u.rol !== 'supervisor') {
+    const lead = wa.leadDeChat(await store.get('leads', []), jid);
+    if (!wa.puedeAtender(u, lead)) return error(res, 403, 'Ese chat no está asignado a ti');
   }
 
   try {

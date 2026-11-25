@@ -112,6 +112,16 @@ function telDeJid(jid) {
   return d.length === 10 ? d : '';
 }
 
+// El lead dueño de un chat. WhatsApp identifica casi todos los chats con un id interno (…@lid) en vez del
+// teléfono, así que primero se busca por el jid guardado en el lead (waJid) y después por teléfono.
+// TODAS las rutas de WhatsApp deben usar esta función para decidir permisos: si cada una decide a su modo,
+// el vendedor ve el chat en la lista pero no puede abrirlo ni ver lo que envía.
+function leadDeChat(leads, jid, phoneJid) {
+  const tel = telDeJid(phoneJid || jid);
+  return (jid && leads.find(l => l.waJid && l.waJid === jid)) || (tel ? leads.find(l => l.tel === tel) : null) || null;
+}
+const puedeAtender = (u, lead) => u.rol === 'admin' || u.rol === 'supervisor' || !!(lead && lead.vendedorId === u.id);
+
 // A la inversa: tel10 → jid de WhatsApp móvil (México: lada 52, sin el 1).
 // El servidor normaliza el formato por su cuenta cuando enviamos.
 function jidDeTel(tel10) {
@@ -120,4 +130,4 @@ function jidDeTel(tel10) {
   return '52' + d + '@s.whatsapp.net';
 }
 
-module.exports = { waEnabled, cuentas, miCuenta, chats, mensajes, enviar, boletoSubida, enviarArchivo, avatarUrl, telDeJid, jidDeTel, ACCOUNT, ACT_AS, URL_ };
+module.exports = { leadDeChat, puedeAtender, waEnabled, cuentas, miCuenta, chats, mensajes, enviar, boletoSubida, enviarArchivo, avatarUrl, telDeJid, jidDeTel, ACCOUNT, ACT_AS, URL_ };

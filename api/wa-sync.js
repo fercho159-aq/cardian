@@ -26,30 +26,35 @@ module.exports = seguro(async (req, res) => {
   let creados = 0, actualizados = 0;
 
   await store.actualizar('leads', leads => {
-    const porTel = new Map();
-    for (const l of leads) if (l.tel) porTel.set(l.tel, l);
+    const porTel = new Map(), porJid = new Map();
+    for (const l of leads) { if (l.tel) porTel.set(l.tel, l); if (l.waJid) porJid.set(l.waJid, l); }
+    const RECIENTE = Date.now() / 1000 - 3 * 86400;
 
     for (const c of lista) {
       const jid = c.jid || c.id || '';
       if (/@g\.us$/.test(jid) || /^status@/i.test(jid)) continue;
       const tel = wa.telDeJid(c.phone_jid || jid);
-      if (!tel) continue;
+      // WhatsApp a veces no da el teléfono (chat …@lid): el lead se liga por el jid. Para no llenar la lista con
+      // conversaciones viejas, un chat sin teléfono solo se da de alta solo si tuvo mensajes en los últimos 3 días.
+      const conocido = porJid.get(jid) || (tel ? porTel.get(tel) : null) || null;
+      if (!tel && !conocido && !(c.last_ts && c.last_ts >= RECIENTE)) continue;
 
       const ultimoMsg = c.last_text ? { cuando: c.last_ts ? new Date(c.last_ts * 1000).toISOString() : ahora(), texto: String(c.last_text).slice(0, 400), from: 'cliente' } : null;
       const nombre = String(c.name || '').trim();
 
-      const abierto = porTel.get(tel);
+      const abierto = conocido;
       if (abierto && !['compro', 'no-compro'].includes(abierto.estado)) {
         let cambio = false;
         if (!abierto.nombre && nombre) { abierto.nombre = nombre; cambio = true; }
         if (ultimoMsg && (!abierto.ultimoMensaje || abierto.ultimoMensaje.cuando !== ultimoMsg.cuando)) { abierto.ultimoMensaje = ultimoMsg; cambio = true; }
-        if (!abierto.waJid) { abierto.waJid = jid; cambio = true; }
+        if (abierto.waJid !== jid) { abierto.waJid = jid; porJid.set(jid, abierto); cambio = true; }
+        if (!abierto.tel && tel) { abierto.tel = tel; porTel.set(tel, abierto); cambio = true; }
         if (cambio) actualizados++;
         continue;
       }
 
       // Si el cliente ya compró antes, asignar a su vendedor anterior (fidelización).
-      const anterior = porTel.get(tel);
+      const anterior = conocido;
       const vendPrev = anterior && anterior.estado === 'compro' ? usuarios.find(x => x.id === anterior.vendedorId && x.activo) : null;
       const vend = vendPrev || M.elegirVendedor(usuarios, '', leads);
       const lead = M.nuevoLead({ nombre, tel, mensaje: c.last_text || '', origen: 'whatsapp', producto: '' }, vend, 'WhatsApp');
@@ -57,7 +62,8 @@ module.exports = seguro(async (req, res) => {
       if (c.last_ts) lead.creado = new Date(c.last_ts * 1000).toISOString();
       if (ultimoMsg) lead.ultimoMensaje = ultimoMsg;
       leads.unshift(lead);
-      porTel.set(tel, lead);
+      if (tel) porTel.set(tel, lead);
+      porJid.set(jid, lead);
       creados++;
     }
   });

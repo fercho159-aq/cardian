@@ -20,8 +20,7 @@ module.exports = seguro(async (req, res) => {
   ]);
 
   const leads = await store.get('leads', []);
-  const porTel = new Map();
-  for (const l of leads) if (l.tel) porTel.set(l.tel, l);
+  const fijar = []; // leads a los que hay que guardarles el jid real del chat (para abrirlo y enviar después)
 
   const esAdmin = u.rol === 'admin' || u.rol === 'supervisor'; // el admin de atención ve todos los chats
   const out = [];
@@ -30,7 +29,8 @@ module.exports = seguro(async (req, res) => {
     // Omitir grupos (@g.us) y broadcasts — WhatsApp Business solo chatea con clientes individuales.
     if (/@g\.us$/.test(jid) || /^status@/i.test(jid)) continue;
     const tel10 = wa.telDeJid(c.phone_jid || jid);
-    const lead = tel10 ? porTel.get(tel10) || null : null;
+    const lead = wa.leadDeChat(leads, jid, c.phone_jid);
+    if (lead && lead.waJid !== jid) { lead.waJid = jid; fijar.push({ id: lead.id, jid }); }
     if (!esAdmin && (!lead || lead.vendedorId !== u.id)) continue;
     out.push({
       jid,
@@ -44,6 +44,7 @@ module.exports = seguro(async (req, res) => {
       lead: lead ? { id: lead.id, estado: lead.estado, vendedorId: lead.vendedorId, origen: lead.origen, producto: lead.producto || '' } : null,
     });
   }
+  if (fijar.length) await store.actualizar('leads', l => { fijar.forEach(f => { const x = l.find(y => y.id === f.id); if (x) x.waJid = f.jid; }); }).catch(() => {});
   // Más recientes primero.
   out.sort((a, b) => (b.hora || 0) - (a.hora || 0));
 

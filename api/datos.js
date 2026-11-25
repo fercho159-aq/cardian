@@ -123,16 +123,18 @@ async function manejar(req, res) {
   if (c === 'leads') {
     const usuarios = await A.usuarios();
     if (ac === 'crear') {
-      const tel = tel10(b.tel); if (!tel) return error(res, 400, 'El WhatsApp debe tener 10 dígitos');
+      // Un chat de WhatsApp puede venir sin teléfono (…@lid): entonces el lead se liga por el jid del chat.
+      const waJid = /^[\w.:-]{1,80}@[\w.-]{1,40}$/.test(String(b.waJid || '')) ? String(b.waJid) : '';
+      const tel = tel10(b.tel); if (!tel && !waJid) return error(res, 400, 'El WhatsApp debe tener 10 dígitos');
       const leads = await store.get('leads', []);
-      const repetido = leads.find(l => l.tel === tel && !['compro', 'no-compro'].includes(l.estado));
+      const repetido = leads.find(l => ((tel && l.tel === tel) || (waJid && l.waJid === waJid)) && !['compro', 'no-compro'].includes(l.estado));
       if (repetido && !b.forzar) return error(res, 409, 'Ese número ya está como lead de ' + ((usuarios.find(x => x.id === repetido.vendedorId) || {}).nombre || 'nadie') + ' (' + repetido.estado + ')');
       let vend = null;
       // El admin puede escoger vendedor; un vendedor solo se lo queda si marca «lo atiendo yo». Si no, al azar parejo.
       if (veTodo(u) && b.vendedorId) vend = usuarios.find(x => x.id === b.vendedorId) || null;
       else if (!veTodo(u) && b.mio) vend = u;
       else if (b.repartir !== false) vend = M.elegirVendedor(usuarios, b.sucursal, leads);
-      const lead = M.nuevoLead({ ...b, tel, origen: b.origen || 'whatsapp' }, vend, u.nombre);
+      const lead = M.nuevoLead({ ...b, tel, waJid: waJid || null, origen: b.origen || 'whatsapp' }, vend, u.nombre);
       await store.actualizar('leads', l => { l.unshift(lead); });
       return ok(res, { lead });
     }

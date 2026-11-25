@@ -68,6 +68,8 @@
   const sinPago = v => !conPago(v) && v.estado !== 'cancelado';
   const METODO_N = { efectivo: 'Efectivo', transferencia: 'Transferencia', tarjeta: 'Tarjeta', 'mercado-pago': 'Mercado Pago', 'mercado-libre': 'Mercado Libre', deposito: 'Depósito', otro: 'Otro' };
   const pagoCon = v => [...new Set((v.pagos || []).map(p => (METODO_N[p.metodo] || p.metodo) + (p.metodo === 'mercado-pago' && p.ref ? ' · ' + p.ref : '')))].join(', ');
+  // Lead sin teléfono (chat de WhatsApp con id interno): el botón abre su chat dentro del sistema.
+  const waLead = (l, txt) => l.tel ? waLink(l.tel, txt) : '/sistema#/whatsapp?chat=' + encodeURIComponent(l.waJid || '');
   const waLink = (tel, txt) => `https://wa.me/52${tel}?text=${encodeURIComponent(txt)}`;
   const ticketUrl = (folio, k) => `/ticket?f=${folio}&k=${k}`;
   const badge = (e, map) => `<span class="badge ${e}">${esc((map || ESTADO_V)[e] || e)}</span>`;
@@ -165,9 +167,9 @@
     const sitioPend = S.ventas.filter(v => sinPago(v) && Date.now() - new Date(v.creado) < 7 * 864e5);
     const sinVendedor = S.leads.filter(l => !l.vendedorId && !['compro', 'no-compro'].includes(l.estado));
     const tareas = [];
-    nuevos.slice(0, 6).forEach(l => tareas.push(`<li class="lead" data-lead="${l.id}"><div><b>${esc(l.nombre || 'Sin nombre')}</b> pidió informes ${l.producto ? 'de ' + esc(l.producto) : ''} <span class="badge origen">${ORIGEN[l.origen]}</span><div class="meta"><span>${hace(l.creado)}</span>${admin() ? `<span>${esc(nombreU(l.vendedorId))}</span>` : ''}</div></div><div class="acts"><a class="btn wa sm" target="_blank" rel="noopener" href="${waLink(l.tel, saludoLead(l))}" onclick="event.stopPropagation()">WhatsApp</a></div></li>`));
+    nuevos.slice(0, 6).forEach(l => tareas.push(`<li class="lead" data-lead="${l.id}"><div><b>${esc(l.nombre || 'Sin nombre')}</b> pidió informes ${l.producto ? 'de ' + esc(l.producto) : ''} <span class="badge origen">${ORIGEN[l.origen]}</span><div class="meta"><span>${hace(l.creado)}</span>${admin() ? `<span>${esc(nombreU(l.vendedorId))}</span>` : ''}</div></div><div class="acts"><a class="btn wa sm" target="_blank" rel="noopener" href="${waLead(l, saludoLead(l))}" onclick="event.stopPropagation()">WhatsApp</a></div></li>`));
     sitioPend.slice(0, 4).forEach(v => tareas.push(`<li class="lead" data-venta="${v.folio}"><div><b>Pedido ${v.folio}</b> sin pago · ${esc(v.cliente.nombre)} · ${fmt(v.total)}<div class="meta"><span>${hace(v.creado)}</span><span>${v.origen === 'sitio' ? 'Página web · eligió Mercado Pago' : (ORIGEN[v.origen] || v.origen)}</span></div></div><div class="acts">${v.cliente.tel ? `<a class="btn wa sm" target="_blank" rel="noopener" href="${waLink(v.cliente.tel, `Hola ${esc(v.cliente.nombre.split(' ')[0])}, soy de Cardian Muebles. Recibimos tu pedido ${v.folio} por ${fmt(v.total)}. ¿Te ayudo a completar el pago?`)}" onclick="event.stopPropagation()">WhatsApp</a>` : ''}</div></li>`));
-    sinRespuesta.slice(0, 4).forEach(l => tareas.push(`<li class="lead" data-lead="${l.id}"><div><b>${esc(l.nombre || l.tel)}</b> no ha respondido · vuelve a intentar<div class="meta"><span>${hace(l.creado)}</span></div></div><div class="acts"><a class="btn wa sm" target="_blank" rel="noopener" href="${waLink(l.tel, `Hola ${esc((l.nombre || '').split(' ')[0])}, te escribo de Cardian Muebles por si sigues interesado${l.producto ? ' en ' + esc(l.producto) : ''}. ¿Te paso el precio?`)}" onclick="event.stopPropagation()">WhatsApp</a></div></li>`));
+    sinRespuesta.slice(0, 4).forEach(l => tareas.push(`<li class="lead" data-lead="${l.id}"><div><b>${esc(l.nombre || l.tel)}</b> no ha respondido · vuelve a intentar<div class="meta"><span>${hace(l.creado)}</span></div></div><div class="acts"><a class="btn wa sm" target="_blank" rel="noopener" href="${waLead(l, `Hola ${esc((l.nombre || '').split(' ')[0])}, te escribo de Cardian Muebles por si sigues interesado${l.producto ? ' en ' + esc(l.producto) : ''}. ¿Te paso el precio?`)}" onclick="event.stopPropagation()">WhatsApp</a></div></li>`));
     shell(`
       <div class="grid kpis">
         <div class="kpi"><small>Ventas del mes</small><b>${fmt(mes.reduce((s, v) => s + v.total, 0))}</b><span>${mes.length} venta${mes.length === 1 ? '' : 's'}</span></div>
@@ -644,7 +646,7 @@
         <div><b>${esc(l.nombre || 'Sin nombre')}</b> · ${l.tel} ${badge(l.estado, ESTADO_L)} <span class="badge origen">${ORIGEN[l.origen] || l.origen}</span>
           <div class="meta">${l.producto ? `<span>Interés: ${esc(l.producto)}</span>` : ''}<span>${hace(l.creado)}</span>${veTodo() ? `<span>${l.vendedorId ? esc(nombreU(l.vendedorId)) : '<b style="color:var(--warn)">sin vendedor</b>'}</span>` : ''}${l.sucursal ? `<span>${esc(l.sucursal)}</span>` : ''}${l.notas.length ? `<span>${l.notas.length} nota${l.notas.length > 1 ? 's' : ''}</span>` : ''}${l.ventaFolio ? `<span>Venta ${l.ventaFolio}</span>` : ''}</div>
           ${l.mensaje ? `<div class="note" style="margin-top:4px">«${esc(l.mensaje)}»</div>` : ''}${l.ultimoMensaje && l.ultimoMensaje.texto !== l.mensaje ? `<div class="note" style="margin-top:2px">Último mensaje ${hace(l.ultimoMensaje.cuando)}: «${esc(l.ultimoMensaje.texto)}»</div>` : ''}</div>
-        <div class="acts"><a class="btn wa sm" target="_blank" rel="noopener" href="${waLink(l.tel, saludoLead(l))}">WhatsApp</a></div></div>`).join('') : '<div class="empty">No hay leads con esos filtros.</div>'}</div>`,
+        <div class="acts"><a class="btn wa sm" target="_blank" rel="noopener" href="${waLead(l, saludoLead(l))}">WhatsApp</a></div></div>`).join('') : '<div class="empty">No hay leads con esos filtros.</div>'}</div>`,
       veTodo() ? 'Leads' : 'Mis leads', 'Contactos que piden informes: del sitio, de WhatsApp Business o de sucursal. Cada uno se asigna al azar a un vendedor.',
       `<button class="btn gold sm" id="nuevoLead">+ Nuevo lead</button>`);
     enlazarComunes();
@@ -679,7 +681,7 @@
         <div class="two">
           <div>
             <div class="box" style="padding:14px 16px"><b style="font-size:16px">${esc(l.nombre || 'Sin nombre')}</b><div class="note">WhatsApp ${l.tel}${l.producto ? ' · Interés: ' + esc(l.producto) : ''}</div>${l.mensaje ? `<div style="margin-top:6px;font-size:13.5px">«${esc(l.mensaje)}»</div>` : ''}
-              <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">${S.ajustes.waBandeja ? `<button class="btn wa sm" id="abrirChat">Abrir chat en el sistema</button>` : ''}<a class="btn wa sm" target="_blank" rel="noopener" href="${waLink(l.tel, saludoLead(l))}">WhatsApp externo</a><a class="btn sm" href="tel:${l.tel}">Llamar</a>${l.estado !== 'compro' ? `<button class="btn gold sm" id="convertir">Registrar venta</button>` : `<button class="btn sm" id="verVenta">Ver venta ${l.ventaFolio}</button>`}</div></div>
+              <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">${S.ajustes.waBandeja ? `<button class="btn wa sm" id="abrirChat">Abrir chat en el sistema</button>` : ''}${l.tel ? `<a class="btn wa sm" target="_blank" rel="noopener" href="${waLink(l.tel, saludoLead(l))}">WhatsApp externo</a><a class="btn sm" href="tel:${l.tel}">Llamar</a>` : ''}${l.estado !== 'compro' ? `<button class="btn gold sm" id="convertir">Registrar venta</button>` : `<button class="btn sm" id="verVenta">Ver venta ${l.ventaFolio}</button>`}</div></div>
             <h2 style="font-size:14px;margin:14px 0 6px">Estado del lead</h2>
             <div class="sel-estado">${Object.entries(ESTADO_L).map(([k, t]) => `<button type="button" data-est="${k}" class="${l.estado === k ? 'on' : ''}">${t}</button>`).join('')}</div>
             <div class="field" style="margin-top:12px"><label>Nota</label><div style="display:flex;gap:8px"><input class="input" id="nota" placeholder="Qué pasó en la llamada, qué cotizaste…"><button class="btn sm" id="okNota">Guardar</button></div></div>
@@ -1035,11 +1037,15 @@
       try { await api('/api/datos?c=leads', { accion: 'estado', id: active.lead.id, estado: we.value }); toast('Estado: ' + ESTADO_L[we.value]); await cargar(); vistaWhatsApp(); } catch (x) { toast(x.message); }
     };
     const wa2 = $('#waAsig'); if (wa2) wa2.onchange = async () => {
-      try { await api('/api/datos?c=leads', { accion: 'asignar', id: active.lead.id, vendedorId: wa2.value }); toast('Reasignado'); await cargar(); await waCargarChats(); vistaWhatsApp(); } catch (x) { toast(x.message); }
+      try {
+        // chat sin lead todavía: al elegir vendedor se da de alta el cliente ya asignado
+        if (active.lead) await api('/api/datos?c=leads', { accion: 'asignar', id: active.lead.id, vendedorId: wa2.value });
+        else if (wa2.value) await api('/api/datos?c=leads', { accion: 'crear', tel: active.tel10 || '', waJid: active.jid, nombre: active.nombre, origen: 'whatsapp', mensaje: active.ultimo || '', vendedorId: wa2.value, repartir: false });
+        toast(wa2.value ? 'Asignado a ' + nombreU(wa2.value) : 'Sin vendedor'); await cargar(); await waCargarChats(); vistaWhatsApp(); } catch (x) { toast(x.message); }
     };
     const cl = $('#waCrearLead'); if (cl) cl.onclick = async () => {
       try {
-        const r = await api('/api/datos?c=leads', { accion: 'crear', tel: active.tel10 || active.jid, nombre: active.nombre, origen: 'whatsapp', mensaje: active.ultimo || '', mio: !veTodo() });
+        const r = await api('/api/datos?c=leads', { accion: 'crear', tel: active.tel10 || '', waJid: active.jid, nombre: active.nombre, origen: 'whatsapp', mensaje: active.ultimo || '', mio: !veTodo() });
         toast('Lead creado' + (r.lead.vendedorId ? ' · ' + nombreU(r.lead.vendedorId) : ''));
         await cargar(); await waCargarChats(); vistaWhatsApp();
       } catch (x) {
