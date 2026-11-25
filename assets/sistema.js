@@ -35,6 +35,22 @@
     Object.assign(S, { ventas: d.ventas, leads: d.leads, usuarios: d.usuarios, sucursales: d.sucursales, ajustes: d.ajustes || {}, catalogo: d.catalogo, yo: d.yo, accesos: d.accesos || [], eliminados: d.eliminados || [] });
     if (window.CARDIAN && window.CARDIAN.aplicarTienda && d.catalogo) window.CARDIAN.aplicarTienda(d.catalogo.tienda || []);
   }
+  // ───────── versión nueva ─────────
+  // La app instalada puede quedarse abierta días: se compara la huella de este archivo en el servidor con la que
+  // había al abrir. Si cambió, se recarga sola (al iniciar sesión, al volver a la app o cada par de minutos),
+  // siempre que no haya una ventana abierta ni se esté escribiendo, para no perder lo capturado.
+  let huella0 = null;
+  const huellaServidor = async () => { try { const r = await fetch('/assets/sistema.js', { method: 'HEAD', cache: 'no-store' }); return r.ok ? (r.headers.get('etag') || '') : ''; } catch (e) { return ''; } };
+  huellaServidor().then(h => { huella0 = h; });
+  async function actualizarSiHayVersion(forzar) {
+    if (!huella0) return false;
+    const h = await huellaServidor();
+    if (!h || h === huella0) return false;
+    const escribiendo = document.activeElement && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName);
+    if (!forzar && ($('#modal') || escribiendo)) return false;
+    location.reload(); return true;
+  }
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) actualizarSiHayVersion(false); });
   const admin = () => S.yo && S.yo.rol === 'admin';
   // Admin de atención («supervisor»): solo Muebles, Leads y WhatsApp, pero ve y reparte todos los leads y chats.
   const sup = () => S.yo && S.yo.rol === 'supervisor';
@@ -82,7 +98,7 @@
     if ($('#appLogin')) $('#appLogin').onclick = () => CardianApp.abrir();
     $('#login').onsubmit = async e => {
       e.preventDefault();
-      try { await api('/api/auth', { accion: 'entrar', usuario: $('#u').value, clave: $('#p').value }); await cargar(); render(); if (S.yo.cambiarClave) pedirClave(true); }
+      try { await api('/api/auth', { accion: 'entrar', usuario: $('#u').value, clave: $('#p').value }); if (await actualizarSiHayVersion(true)) return; await cargar(); render(); if (S.yo.cambiarClave) pedirClave(true); }
       catch (x) { vistaLogin(x.message); }
     };
   }
@@ -1064,7 +1080,9 @@
       vistos = new Set(mios.map(l => l.id));
     };
     if (S.yo) revisar();
+    let vueltas = 0;
     setInterval(async () => {
+      if (++vueltas % 4 === 0 && await actualizarSiHayVersion(false)) return;
       if (!S.yo) return;
       try { await cargar(); } catch (e) { return; }
       revisar();
