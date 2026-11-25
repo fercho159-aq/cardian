@@ -102,6 +102,15 @@
           "value": "noindex, nofollow"
         }
       ]
+    },
+    {
+      "source": "/tutoriales/(.*)",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        }
+      ]
     }
   ],
   "redirects": [

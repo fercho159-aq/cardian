@@ -56,7 +56,7 @@
   const sup = () => S.yo && S.yo.rol === 'supervisor';
   const veTodo = () => admin() || sup();
   const ROL_N = { admin: 'Administrador', supervisor: 'Admin de atención', vendedor: 'Vendedor' };
-  const SOLO_SUP = ['muebles', 'leads', 'whatsapp', 'cuenta'];
+  const SOLO_SUP = ['muebles', 'leads', 'whatsapp', 'tutoriales', 'cuenta'];
   const nombreU = id => (S.usuarios.find(u => u.id === id) || {}).nombre || '—';
   // Quién dio de alta el pedido: el primer registro del historial (un usuario, «Sitio web» o Mercado Pago).
   const altaDe = v => ((v.historial || [])[0] || {}).quien || '—';
@@ -125,6 +125,7 @@
     bitacora: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4"/><path d="M9 12h7M9 16h7M9 8h3"/></svg>',
     ajustes: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
     sinpago: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+    tutoriales: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M10 9.5v5l4.5-2.5z"/></svg>',
     cuenta: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>',
     whatsapp: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.11 4.9A10 10 0 0 0 4.1 18.4L3 22l3.7-1A10 10 0 1 0 19.11 4.9zM12 20.3a8.3 8.3 0 0 1-4.24-1.17l-.3-.18-2.19.57.59-2.14-.2-.31A8.3 8.3 0 1 1 12 20.3zm4.56-6.22c-.25-.13-1.48-.73-1.71-.81-.23-.08-.4-.13-.56.13-.17.25-.65.81-.8.98-.14.17-.3.19-.55.06-.25-.13-1.06-.39-2.02-1.24-.75-.67-1.25-1.49-1.4-1.74-.14-.25-.02-.38.11-.5.11-.11.25-.3.38-.44.13-.14.17-.25.25-.42.08-.17.04-.31-.02-.44-.06-.13-.56-1.36-.77-1.86-.2-.49-.41-.42-.56-.43h-.48c-.17 0-.44.06-.67.31-.23.25-.88.86-.88 2.11 0 1.24.9 2.44 1.03 2.6.13.17 1.78 2.73 4.33 3.82.6.26 1.08.42 1.45.54.61.19 1.17.17 1.6.1.49-.07 1.48-.6 1.69-1.19.21-.59.21-1.09.15-1.19-.06-.1-.23-.17-.48-.3z"/></svg>'
 ,
@@ -138,10 +139,10 @@
     const pendientes = S.ventas.filter(sinPago).length;
     const waNoLeidos = (S.wa && S.wa.chats || []).reduce((s, c) => s + (veTodo() || (c.lead && c.lead.vendedorId === S.yo.id) ? (c.noLeidos || 0) : 0), 0);
     const menu = sup()
-      ? [['muebles', 'Muebles'], ['leads', 'Leads', leadsNuevos], ['whatsapp', 'WhatsApp', waNoLeidos], ['cuenta', 'Mi cuenta']]
+      ? [['muebles', 'Muebles'], ['leads', 'Leads', leadsNuevos], ['whatsapp', 'WhatsApp', waNoLeidos], ['tutoriales', 'Tutoriales'], ['cuenta', 'Mi cuenta']]
       : admin()
-      ? [['hoy', 'Hoy'], ['ventas', 'Ventas'], ['sinpago', 'Sin pago', pendientes], ['leads', 'Leads', leadsNuevos], ['whatsapp', 'WhatsApp', waNoLeidos], ['muebles', 'Muebles'], ['cupones', 'Cupones'], ['vendido', 'Lo vendido'], ['bitacora', 'Bitácora'], ['vendedores', 'Usuarios'], ['ajustes', 'Ajustes']]
-      : [['hoy', 'Hoy'], ['muebles', 'Muebles'], ['leads', 'Mis leads', leadsNuevos], ['whatsapp', 'WhatsApp', waNoLeidos], ['ventas', 'Mis ventas'], ['vendido', 'Lo que vendí'], ['sinpago', 'Sin pago', pendientes], ['cuenta', 'Mi cuenta']];
+      ? [['hoy', 'Hoy'], ['ventas', 'Ventas'], ['sinpago', 'Sin pago', pendientes], ['leads', 'Leads', leadsNuevos], ['whatsapp', 'WhatsApp', waNoLeidos], ['muebles', 'Muebles'], ['cupones', 'Cupones'], ['vendido', 'Lo vendido'], ['bitacora', 'Bitácora'], ['vendedores', 'Usuarios'], ['tutoriales', 'Tutoriales'], ['ajustes', 'Ajustes']]
+      : [['hoy', 'Hoy'], ['muebles', 'Muebles'], ['leads', 'Mis leads', leadsNuevos], ['whatsapp', 'WhatsApp', waNoLeidos], ['ventas', 'Mis ventas'], ['vendido', 'Lo que vendí'], ['sinpago', 'Sin pago', pendientes], ['tutoriales', 'Tutoriales'], ['cuenta', 'Mi cuenta']];
     const r = ruta();
     $('#app').innerHTML = `<div class="shell">
       <nav class="side" id="side"><div class="brand"><img src="/img/logo.png" alt=""><span>Sistema</span></div>
@@ -359,6 +360,29 @@
       if (!confirm('¿Quitar los cambios y dejar «' + p.name + '» como estaba originalmente (precio, textos y fotos)?')) return;
       try { await api('/api/datos?c=tienda', { accion: 'original', id }); m.cerrar(); toast('Producto como estaba originalmente'); await cargar(); render(); } catch (e) { toast(e.message); }
     };
+  }
+
+  // ───────── Tutoriales en video ─────────
+  // Los videos viven en /tutoriales/ (mp4 720p + portada jpg). «roles» decide quién ve cada uno:
+  // el vendedor ve los de su trabajo diario; el administrador, todos.
+  const TUTOS = [
+    { id: 'panel-vendedor', titulo: 'Tu panel: clientes, WhatsApp y ventas', dur: '2:03', roles: ['vendedor', 'supervisor', 'admin'], desc: 'Qué hay en cada sección, cómo dar seguimiento a tus clientes, contestar por WhatsApp desde el sistema y mandar archivos.' },
+    { id: 'venta-en-tienda', titulo: 'Registrar una venta, ticket y estado del pedido', dur: '2:48', roles: ['vendedor', 'admin'], desc: 'Cómo registrar una venta de tienda (aunque el modelo no esté en la lista), imprimir o mandar el ticket y avisar al cliente cómo va su pedido.' },
+    { id: 'administrador', titulo: 'Administrador: equipo, chats y control de ventas', dur: '3:30', roles: ['admin'], desc: 'Dar de alta vendedores, repartir y asignar chats, ventas de Mercado Libre y el control de todo lo que se vende.' },
+    { id: 'cupones', titulo: 'Cupones de descuento', dur: '2:29', roles: ['admin'], desc: 'Crear un cupón, compartirlo, ver cómo lo usa el cliente al pagar en la página y cuántas veces se ha usado.' },
+  ];
+  function vistaTutoriales() {
+    const rol = S.yo.rol || 'vendedor';
+    const lista = TUTOS.filter(t => t.roles.includes(rol));
+    shell(`
+      <div class="tutos">${lista.map(t => `<article class="tuto">
+        <video controls preload="none" playsinline poster="/tutoriales/${t.id}.jpg" src="/tutoriales/${t.id}.mp4"></video>
+        <div class="tb"><b>${esc(t.titulo)}</b><small>${t.dur} min${t.roles.length === 1 ? ' · solo administrador' : ''}</small><p>${esc(t.desc)}</p></div>
+      </article>`).join('')}</div>
+      <p class="note" style="margin-top:14px">Los videos están grabados con clientes y ventas de ejemplo. El sistema se sigue mejorando, así que algún botón puede verse un poco distinto; los pasos son los mismos.</p>`,
+      'Tutoriales', admin() ? 'Videos cortos para aprender a usar el sistema. Tú ves todos; cada vendedor ve solo los de su panel.' : 'Videos cortos para aprender a usar tu panel.');
+    // Al reproducir uno se pausan los demás.
+    $$('.tuto video').forEach(v => v.addEventListener('play', () => $$('.tuto video').forEach(o => { if (o !== v) o.pause(); })));
   }
 
   // ───────── Cupones y ofertas (solo administrador) ─────────
@@ -1186,7 +1210,7 @@
     if (r !== 'whatsapp') waStop();
     // El admin de atención solo entra a Muebles, Leads, WhatsApp y Mi cuenta.
     if (sup() && !SOLO_SUP.includes(r)) { location.replace('#/muebles'); return; }
-    const vistas = { hoy: vistaHoy, muebles: vistaMuebles, vendido: vistaVendido, ventas: vistaVentas, sinpago: vistaSinPago, leads: vistaLeads, whatsapp: vistaWhatsApp, vendedores: admin() ? vistaVendedores : vistaHoy, cupones: admin() ? vistaCupones : vistaHoy, bitacora: admin() ? vistaBitacora : vistaHoy, ajustes: admin() ? vistaAjustes : vistaCuenta, cuenta: vistaCuenta };
+    const vistas = { hoy: vistaHoy, muebles: vistaMuebles, vendido: vistaVendido, ventas: vistaVentas, sinpago: vistaSinPago, leads: vistaLeads, whatsapp: vistaWhatsApp, vendedores: admin() ? vistaVendedores : vistaHoy, cupones: admin() ? vistaCupones : vistaHoy, bitacora: admin() ? vistaBitacora : vistaHoy, ajustes: admin() ? vistaAjustes : vistaCuenta, tutoriales: vistaTutoriales, cuenta: vistaCuenta };
     // La primera vez que se entra a WhatsApp, cargar en segundo plano y re-pintar
     if (r === 'whatsapp' && !S.wa._cargado) { S.wa._cargado = true; waCargarChats().then(() => { if (ruta() === 'whatsapp') vistaWhatsApp(); }); waSync(); }
     (vistas[r] || vistaHoy)();
@@ -1220,7 +1244,7 @@
       try { await cargar(); } catch (e) { return; }
       revisar();
       const escribiendo = document.activeElement && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName);
-      if (!$('#modal') && !escribiendo) render();
+      if (!$('#modal') && !escribiendo && ruta() !== 'tutoriales') render();
     }, 30000);
   })();
 })();
