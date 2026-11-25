@@ -15,7 +15,8 @@ const visiblesVentas = (lista, u) => esAdmin(u) ? lista : lista.filter(v => v.ve
 const visiblesLeads = (lista, u) => veTodo(u) ? lista : lista.filter(l => l.vendedorId === u.id);
 const hist = (obj, quien, que) => { (obj.historial = obj.historial || []).push({ cuando: ahora(), quien, que }); };
 
-const COLECCIONES = ['ventas', 'leads', 'usuarios', 'sucursales', 'ajustes', 'modelos'];
+const COLECCIONES = ['ventas', 'leads', 'usuarios', 'sucursales', 'ajustes', 'modelos', 'tienda'];
+const T = require('./_lib/tienda');
 // Modelos que agrega el equipo cuando venden algo que no está en el catálogo del sitio (id «x-…»).
 const normal = s => String(s || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ');
 module.exports = seguro(async (req, res) => {
@@ -27,6 +28,7 @@ module.exports = seguro(async (req, res) => {
 async function manejar(req, res) {
   const u = await A.exigir(req, res); if (!u) return;
   const q = query(req); const c = q.c || 'todo';
+  const tienda = await M.cargarTienda(); // el catálogo con las altas y cambios del administrador
 
   if (req.method === 'GET') {
     const out = {};
@@ -39,7 +41,7 @@ async function manejar(req, res) {
     if (esAdmin(u) && (c === 'ajustes' || c === 'todo')) { out.accesos = (await store.get('accesos', [])).slice(0, 40); out.eliminados = (await store.get('eliminados', [])).slice(0, 20); }
     out.yo = A.publico(u);
     const extras = (await store.get('modelos', [])).filter(m => m.activo !== false);
-    out.catalogo = { productos: M.D().products.map(p => ({ id: p.id, nombre: p.name, precio: p.price || 0, cat: p.cat, tapiz: p.tapiz || [] })), tapiz: M.D().TAPIZ, estados: M.D().states, estadosVenta: M.ESTADOS_VENTA, estadosLead: M.ESTADOS_LEAD, origenes: M.ORIGENES, extras };
+    out.catalogo = { productos: M.D().products.map(p => ({ id: p.id, nombre: p.name, precio: p.price || 0, cat: p.cat, tapiz: p.tapiz || [] })), tapiz: M.D().TAPIZ, estados: M.D().states, estadosVenta: M.ESTADOS_VENTA, estadosLead: M.ESTADOS_LEAD, origenes: M.ORIGENES, extras, tienda };
     return ok(res, out);
   }
   if (req.method !== 'POST') return error(res, 405, 'Método no permitido');
@@ -222,6 +224,47 @@ async function manejar(req, res) {
     await store.set('sucursales', [...new Set(lista)]);
     return ok(res, { sucursales: [...new Set(lista)] });
   }
+  // ───── Productos de la tienda (página web): alta, edición, precio y ocultar. Solo el administrador. ─────
+  if (c === 'tienda') {
+    if (!esAdmin(u)) return error(res, 403, 'Solo el administrador da de alta o cambia productos de la tienda');
+    const D = M.D(); const base = M.productosBase();
+    const lista = await store.get('tienda', []);
+    const original = b.id ? base.find(p => p.id === b.id) : null;
+    let r = b.id ? lista.find(x => x.id === b.id) : null;
+    if (ac === 'guardar') {
+      let d; try { d = T.normalizar({ ...(original || {}), ...(b.datos || {}) }, D); } catch (e) { return error(res, 400, e.message); }
+      if (original) {
+        // producto del catálogo base: se guarda solo lo que cambió (si no cambió nada, el registro desaparece)
+        if (!(b.datos || {}).tapiz || !(b.datos.tapiz || []).length) { delete d.tapiz; delete d.defaultColor; }
+        const dif = T.diferencias(d, original);
+        if (!r) { r = { id: original.id, base: true, creado: ahora(), creadoPor: u.nombre }; lista.push(r); }
+        Object.assign(r, { datos: dif, oculto: !!b.oculto, editado: ahora(), editadoPor: u.nombre });
+        if (!Object.keys(dif).length && !r.oculto) lista.splice(lista.indexOf(r), 1);
+      } else if (r) {
+        Object.assign(r, { datos: d, oculto: !!b.oculto, editado: ahora(), editadoPor: u.nombre });
+      } else {
+        if (b.id) return error(res, 404, 'No existe ese producto');
+        let nid = T.slug(d.name) || 'producto'; if (nid.startsWith('x-')) nid = 'p-' + nid;
+        const usados = new Set([...base.map(p => p.id), ...lista.map(x => x.id)]);
+        let k = nid, n = 2; while (usados.has(k)) k = nid + '-' + n++;
+        r = { id: k, base: false, oculto: !!b.oculto, datos: d, creado: ahora(), creadoPor: u.nombre, editado: ahora(), editadoPor: u.nombre };
+        lista.push(r);
+      }
+      await store.set('tienda', lista);
+      return ok(res, { producto: r, tienda: lista });
+    }
+    if (ac === 'eliminar') {
+      // producto nuevo: se borra con sus fotos. Producto base: se quitan los cambios y vuelve a como estaba.
+      if (!r) return error(res, 404, 'No existe ese producto');
+      lista.splice(lista.indexOf(r), 1);
+      await store.set('tienda', lista);
+      if (!r.base) for (const src of ((r.datos || {}).imgs || [])) { const m = String(src).match(/^img\/tienda\/([\w-]+)\.jpg$/); if (m) await store.del('timg:' + m[1]).catch(() => {}); }
+      await store.actualizar('eliminados', l => [{ cuando: ahora(), quien: u.nombre, tipo: r.base ? 'Cambios de producto' : 'Producto de tienda', ref: r.id, detalle: (r.datos || {}).name || '' }, ...l].slice(0, 100));
+      return ok(res, { ok: true, tienda: lista });
+    }
+    return error(res, 400, 'Acción desconocida');
+  }
+
   // ───── Modelos agregados por el equipo ─────
   if (c === 'modelos') {
     const lista = await store.get('modelos', []);

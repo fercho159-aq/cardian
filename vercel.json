@@ -13,6 +13,14 @@
     {
       "source": "/producto/:id",
       "destination": "/producto?id=:id"
+    },
+    {
+      "source": "/catalogo-extra.js",
+      "destination": "/api/tienda?js=1"
+    },
+    {
+      "source": "/img/tienda/:id.jpg",
+      "destination": "/api/tienda?img=:id"
     }
   ],
   "headers": [

@@ -17,6 +17,10 @@ module.exports = seguro(async (req, res) => {
   const lineas = b.lineas.filter(l => l.id).map(l => ({ id: l.id, color: l.color, qty: l.qty }));
   if (!lineas.length) return error(res, 400, 'Carrito inválido');
   const envio = b.envio && b.envio.tipo === 'domicilio' ? { tipo: 'domicilio', estado: b.envio.estado, direccion: b.envio.direccion } : { tipo: 'bodega' };
+  await M.cargarTienda(); // precios y productos vigentes (lo que el admin dio de alta o cambió)
+  // Si el carrito trae un producto que ya no está en la tienda (el admin lo ocultó o lo quitó), no se crea el pedido.
+  const faltan = lineas.filter(l => !M.D().products.some(p => p.id === l.id));
+  if (faltan.length) return error(res, 409, 'Un producto de tu carrito ya no está disponible. Quítalo del carrito o escríbenos por WhatsApp.');
   const folio = await M.folioNuevo();
   // el pedido del sitio también se reparte al azar para que un vendedor le dé seguimiento
   const vend = M.elegirVendedor(await A.usuarios());

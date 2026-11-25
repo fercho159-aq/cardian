@@ -5,11 +5,22 @@ const { id, ahora, tel10 } = require('./http');
 
 // El catálogo del sitio (assets/data.js) también sirve en el servidor: así el precio que se
 // cobra siempre sale de la lista oficial y no de lo que mande el navegador.
+let BASE = null; // productos originales de assets/data.js, sin los cambios del administrador
 function catalogo() {
   if (!global.window) global.window = {};
   if (!global.window.CARDIAN) require(path.join(process.cwd(), 'assets', 'data.js'));
+  if (!BASE) BASE = global.window.CARDIAN.products.slice();
   return global.window.CARDIAN;
 }
+// Aplica las altas y cambios que el administrador hizo desde el sistema (colección «tienda»): precio vigente,
+// productos nuevos y productos ocultos. Hay que llamarla antes de calcular() en cada petición que cobra o lista.
+async function cargarTienda() {
+  const d = catalogo();
+  const regs = await store.get('tienda', []);
+  d.products = require('./tienda').fusionar(BASE, regs);
+  return regs;
+}
+const productosBase = () => { catalogo(); return BASE; };
 const D = () => catalogo();
 
 const ESTADOS_VENTA = ['pendiente', 'apartado', 'pagado', 'en-produccion', 'entregado', 'cancelado'];
@@ -116,4 +127,4 @@ function nuevoLead(datos, vendedor, quien) {
   };
 }
 
-module.exports = { D, calcular, folioNuevo, pagado, saldo, estadoPorPago, llaveTicket, nuevaVenta, elegirVendedor, nuevoLead, ESTADOS_VENTA, ESTADOS_LEAD, ETAPAS, ORIGENES, ORIGENES_ADMIN };
+module.exports = { D, cargarTienda, productosBase, calcular, folioNuevo, pagado, saldo, estadoPorPago, llaveTicket, nuevaVenta, elegirVendedor, nuevoLead, ESTADOS_VENTA, ESTADOS_LEAD, ETAPAS, ORIGENES, ORIGENES_ADMIN };

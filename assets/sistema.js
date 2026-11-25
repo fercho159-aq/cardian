@@ -33,6 +33,7 @@
   async function cargar() {
     const d = await api('/api/datos?c=todo');
     Object.assign(S, { ventas: d.ventas, leads: d.leads, usuarios: d.usuarios, sucursales: d.sucursales, ajustes: d.ajustes || {}, catalogo: d.catalogo, yo: d.yo, accesos: d.accesos || [], eliminados: d.eliminados || [] });
+    if (window.CARDIAN && window.CARDIAN.aplicarTienda && d.catalogo) window.CARDIAN.aplicarTienda(d.catalogo.tienda || []);
   }
   const admin = () => S.yo && S.yo.rol === 'admin';
   // Admin de atención («supervisor»): solo Muebles, Leads y WhatsApp, pero ve y reparte todos los leads y chats.
@@ -212,6 +213,9 @@
     const f = S.filtros.m || (S.filtros.m = { q: '', cat: '' });
     const lista = D.products.filter(p => (!f.cat || p.cat === f.cat) && (!f.q || (p.name + ' ' + (p.type || '') + ' ' + (p.short || '')).toLowerCase().includes(f.q.toLowerCase())));
     const extras = ((S.catalogo && S.catalogo.extras) || []).filter(e => !f.q || e.nombre.toLowerCase().includes(f.q.toLowerCase()));
+    const regsT = (S.catalogo && S.catalogo.tienda) || [];
+    const ocultos = regsT.filter(r => r.oculto);
+    const nombreProd = r => (r.datos && r.datos.name) || ((D.productsBase || []).find(p => p.id === r.id) || {}).name || r.id;
     const medidas = p => p.dims ? `${(p.dims.largo / 100).toFixed(2)} × ${(p.dims.fondo / 100).toFixed(2)} m · alto ${p.dims.alto} cm` : '';
     const infoWa = p => `${p.name}${p.type ? ' (' + p.type + ')' : ''}\nPrecio directo: ${fmt(p.price)} *sin IVA\n${medidas(p) ? 'Medidas: ' + medidas(p) + '\n' : ''}${(p.tapiz || []).length ? 'Colores: ' + p.tapiz.map(t => (D.TAPIZ[t] || {}).name || t).join(', ') + '\n' : ''}Entrega: ${p.stock === 'pedido' ? 'sobre pedido, aprox. ' + (p.dias || 15) + ' días' : 'inmediata'}\n${location.origin}/producto?id=${p.id}`;
     shell(`
@@ -228,19 +232,93 @@
           ${medidas(p) ? `<div class="note">${medidas(p)}</div>` : ''}
           ${(p.tapiz || []).length ? `<div class="tapiz">${p.tapiz.map(t => `<i title="${esc((D.TAPIZ[t] || {}).name || t)}" style="background:${(D.TAPIZ[t] || {}).hex || '#ccc'}"></i>`).join('')}</div>` : ''}
           <div class="note">${p.stock === 'pedido' ? 'Sobre pedido · aprox. ' + (p.dias || 15) + ' días' : 'Entrega inmediata'}</div>
-          <div class="acts"><button class="btn gold sm" data-vender="${p.id}">Registrar venta</button><button class="btn sm" data-copiar="${p.id}">Copiar info</button></div>
+          <div class="acts"><button class="btn gold sm" data-vender="${p.id}">Registrar venta</button><button class="btn sm" data-copiar="${p.id}">Copiar info</button>${admin() ? `<button class="btn sm" data-edprod="${p.id}">Editar / precio</button>` : ''}</div>
         </div></article>`).join('') : '<div class="empty">No hay modelos con esa búsqueda.</div>'}</div>
+      ${admin() && ocultos.length ? `<h2 style="font-size:15px;margin:26px 0 10px">Ocultos de la tienda</h2><p class="note" style="margin:-4px 0 12px">No se ven en la página web ni se pueden comprar. Ábrelos para volver a publicarlos.</p><div class="table-wrap"><table class="table"><tbody>${ocultos.map(r => `<tr><td><b>${esc(nombreProd(r))}</b><small>${r.base ? 'Del catálogo' : 'Alta del sistema'} · oculto por ${esc(r.editadoPor || '—')}</small></td><td style="text-align:right"><button class="btn sm" data-edprod="${r.id}">Editar / publicar</button></td></tr>`).join('')}</tbody></table></div>` : ''}
       ${extras.length ? `<h2 style="font-size:15px;margin:26px 0 10px">Modelos agregados por el equipo</h2><p class="note" style="margin:-4px 0 12px">Modelos que no estaban en el catálogo y alguien vendió en tienda. Solo existen dentro del sistema (no se publican en la página web) y quedan aquí para la próxima venta${admin() ? '; tú puedes cambiar su precio o quitarlos' : ''}.</p>
       <div class="table-wrap"><table class="table"><thead><tr><th>Modelo</th><th>Agregado por</th><th class="num">Precio</th><th></th></tr></thead><tbody>${extras.map(e => `<tr><td><b>${esc(e.nombre)}</b></td><td>${esc(e.creadoNombre || '—')}<small>${dia(e.creado)}</small></td><td class="num">${fmt(e.precio)}</td><td style="white-space:nowrap;text-align:right"><button class="btn gold sm" data-vender="${e.id}">Registrar venta</button>${admin() ? ` <button class="btn sm" data-mxp="${e.id}">Precio</button> <button class="btn sm" data-mxq="${e.id}">Quitar</button>` : ''}</td></tr>`).join('')}</tbody></table></div>` : ''}`,
       'Muebles.', 'Modelos y precios de lista para atender y vender. Si vendiste algo que no está aquí, regístralo con «Modelo que no está en la lista».',
-      `<button class="btn gold sm" id="nuevaVenta">+ Registrar venta</button>`);
+      `${admin() ? '<button class="btn sm" id="nuevoProd">+ Producto para la tienda</button>' : ''}<button class="btn gold sm" id="nuevaVenta">+ Registrar venta</button>`);
     enlazarComunes();
+    const np = $('#nuevoProd'); if (np) np.onclick = () => formProducto(null);
+    $$('[data-edprod]').forEach(b => b.onclick = () => formProducto(b.dataset.edprod));
     $('#mq').oninput = () => { f.q = $('#mq').value; vistaMuebles(); const i = $('#mq'); i.focus(); i.setSelectionRange(i.value.length, i.value.length); };
     $$('[data-mc]').forEach(b => b.onclick = () => { f.cat = b.dataset.mc; vistaMuebles(); });
     $$('[data-vender]').forEach(b => b.onclick = () => formVenta(null, { id: b.dataset.vender }));
     $$('[data-mxp]').forEach(b => b.onclick = async () => { const e = S.catalogo.extras.find(x => x.id === b.dataset.mxp); const v = prompt('Nuevo precio de ' + e.nombre + ' (sin IVA):', e.precio); if (v === null) return; try { await api('/api/datos?c=modelos', { accion: 'editar', id: e.id, precio: +v }); toast('Precio actualizado'); await cargar(); vistaMuebles(); } catch (x) { toast(x.message); } });
     $$('[data-mxq]').forEach(b => b.onclick = async () => { const e = S.catalogo.extras.find(x => x.id === b.dataset.mxq); if (!confirm('¿Quitar «' + e.nombre + '» de la lista? Las ventas que ya lo tienen no cambian.')) return; try { await api('/api/datos?c=modelos', { accion: 'quitar', id: e.id }); toast('Modelo quitado de la lista'); await cargar(); vistaMuebles(); } catch (x) { toast(x.message); } });
     $$('[data-copiar]').forEach(b => b.onclick = () => { const p = D.products.find(x => x.id === b.dataset.copiar); navigator.clipboard.writeText(infoWa(p)).then(() => toast('Info copiada: pégala en WhatsApp'), () => toast('No se pudo copiar')); });
+  }
+
+  // ───────── Producto de la tienda (solo administrador): alta, edición, precio y publicar/ocultar ─────────
+  // Reduce la foto a máx. 1600 px y la pasa a JPG para que cargue rápido en la tienda (no cambia colores).
+  const comprimirFoto = file => new Promise((res, rej) => {
+    const img = new Image();
+    img.onload = () => {
+      const k = Math.min(1, 1600 / Math.max(img.naturalWidth, img.naturalHeight));
+      const c = document.createElement('canvas'); c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k);
+      const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height); x.drawImage(img, 0, 0, c.width, c.height);
+      let q = 0.86, out; do { out = c.toDataURL('image/jpeg', q); q -= 0.08; } while (out.length > 600000 && q > 0.35);
+      URL.revokeObjectURL(img.src); res(out);
+    };
+    img.onerror = () => rej(new Error('No se pudo leer la foto «' + file.name + '»'));
+    img.src = URL.createObjectURL(file);
+  });
+  function formProducto(id) {
+    const D = window.CARDIAN; const regs = (S.catalogo && S.catalogo.tienda) || [];
+    const reg = id ? regs.find(r => r.id === id) : null;
+    const base = id ? (D.productsBase || []).find(p => p.id === id) : null;
+    const p = id ? { ...(base || {}), ...((reg && reg.datos) || {}) } : { cat: 'salas', stock: 'pedido', dias: 15, imgs: [], tapiz: [], factor: 1, bultos: 1 };
+    if (id && !base && !reg) return toast('No existe ese producto');
+    // fotos: {src} ya guardadas (ruta) o {data} nuevas por subir
+    let fotos = (p.imgs || []).map(src => ({ src }));
+    let colores = new Set(p.tapiz || []);
+    const m = modal(id ? 'Editar ' + esc(p.name) : 'Nuevo producto para la tienda', `
+      <p class="note" style="margin:0 0 12px">${id ? 'Los cambios se ven en la página web en menos de un minuto.' : 'Al guardar aparece en la página web y el cliente lo puede comprar y pagar con Mercado Pago.'} *El precio va sin IVA.</p>
+      <div class="fields">
+        <div class="field"><label>Nombre del producto</label><input class="input" id="pN" maxlength="70" value="${esc(p.name || '')}" placeholder="Ej. Sala Roma"></div>
+        <div class="field"><label>Categoría</label><select class="input" id="pC">${opts(D.categories.map(c => [c.id, c.name]), p.cat)}</select></div>
+        <div class="field"><label>Precio (sin IVA)</label><input class="input" id="pP" type="number" min="1" step="1" value="${p.price || ''}" placeholder="Ej. 18500"></div>
+        <div class="field"><label>Tipo (una línea)</label><input class="input" id="pT" maxlength="70" value="${esc(p.type || '')}" placeholder="Ej. Juego 3-2-1 con reposet"></div>
+        <div class="field full"><label>Descripción corta</label><input class="input" id="pS" maxlength="180" value="${esc(p.short || '')}" placeholder="Lo que se lee junto al precio"></div>
+        <div class="field full"><label>Descripción completa</label><textarea class="input" id="pD" maxlength="900" style="min-height:90px" placeholder="Materiales, qué incluye, para cuántas personas…">${esc(p.desc || '')}</textarea></div>
+        <div class="field full"><label>Fotos (la primera es la principal)</label><div class="prod-fotos" id="pF"></div><input type="file" id="pFile" accept="image/*" multiple hidden><button type="button" class="btn sm" id="pAdd" style="margin-top:8px">+ Agregar fotos</button><span class="note" style="display:block;margin-top:6px">Usa fotos originales y nítidas del mueble. Máximo 6.</span></div>
+        <div class="field full"><label>Colores disponibles (opcional)</label><div class="prod-colores" id="pCol">${Object.entries(D.TAPIZ).map(([k, t]) => `<label class="${colores.has(k) ? 'on' : ''}"><input type="checkbox" value="${k}" ${colores.has(k) ? 'checked' : ''}><i style="background:${t.hex}"></i>${esc(t.name)}</label>`).join('')}</div></div>
+        <div class="field"><label>Entrega</label><select class="input" id="pSt">${opts([['pedido', 'Sobre pedido (se fabrica)'], ['inmediata', 'Entrega inmediata']], p.stock || 'pedido')}</select></div>
+        <div class="field"><label>Días de fabricación</label><input class="input" id="pDi" type="number" min="1" max="120" value="${p.dias || 15}"></div>
+        ${base ? '' : `<div class="field"><label>Largo (cm)</label><input class="input" id="pL" type="number" min="0" value="${(p.dims || {}).largo || ''}"></div>
+        <div class="field"><label>Fondo (cm)</label><input class="input" id="pFo" type="number" min="0" value="${(p.dims || {}).fondo || ''}"></div>
+        <div class="field"><label>Alto (cm)</label><input class="input" id="pA" type="number" min="0" value="${(p.dims || {}).alto || ''}"></div>
+        <div class="field"><label>Tamaño para calcular el envío</label><select class="input" id="pFa">${opts([['0.5', 'Pieza chica (sofá cama, sillón)'], ['0.8', 'Mediano (comedor, sala chica)'], ['1', 'Sala o juego completo'], ['1.2', 'Modular grande']], String(p.factor || 1))}</select></div>`}
+        <div class="field full"><label class="chk"><input type="checkbox" id="pPub" ${reg && reg.oculto ? '' : 'checked'}> Publicado en la tienda (los clientes lo ven y lo pueden comprar)</label></div>
+      </div>`,
+      `${reg ? `<button class="btn sm" id="pDel" style="color:#b4322b;border-color:#e7b9b4">${reg.base ? 'Restaurar el original' : 'Eliminar producto'}</button>` : ''}<button class="btn primary sm" id="pOk">${id ? 'Guardar cambios' : 'Publicar producto'}</button>`, { wide: true });
+    const pintarFotos = () => { $('#pF').innerHTML = fotos.length ? fotos.map((x, i) => `<div class="pf"><img src="${x.data || '/' + esc(x.src)}" alt="">${i === 0 ? '<span>Principal</span>' : `<button type="button" data-pri="${i}" title="Poner como principal">★</button>`}<button type="button" class="x" data-qf="${i}" title="Quitar">×</button></div>`).join('') : '<div class="note">Aún no hay fotos.</div>';
+      $$('[data-qf]', $('#pF')).forEach(b => b.onclick = () => { fotos.splice(+b.dataset.qf, 1); pintarFotos(); });
+      $$('[data-pri]', $('#pF')).forEach(b => b.onclick = () => { const [x] = fotos.splice(+b.dataset.pri, 1); fotos.unshift(x); pintarFotos(); }); };
+    pintarFotos();
+    $('#pAdd').onclick = () => $('#pFile').click();
+    $('#pFile').onchange = async () => { const fl = [...$('#pFile').files]; $('#pFile').value = ''; for (const file of fl) { if (fotos.length >= 6) { toast('Máximo 6 fotos'); break; } try { fotos.push({ data: await comprimirFoto(file) }); } catch (e) { toast(e.message); } } pintarFotos(); };
+    $$('#pCol input').forEach(c => c.onchange = () => { c.checked ? colores.add(c.value) : colores.delete(c.value); c.parentElement.classList.toggle('on', c.checked); });
+    const sync = () => { $('#pDi').disabled = $('#pSt').value === 'inmediata'; }; $('#pSt').onchange = sync; sync();
+    $('#pOk').onclick = async () => {
+      if ($('#pN').value.trim().length < 3) return toast('Escribe el nombre del producto');
+      if (!(+$('#pP').value > 0)) return toast('Escribe el precio (sin IVA)');
+      if (!fotos.length) return toast('Sube al menos una foto');
+      const btn = $('#pOk'); btn.disabled = true; btn.textContent = 'Guardando…';
+      try {
+        for (const x of fotos) if (x.data) { const r = await api('/api/tienda', { data: x.data }); x.src = r.ruta; delete x.data; }
+        const datos = { name: $('#pN').value, cat: $('#pC').value, price: +$('#pP').value, type: $('#pT').value, short: $('#pS').value, desc: $('#pD').value, imgs: fotos.map(x => x.src),
+          tapiz: Object.keys(D.TAPIZ).filter(k => colores.has(k)), defaultColor: p.defaultColor, stock: $('#pSt').value, dias: +$('#pDi').value || 15 };
+        if (!base) Object.assign(datos, { dims: { largo: +$('#pL').value || 0, fondo: +$('#pFo').value || 0, alto: +$('#pA').value || 0 }, factor: +$('#pFa').value || 1, bultos: p.bultos || 1 });
+        await api('/api/datos?c=tienda', { accion: 'guardar', id: id || undefined, datos, oculto: !$('#pPub').checked });
+        m.cerrar(); toast(id ? 'Producto actualizado' : 'Producto publicado en la tienda'); await cargar(); render();
+      } catch (e) { toast(e.message); btn.disabled = false; btn.textContent = id ? 'Guardar cambios' : 'Publicar producto'; pintarFotos(); }
+    };
+    const del = $('#pDel'); if (del) del.onclick = async () => {
+      if (!confirm(reg.base ? '¿Quitar los cambios y dejar «' + p.name + '» como estaba originalmente?' : '¿Eliminar «' + p.name + '» de la tienda para siempre? Las ventas que ya lo tienen no cambian.')) return;
+      try { await api('/api/datos?c=tienda', { accion: 'eliminar', id }); m.cerrar(); toast(reg.base ? 'Producto restaurado' : 'Producto eliminado'); await cargar(); render(); } catch (e) { toast(e.message); }
+    };
   }
 
   // ───────── Lo vendido (control por modelo y por vendedor) ─────────
