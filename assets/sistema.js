@@ -16,7 +16,7 @@
   // Orígenes que solo registra el administrador (llegan solos o los asigna él, como las ventas de Mercado Libre).
   const ORIGEN_ADMIN = ['sitio', 'mercado-pago', 'mercado-libre'];
   const METODOS = ['efectivo', 'transferencia', 'tarjeta', 'mercado-pago', 'mercado-libre', 'deposito', 'otro'];
-  let S = { yo: null, ventas: [], leads: [], usuarios: [], sucursales: [], ajustes: {}, catalogo: null, filtros: {}, wa: { chats: [], account: null, waEnabled: false, activo: null, mensajes: [], busca: '', fEstado: '', fVend: '', sinLeads: false } };
+  let S = { yo: null, ventas: [], leads: [], usuarios: [], sucursales: [], ajustes: {}, catalogo: null, filtros: {}, wa: { chats: [], account: null, waEnabled: false, activo: null, mensajes: [], busca: '', fEstado: '', fVend: '', sinLeads: false, borrador: {}, adjunto: {}, rr: null } };
   // timers del panel WhatsApp (bandeja + chat activo) para parar polling al salir
   let waTimers = { lista: null, msgs: null };
   function waStop() { clearInterval(waTimers.lista); clearInterval(waTimers.msgs); waTimers.lista = waTimers.msgs = null; }
@@ -32,7 +32,7 @@
   }
   async function cargar() {
     const d = await api('/api/datos?c=todo');
-    Object.assign(S, { ventas: d.ventas, leads: d.leads, usuarios: d.usuarios, sucursales: d.sucursales, ajustes: d.ajustes || {}, catalogo: d.catalogo, yo: d.yo, accesos: d.accesos || [], eliminados: d.eliminados || [], cupones: d.cupones || [] });
+    Object.assign(S, { ventas: d.ventas, leads: d.leads, usuarios: d.usuarios, sucursales: d.sucursales, ajustes: d.ajustes || {}, catalogo: d.catalogo, yo: d.yo, accesos: d.accesos || [], eliminados: d.eliminados || [], cupones: d.cupones || [], respuestas: d.respuestas || [] });
     if (window.CARDIAN && window.CARDIAN.aplicarTienda && d.catalogo) window.CARDIAN.aplicarTienda(d.catalogo.tienda || []);
   }
   // ───────── versión nueva ─────────
@@ -978,6 +978,9 @@
   // Antes de subir directo se prueba CORS con un OPTIONS: si el servidor no lo permite, el navegador lo corta sin
   // mandar nada, y así nunca se manda el archivo dos veces (un POST sin CORS sí llegaría aunque no se pueda leer la respuesta).
   async function waEnviarArchivo(jid, file, pie) {
+    // El servidor de WhatsApp lee mal los nombres con acentos («CatÃ¡logo»): se mandan sin acentos.
+    const limpioN = String(file.name || 'archivo').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\w. ()-]/g, '-');
+    if (limpioN !== file.name) file = new File([file], limpioN, { type: file.type });
     let g = null;
     try { g = await api('/api/wa-archivo?accion=boleto', { jid }); await fetch(g.url, { method: 'OPTIONS' }); }
     catch (e) { g = null; }
@@ -994,6 +997,88 @@
     const j = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(j.error || 'No se pudo enviar el archivo');
   }
+  // ───────── Respuestas rápidas ─────────
+  // Al elegir una, su texto llena la caja ({nombre} → nombre del cliente, {vendedor} → quien escribe) y su archivo
+  // queda listo para enviarse junto con el mensaje. Se pueden editar antes de enviar.
+  const rrTexto = (r, chat) => String(r.texto || '').replace(/\{nombre\}/g, ((chat && chat.nombre) || '').split(' ')[0] || '').replace(/\{vendedor\}/g, (S.yo.nombre || '').split(' ')[0]).replace(/¡Hola !/g, '¡Hola!').replace(/Hola ,/g, 'Hola,');
+  function rrAbrir(filtro, desdeBarra = true) {
+    const box = $('#waRR'); if (!box) return;
+    S.wa.rr = { filtro: filtro || '', desdeBarra };
+    const q = (filtro || '').toLowerCase();
+    // primero las que empiezan con el atajo escrito, luego las que lo tienen en el título y al final en el texto
+    const peso = r => !q ? 0 : (r.atajo || '').startsWith(q) ? 0 : r.titulo.toLowerCase().includes(q) ? 1 : 2;
+    const lista = (S.respuestas || []).filter(r => !q || (r.atajo || '').startsWith(q) || r.titulo.toLowerCase().includes(q) || (r.texto || '').toLowerCase().includes(q))
+      .sort((a, b) => peso(a) - peso(b) || (a.alcance === 'personal') - (b.alcance === 'personal') || a.titulo.localeCompare(b.titulo));
+    box.innerHTML = `<div class="rr-top">${desdeBarra ? '' : '<input id="rrBusca" placeholder="Buscar respuesta…" autocomplete="off">'}<span>⚡ Respuestas rápidas</span><button type="button" class="btn sm" id="rrNueva">+ Nueva</button><button type="button" class="btn sm" id="rrAdmin">Administrar</button></div>
+      <div class="rr-lista">${lista.length ? lista.map(r => `<button type="button" data-rr="${r.id}"><b>${esc(r.titulo)}</b>${r.atajo ? `<code>/${esc(r.atajo)}</code>` : ''}${r.adjunto ? '<i title="Lleva archivo">📎</i>' : ''}${r.alcance === 'personal' ? '<em>mía</em>' : ''}<small>${esc((r.texto || r.adjunto && r.adjunto.nombre || '').slice(0, 110))}</small></button>`).join('') : '<div class="note" style="padding:10px 12px">No hay respuestas con ese nombre. Crea una con «+ Nueva».</div>'}</div>`;
+    box.hidden = false;
+    const chat = (S.wa.chats || []).find(c => c.jid === S.wa.activo);
+    $$('[data-rr]', box).forEach(b => b.onclick = () => {
+      const r = S.respuestas.find(x => x.id === b.dataset.rr); const ta = $('#waTxt');
+      ta.value = rrTexto(r, chat); S.wa.borrador[S.wa.activo] = ta.value;
+      if (r.adjunto) S.wa.adjunto[S.wa.activo] = r.adjunto; else delete S.wa.adjunto[S.wa.activo];
+      rrCerrar(); vistaWhatsApp();
+      const t2 = $('#waTxt'); if (t2) { t2.focus(); t2.setSelectionRange(t2.value.length, t2.value.length); }
+    });
+    const bu = $('#rrBusca'); if (bu) { bu.value = S.wa.rr.busca || ''; bu.oninput = () => { S.wa.rr.busca = bu.value; rrAbrir(bu.value, false); const b2 = $('#rrBusca'); b2.focus(); b2.setSelectionRange(b2.value.length, b2.value.length); }; if (!filtro) bu.focus(); }
+    $('#rrNueva').onclick = () => { rrCerrar(); formRespuesta(null); };
+    $('#rrAdmin').onclick = () => { rrCerrar(); adminRespuestas(); };
+  }
+  function rrCerrar() { const box = $('#waRR'); if (box) { box.hidden = true; box.innerHTML = ''; } S.wa.rr = null; }
+  // Sube un archivo por partes (la base guarda valores chicos); devuelve { nombre, tipo, tam, url }.
+  async function subirAdjunto(file, avance) {
+    const ini = await api('/api/adjuntos', { accion: 'iniciar', nombre: file.name, tipo: file.type, tam: file.size });
+    const buf = new Uint8Array(await file.arrayBuffer()); const P = ini.parte; const n = Math.ceil(buf.length / P);
+    for (let i = 0; i < n; i++) {
+      let bin = ''; const trozo = buf.subarray(i * P, (i + 1) * P); for (let k = 0; k < trozo.length; k += 0x8000) bin += String.fromCharCode.apply(null, trozo.subarray(k, k + 0x8000));
+      await api('/api/adjuntos', { accion: 'parte', id: ini.id, n: i, data: btoa(bin) }); if (avance) avance(i + 1, n);
+    }
+    return (await api('/api/adjuntos', { accion: 'cerrar', id: ini.id, partes: n })).adjunto;
+  }
+  const CATS_PDF = [['/pdf/catalogo-salas-cardian-muebles.pdf', 'Catálogo de salas (PDF)', 'Catálogo Salas - Cardian Muebles.pdf'], ['/pdf/catalogo-comedores-cardian-muebles.pdf', 'Catálogo de comedores (PDF)', 'Catálogo Comedores - Cardian Muebles.pdf']];
+  function formRespuesta(r) {
+    const equipo = veTodo();
+    let adj = r && r.adjunto ? { ...r.adjunto } : null;
+    const m = modal(r ? 'Editar respuesta rápida' : 'Nueva respuesta rápida', `
+      <div class="fields">
+        <div class="field"><label>Título</label><input class="input" id="qT" maxlength="60" value="${esc(r ? r.titulo : '')}" placeholder="Ej. Promoción de diciembre"></div>
+        <div class="field"><label>Atajo (opcional)</label><input class="input" id="qA" maxlength="20" value="${esc(r ? r.atajo || '' : '')}" placeholder="Ej. promo"><span class="note">En el chat escribe /promo y aparece.</span></div>
+        <div class="field full"><label>Mensaje</label><textarea class="input" id="qX" maxlength="2000" style="min-height:150px">${esc(r ? r.texto : '')}</textarea><span class="note">Puedes usar <b>{nombre}</b> (nombre del cliente) y <b>{vendedor}</b> (tu nombre). Antes de enviar lo puedes cambiar.</span></div>
+        <div class="field full"><label>Archivo (opcional)</label>
+          <div class="rr-adj" id="qAdj"></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><select class="input" id="qCat" style="max-width:280px"><option value="">Usar un catálogo del sitio…</option>${CATS_PDF.map(c => `<option value="${c[0]}">${c[1]}</option>`).join('')}</select><button type="button" class="btn sm" id="qSubir">Subir archivo (PDF, foto, Word o Excel, máx. 4 MB)</button><input type="file" id="qFile" hidden accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx,.xls,.xlsx,.txt"></div></div>
+        <div class="field full"><label>¿Quién la puede usar?</label><select class="input" id="qAl" ${equipo ? '' : 'disabled'}>${opts(equipo ? [['equipo', 'Todo el equipo'], ['personal', 'Solo yo']] : [['personal', 'Solo yo']], r ? r.alcance : (equipo ? 'equipo' : 'personal'))}</select>${equipo ? '' : '<span class="note">Las respuestas para todo el equipo las crea el administrador.</span>'}</div>
+      </div>`, `${r ? '<button class="btn sm" id="qDel" style="color:#b4322b;border-color:#e7b9b4">Eliminar</button>' : ''}<button class="btn primary sm" id="qOk">${r ? 'Guardar' : 'Crear respuesta'}</button>`, { wide: true });
+    const pintaAdj = () => { $('#qAdj').innerHTML = adj ? `<span>📎 <b>${esc(adj.nombre)}</b>${adj.tam ? ' · ' + (adj.tam / 1048576).toFixed(1) + ' MB' : ''}</span> <button type="button" class="btn sm" id="qAdjX">Quitar</button>` : '<span class="note">Sin archivo.</span>'; const x = $('#qAdjX'); if (x) x.onclick = () => { adj = null; pintaAdj(); }; };
+    pintaAdj();
+    $('#qCat').onchange = () => { const c = CATS_PDF.find(x => x[0] === $('#qCat').value); if (c) { adj = { nombre: c[2], tipo: 'application/pdf', url: c[0] }; pintaAdj(); } $('#qCat').value = ''; };
+    $('#qSubir').onclick = () => $('#qFile').click();
+    $('#qFile').onchange = async () => {
+      const f = $('#qFile').files[0]; $('#qFile').value = ''; if (!f) return;
+      if (f.size > 4 * 1048576) return toast('El archivo pesa más de 4 MB. Súbelo más ligero.');
+      const b = $('#qSubir'); b.disabled = true;
+      try { adj = await subirAdjunto(f, (i, n) => { b.textContent = 'Subiendo… ' + Math.round(i / n * 100) + ' %'; }); pintaAdj(); toast('Archivo listo'); }
+      catch (e) { toast(e.message); }
+      b.disabled = false; b.textContent = 'Subir archivo (PDF, foto, Word o Excel, máx. 4 MB)';
+    };
+    $('#qOk').onclick = async () => {
+      try {
+        await api('/api/datos?c=respuestas', { accion: r ? 'editar' : 'crear', id: r ? r.id : undefined, titulo: $('#qT').value, atajo: $('#qA').value, texto: $('#qX').value, adjunto: adj, alcance: $('#qAl').value });
+        m.cerrar(); toast(r ? 'Respuesta guardada' : 'Respuesta creada'); await cargar(); render();
+      } catch (e) { toast(e.message); }
+    };
+    const del = $('#qDel'); if (del) del.onclick = async () => { if (!confirm('¿Eliminar la respuesta «' + r.titulo + '»?')) return; try { await api('/api/datos?c=respuestas', { accion: 'eliminar', id: r.id }); m.cerrar(); toast('Respuesta eliminada'); await cargar(); render(); } catch (e) { toast(e.message); } };
+  }
+  function adminRespuestas() {
+    const lista = (S.respuestas || []).slice().sort((a, b) => (a.alcance === 'personal') - (b.alcance === 'personal') || a.titulo.localeCompare(b.titulo));
+    const puede = r => r.alcance === 'equipo' ? veTodo() : true;
+    const m = modal('Respuestas rápidas', `<p class="note" style="margin:0 0 12px">En cualquier chat usa el botón ⚡ o escribe <b>/</b> en la caja de texto. Las «del equipo» las ven todos; las «mías» solo tú.</p>
+      <div class="table-wrap"><table class="table"><tbody>${lista.map(r => `<tr><td><b>${esc(r.titulo)}</b>${r.atajo ? ` <code>/${esc(r.atajo)}</code>` : ''}<small>${esc((r.texto || '').slice(0, 90))}${r.adjunto ? ' · 📎 ' + esc(r.adjunto.nombre) : ''}</small></td><td style="white-space:nowrap">${r.alcance === 'equipo' ? 'Del equipo' : 'Mía'}</td><td style="text-align:right">${puede(r) ? `<button class="btn sm" data-qe="${r.id}">Editar</button>` : ''}</td></tr>`).join('')}</tbody></table></div>`,
+      `<button class="btn primary sm" id="qNueva">+ Nueva respuesta</button>`, { wide: true });
+    $('#qNueva').onclick = () => { m.cerrar(); formRespuesta(null); };
+    $$('[data-qe]').forEach(b => b.onclick = () => { m.cerrar(); formRespuesta(S.respuestas.find(x => x.id === b.dataset.qe)); });
+  }
+
   async function waSync() {
     try { await api('/api/wa-sync', {}); await cargar(); } catch (e) { /* throttled o VPS caído */ }
   }
@@ -1083,7 +1168,9 @@
           <div class="acciones">${estadoSel}${asignarSel}${crearLeadBtn}${lead ? `<a class="btn sm" href="#/leads" data-ver-lead="${lead.id}" title="Abrir ficha del lead">Ficha</a>` : ''}</div>
         </div>
         <div class="wa-msgs" id="waMsgs">${hilo}</div>
-        <form class="wa-input" id="waForm"><input type="file" id="waFile" hidden accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.zip,image/*,video/*,audio/*"><button type="button" class="btn wa-clip" id="waClip" title="Adjuntar documento, foto o video" ${estado !== 'connected' ? 'disabled' : ''}>📎</button><textarea id="waTxt" rows="1" placeholder="Escribe un mensaje…" ${estado !== 'connected' ? 'disabled title="La cuenta de WhatsApp no está conectada"' : ''}></textarea><button class="btn wa" type="submit" ${estado !== 'connected' ? 'disabled' : ''}>Enviar</button></form>
+        <div class="wa-rr" id="waRR" hidden></div>
+        ${S.wa.adjunto[active.jid] ? `<div class="wa-adj"><span>📎 <b>${esc(S.wa.adjunto[active.jid].nombre)}</b> · se envía junto con el mensaje</span><button type="button" id="waAdjX" title="Quitar el archivo">×</button></div>` : ''}
+        <form class="wa-input" id="waForm"><button type="button" class="btn wa-clip" id="waRap" title="Respuestas rápidas (o escribe / en la caja)" ${estado !== 'connected' ? 'disabled' : ''}>⚡</button><input type="file" id="waFile" hidden accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.zip,image/*,video/*,audio/*"><button type="button" class="btn wa-clip" id="waClip" title="Adjuntar documento, foto o video" ${estado !== 'connected' ? 'disabled' : ''}>📎</button><textarea id="waTxt" rows="1" placeholder="Escribe un mensaje… (o / para respuestas rápidas)" ${estado !== 'connected' ? 'disabled title="La cuenta de WhatsApp no está conectada"' : ''}></textarea><button class="btn wa" type="submit" ${estado !== 'connected' ? 'disabled' : ''}>Enviar</button></form>
       </div>`;
     }
 
@@ -1141,16 +1228,35 @@
     // Enviar
     const form = $('#waForm');
     if (form) {
-      const ta = $('#waTxt');
-      ta.oninput = () => { ta.style.height = 'auto'; ta.style.height = Math.min(120, ta.scrollHeight) + 'px'; };
-      ta.onkeydown = e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); form.requestSubmit(); } };
+      const ta = $('#waTxt'); const jidAct = S.wa.activo;
+      const alto = () => { ta.style.height = 'auto'; ta.style.height = Math.min(160, ta.scrollHeight) + 'px'; };
+      if (S.wa.borrador[jidAct]) { ta.value = S.wa.borrador[jidAct]; alto(); }
+      ta.oninput = () => { alto(); S.wa.borrador[jidAct] = ta.value; const m = ta.value.match(/^\/(\S*)$/); if (m) rrAbrir(m[1]); else if (S.wa.rr !== null && !$('#waRR').hidden && ta.value.startsWith('/') === false && S.wa.rr.desdeBarra) rrCerrar(); };
+      ta.onkeydown = e => {
+        if (!$('#waRR').hidden && S.wa.rr && S.wa.rr.desdeBarra && (e.key === 'Enter' || e.key === 'Tab')) { const p = $('#waRR [data-rr]'); if (p) { e.preventDefault(); p.click(); return; } }
+        if (e.key === 'Escape') { rrCerrar(); return; }
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); form.requestSubmit(); }
+      };
+      const ax = $('#waAdjX'); if (ax) ax.onclick = () => { delete S.wa.adjunto[jidAct]; vistaWhatsApp(); };
+      $('#waRap').onclick = () => { if ($('#waRR').hidden) rrAbrir('', false); else rrCerrar(); };
       form.onsubmit = async e => {
         e.preventDefault();
-        const t = ta.value.trim(); if (!t || !S.wa.activo) return;
-        ta.disabled = true;
-        try { await waEnviar(S.wa.activo, t); ta.value = ''; ta.style.height = 'auto'; } catch (x) { /* toast ya salió */ }
-        ta.disabled = false; ta.focus();
-        vistaWhatsApp();
+        const t = ta.value.trim(); const adj = S.wa.adjunto[jidAct];
+        if ((!t && !adj) || !jidAct) return;
+        ta.disabled = true; const btn = form.querySelector('button[type=submit]'); btn.disabled = true;
+        try {
+          if (t) { await waEnviar(jidAct, t); S.wa.borrador[jidAct] = ''; ta.value = ''; }
+          if (adj) {
+            toast('Enviando ' + adj.nombre + '…');
+            const r = await fetch(adj.url); if (!r.ok) throw new Error('No se pudo abrir el archivo ' + adj.nombre);
+            const blob = await r.blob();
+            await waEnviarArchivo(jidAct, new File([blob], adj.nombre, { type: adj.tipo || blob.type }), '');
+            delete S.wa.adjunto[jidAct]; toast('Mensaje y archivo enviados');
+            await Promise.all([waCargarMensajes(jidAct), waCargarChats()]);
+          }
+        } catch (x) { if (x && x.message) toast(x.message); }
+        ta.disabled = false; btn.disabled = false;
+        vistaWhatsApp(); const t2 = $('#waTxt'); if (t2) t2.focus();
       };
       // Adjuntar: el texto escrito en la caja va como pie del archivo.
       const clip = $('#waClip'), fi = $('#waFile');

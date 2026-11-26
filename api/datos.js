@@ -15,10 +15,13 @@ const visiblesVentas = (lista, u) => esAdmin(u) ? lista : lista.filter(v => v.ve
 const visiblesLeads = (lista, u) => veTodo(u) ? lista : lista.filter(l => l.vendedorId === u.id);
 const hist = (obj, quien, que) => { (obj.historial = obj.historial || []).push({ cuando: ahora(), quien, que }); };
 
-const COLECCIONES = ['ventas', 'leads', 'usuarios', 'sucursales', 'ajustes', 'modelos', 'tienda', 'cupones'];
+const COLECCIONES = ['ventas', 'leads', 'usuarios', 'sucursales', 'ajustes', 'modelos', 'tienda', 'cupones', 'respuestas'];
 const T = require('./_lib/tienda');
 const B = require('./_lib/bitacora');
 const CU = require('./_lib/cupones');
+const RR = require('./_lib/respuestas');
+// La primera vez que alguien abre el sistema se cargan las respuestas rápidas que vienen listas.
+async function respuestas() { let l = await store.get('respuestas', null); if (!Array.isArray(l)) { l = RR.iniciales(); await store.set('respuestas', l); } return l; }
 
 // ───── Bitácora: cada cambio hecho por /api/datos queda anotado (quién, qué, cuándo) ─────
 // Se engancha en res.end para registrar ANTES de contestar (en Vercel lo que corre después de contestar puede no terminar).
@@ -68,6 +71,12 @@ async function describir(col, b, out) {
     if (ac === 'editar') return ['Cupón', (b.soloEstado ? (c.activo === false ? 'Pausó' : 'Reactivó') + ' el cupón ' + cod : 'Editó el cupón ' + cod + ': ' + CU.etiqueta(c)), cod];
     if (ac === 'eliminar') return ['Cupón', 'Eliminó el cupón ' + cod, cod];
   }
+  if (col === 'respuestas') {
+    const r = out.respuesta || {}; const quien = r.alcance === 'equipo' ? ' (para todo el equipo)' : ' (personal)';
+    if (ac === 'crear') return ['WhatsApp', 'Creó la respuesta rápida «' + r.titulo + '»' + quien + (r.adjunto ? ' con el archivo ' + r.adjunto.nombre : ''), r.id];
+    if (ac === 'editar') return ['WhatsApp', 'Editó la respuesta rápida «' + r.titulo + '»' + quien, r.id];
+    if (ac === 'eliminar') return ['WhatsApp', 'Eliminó la respuesta rápida «' + (r.titulo || b.id) + '»', b.id];
+  }
   if (col === 'sucursales') return ['Ajustes', 'Cambió la lista de sucursales', ''];
   if (col === 'ajustes') return ['Ajustes', ac === 'limpiarBitacora' ? 'Limpió el registro de accesos' : 'Cambió los ajustes del negocio', ''];
   return null; // «tienda» se anota en su propio bloque, con el detalle del cambio
@@ -115,6 +124,7 @@ async function manejar(req, res) {
     out.catalogo = { productos: M.D().products.map(p => ({ id: p.id, nombre: p.name, precio: p.price || 0, cat: p.cat, tapiz: p.tapiz || [] })), tapiz: M.D().TAPIZ, estados: M.D().states, estadosVenta: M.ESTADOS_VENTA, estadosLead: M.ESTADOS_LEAD, origenes: M.ORIGENES, extras, tienda };
     if (esAdmin(u)) out.catalogo.bitacoraTienda = (await store.get('bitacoraTienda', [])).slice(0, 80);
     if (esAdmin(u)) out.cupones = (await store.get('cupones', [])).map(x => ({ ...x, estado: CU.estado(x) }));
+    if (c === 'todo' || c === 'respuestas') out.respuestas = (await respuestas()).filter(r => RR.visible(r, u));
     return ok(res, out);
   }
   if (req.method !== 'POST') return error(res, 405, 'Método no permitido');
@@ -374,6 +384,32 @@ async function manejar(req, res) {
       await anotar('Volvió al original', b.id, original.name, 'Precio ' + pesos(original.price));
       return ok(res, { ok: true, tienda: lista });
     }
+    return error(res, 400, 'Acción desconocida');
+  }
+
+  // ───── Respuestas rápidas de WhatsApp: todos pueden crear las suyas; las del equipo, admin y admin de atención ─────
+  if (c === 'respuestas') {
+    const lista = await respuestas();
+    if (ac === 'crear') {
+      let d; try { d = RR.normalizar(b); } catch (e) { return error(res, 400, e.message); }
+      const alcance = b.alcance === 'equipo' && RR.veEquipo(u) ? 'equipo' : 'personal';
+      if (d.atajo && lista.some(r => RR.visible(r, u) && r.atajo === d.atajo)) return error(res, 409, 'Ya tienes una respuesta con el atajo /' + d.atajo);
+      const r = { id: 'r-' + id(8), ...d, alcance, dueno: alcance === 'personal' ? u.id : null, creadoPor: u.nombre, creado: ahora() };
+      lista.push(r); await store.set('respuestas', lista);
+      return ok(res, { respuesta: r });
+    }
+    const r = lista.find(x => x.id === b.id);
+    if (!r || !RR.visible(r, u)) return error(res, 404, 'No existe esa respuesta');
+    if (!RR.puedeCambiar(r, u)) return error(res, 403, r.alcance === 'equipo' ? 'Las respuestas del equipo solo las cambia el administrador' : 'Esa respuesta es de otra persona');
+    if (ac === 'editar') {
+      let d; try { d = RR.normalizar(b); } catch (e) { return error(res, 400, e.message); }
+      if (d.atajo && lista.some(x => x.id !== r.id && RR.visible(x, u) && x.atajo === d.atajo)) return error(res, 409, 'Ya tienes una respuesta con el atajo /' + d.atajo);
+      Object.assign(r, d, { editado: ahora(), editadoPor: u.nombre });
+      if (RR.veEquipo(u) && (b.alcance === 'equipo' || b.alcance === 'personal')) { r.alcance = b.alcance; r.dueno = b.alcance === 'personal' ? (r.dueno || u.id) : null; }
+      await store.set('respuestas', lista);
+      return ok(res, { respuesta: r });
+    }
+    if (ac === 'eliminar') { lista.splice(lista.indexOf(r), 1); await store.set('respuestas', lista); return ok(res, { ok: true, respuesta: r }); }
     return error(res, 400, 'Acción desconocida');
   }
 
